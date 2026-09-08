@@ -11,6 +11,19 @@ export function TemplatesPage() {
         saisissez vos données via un formulaire.
       </p>
 
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
+        <span className="text-[var(--color-text-muted)]">
+          Vous ne savez pas quel template choisir ? Déposez votre fichier, l'IA propose le
+          dashboard adapté.
+        </span>
+        <Link
+          to="/import-ia"
+          className="shrink-0 rounded-lg border border-[var(--color-accent)] px-3 py-1.5 font-medium text-[var(--color-accent)]"
+        >
+          ✨ Laisser l'IA choisir
+        </Link>
+      </div>
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {templates.map((template) => (
           <div key={template.id} className="flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">

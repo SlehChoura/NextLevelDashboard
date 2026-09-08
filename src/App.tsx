@@ -12,6 +12,10 @@ const FormPage = lazy(() => import("./pages/FormPage").then((m) => ({ default: m
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })))
 const ReportsListPage = lazy(() => import("./pages/ReportsListPage").then((m) => ({ default: m.ReportsListPage })))
 const ThemePage = lazy(() => import("./pages/ThemePage").then((m) => ({ default: m.ThemePage })))
+const SettingsAiPage = lazy(() => import("./pages/SettingsAiPage").then((m) => ({ default: m.SettingsAiPage })))
+const AiTemplatePickerPage = lazy(() =>
+  import("./pages/AiTemplatePickerPage").then((m) => ({ default: m.AiTemplatePickerPage })),
+)
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
 
 export default function App() {
@@ -28,6 +32,8 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="mes-rapports" element={<ReportsListPage />} />
             <Route path="theme" element={<ThemePage />} />
+            <Route path="parametres-ia" element={<SettingsAiPage />} />
+            <Route path="import-ia" element={<AiTemplatePickerPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
