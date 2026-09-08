@@ -17,6 +17,10 @@ const FEATURES = [
     title: "Charte graphique",
     text: "Thème inspiré Wavestone par défaut, personnalisable intégralement (couleurs, logo) pour coller à votre charte ou celle de votre client.",
   },
+  {
+    title: "Analyse IA (optionnelle)",
+    text: "Configurez votre clé API Claude pour laisser l'IA choisir le template adapté et proposer une correspondance de colonnes plus fine que la reconnaissance automatique seule.",
+  },
 ]
 
 export function HomePage() {
@@ -62,8 +66,9 @@ export function HomePage() {
       <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
         toutes les données (fichiers importés, saisies, rapports) restent dans votre navigateur ;
-        rien n'est envoyé à un serveur. Pensez tout de même à vider le stockage local sur un
-        poste partagé.
+        rien n'est envoyé à un serveur. Seule exception, optionnelle : si vous configurez une clé
+        API IA, les en-têtes de colonnes et un échantillon de lignes sont transmis directement à
+        l'API Claude pour l'analyse. Pensez à vider le stockage local sur un poste partagé.
       </div>
     </div>
   )

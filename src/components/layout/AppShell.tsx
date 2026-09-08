@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/templates", label: "Templates" },
   { to: "/mes-rapports", label: "Mes rapports" },
   { to: "/theme", label: "Charte graphique" },
+  { to: "/parametres-ia", label: "Assistant IA" },
 ]
 
 export function AppShell() {

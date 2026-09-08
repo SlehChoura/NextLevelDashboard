@@ -4,7 +4,9 @@ import * as XLSX from "xlsx"
 import { getTemplate } from "../templates"
 import { autoMapColumns, buildDataRows, parseWorkbookFile, readSheet, type ParsedSheet } from "../lib/excelImport"
 import { downloadBlankExcelTemplate } from "../lib/excelTemplate"
+import { applyAiMapping, suggestDashboardFromExcel } from "../lib/ai"
 import { useReportStore } from "../store/reportStore"
+import { useAiStore } from "../store/aiStore"
 import { FileDrop } from "../components/common/FileDrop"
 import { ReportMetaForm } from "../components/dashboard/ReportMetaForm"
 import type { ReportMeta } from "../types"
@@ -15,12 +17,17 @@ export function ImportExcelPage() {
   const navigate = useNavigate()
   const createReport = useReportStore((s) => s.createReport)
   const setRows = useReportStore((s) => s.setRows)
+  const aiApiKey = useAiStore((s) => s.apiKey)
+  const aiModel = useAiStore((s) => s.model)
 
   const [meta, setMeta] = useState<ReportMeta>({ title: "", client: "", author: "", period: "" })
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null)
   const [sheet, setSheet] = useState<ParsedSheet | null>(null)
   const [mapping, setMapping] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiNote, setAiNote] = useState<string | null>(null)
 
   const previewRows = useMemo(() => sheet?.rows.slice(0, 5) ?? [], [sheet])
 
@@ -48,6 +55,28 @@ export function ImportExcelPage() {
     if (!template) return
     setSheet(parsed)
     setMapping(autoMapColumns(parsed.headers, template))
+    setAiNote(null)
+    setAiError(null)
+  }
+
+  async function handleAiAnalyze() {
+    if (!template || !sheet || !aiApiKey) return
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const suggestion = await suggestDashboardFromExcel({
+        apiKey: aiApiKey,
+        model: aiModel,
+        candidates: [template],
+        sheet,
+      })
+      setMapping(applyAiMapping(template, sheet, suggestion))
+      setAiNote(suggestion.templateReason)
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Erreur inattendue lors de l'analyse IA.")
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   function handleConfirm() {
@@ -96,6 +125,16 @@ export function ImportExcelPage() {
         <FileDrop onFile={handleFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
       </div>
 
+      {!aiApiKey && (
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+          Astuce :{" "}
+          <Link to="/parametres-ia" className="underline">
+            configurez une clé IA
+          </Link>{" "}
+          pour une analyse des colonnes plus fine que la reconnaissance automatique.
+        </p>
+      )}
+
       {error && <p className="mt-3 text-sm text-[var(--color-danger)]">{error}</p>}
 
       {workbook && sheet && (
@@ -118,14 +157,32 @@ export function ImportExcelPage() {
           )}
 
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-[var(--color-text)]">
                 Correspondance des colonnes
               </h2>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {mappedCount} / {template.criteria.length} critères reconnus
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {mappedCount} / {template.criteria.length} critères reconnus
+                </span>
+                {aiApiKey && (
+                  <button
+                    onClick={handleAiAnalyze}
+                    disabled={aiLoading}
+                    className="shrink-0 rounded-lg border border-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-[var(--color-accent)] disabled:opacity-50"
+                  >
+                    {aiLoading ? "Analyse en cours…" : "✨ Analyser avec l'IA"}
+                  </button>
+                )}
+              </div>
             </div>
+            {aiError && <p className="mt-2 text-xs text-[var(--color-danger)]">{aiError}</p>}
+            {aiNote && !aiError && (
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                <span className="font-medium text-[var(--color-text)]">Analyse IA — </span>
+                {aiNote}
+              </p>
+            )}
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {template.criteria.map((criterion) => (
                 <label key={criterion.key} className="text-xs text-[var(--color-text-muted)]">
