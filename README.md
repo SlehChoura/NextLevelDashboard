@@ -21,10 +21,15 @@ l'API d'Anthropic, avec la clé API personnelle de l'utilisateur (voir « Analys
   intermédiaire).
 - **Relecture et correction avant génération** : l'analyse de l'IA n'est jamais appliquée à
   l'aveugle. Un écran de relecture affiche sa synthèse, les critères qu'elle a détectés (libellé,
-  type, rôle, modifiables ou supprimables) et les données ligne par ligne (éditables, lignes
+  type, rôle, modifiables ou supprimables), un comparatif entre le nombre de lignes non vides du
+  fichier et le nombre de lignes retenues comme données réelles (avec alerte si l'écart est
+  important — l'IA a pu en oublier), et les données ligne par ligne (éditables, lignes
   ajoutables/supprimables) — utile par exemple pour retirer une ligne de légende que l'IA aurait
-  mal identifiée comme une donnée, ou corriger un critère mal typé, avant de confirmer la
+  mal identifiée comme une donnée, ou pour compléter des lignes manquantes, avant de confirmer la
   génération du dashboard.
+- **Édition après génération** : le bouton « Modifier les données » du dashboard rouvre le même
+  écran de relecture/édition sur un rapport déjà généré — pour ajouter, corriger ou supprimer des
+  lignes ou des critères à tout moment, sans avoir à relancer une analyse IA.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +

@@ -73,15 +73,32 @@ export interface AiAnalysisResult {
   rows: DataRow[]
   summary: string
   truncated: boolean
+  /** Nombre de lignes non vides du fichier envoyées au modèle (légende/totaux compris) — pour comparaison. */
+  sheetRowCount: number
+  /** La réponse du modèle a été coupée avant la fin (limite de tokens) : des lignes manquent probablement. */
+  outputTruncated: boolean
 }
 
-function sheetToText(sheet: ParsedSheet, maxRows: number): { text: string; truncated: boolean } {
+function sheetToText(
+  sheet: ParsedSheet,
+  maxRows: number,
+): { text: string; truncated: boolean; nonEmptyRowCount: number } {
   const rows = sheet.rows.slice(0, maxRows)
+  const nonEmptyRowCount = rows.filter((row) => row.some((cell) => String(cell ?? "").trim() !== "")).length
   const lines = [
     sheet.headers.join(" | "),
     ...rows.map((row) => sheet.headers.map((_, i) => String(row[i] ?? "")).join(" | ")),
   ]
-  return { text: lines.join("\n"), truncated: sheet.rows.length > maxRows }
+  return { text: lines.join("\n"), truncated: sheet.rows.length > maxRows, nonEmptyRowCount }
+}
+
+/** Haiku 4.5 ne pense pas de façon adaptative : lui laisser un budget de réflexion explicite
+ *  l'aide nettement sur une tâche de discrimination (données réelles vs légende/glossaire). */
+function thinkingConfigFor(model: AiModel) {
+  if (model === "claude-haiku-4-5") {
+    return { type: "enabled" as const, budget_tokens: 3000 }
+  }
+  return { type: "adaptive" as const }
 }
 
 export async function analyzeSheetWithAI(
@@ -90,11 +107,12 @@ export async function analyzeSheetWithAI(
   model: AiModel,
 ): Promise<AiAnalysisResult> {
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
-  const { text, truncated } = sheetToText(sheet, MAX_ROWS_SENT)
+  const { text, truncated, nonEmptyRowCount } = sheetToText(sheet, MAX_ROWS_SENT)
 
   const response = await client.messages.parse({
     model,
-    max_tokens: 8192,
+    max_tokens: 16000,
+    thinking: thinkingConfigFor(model),
     system:
       "Tu es un analyste qui transforme un export Excel/CSV arbitraire en dashboard de reporting. " +
       "Détermine toi-même les critères (colonnes) les plus pertinents à suivre : reprends les colonnes " +
@@ -113,6 +131,14 @@ export async function analyzeSheetWithAI(
       "qu'une valeur franche pour un critère par ailleurs numérique, préfère garder ce critère en type " +
       "'text' pour ne perdre aucune information, plutôt que de forcer un type 'number'/'percent' qui " +
       "obligerait à jeter ces valeurs.\n\n" +
+      "Important, ne sous-compte jamais les données : une ligne avec un identifiant/nom renseigné dans " +
+      "la colonne 'label' est un élément de données valide même si la plupart de ses autres cellules " +
+      "sont vides (par exemple un cas d'usage encore au statut 'en cours' sans autre information " +
+      "disponible) — inclus-la quand même, avec des valeurs vides pour les critères non renseignés. " +
+      "Seules les lignes qui reproduisent une légende (association valeur → signification), un total, " +
+      "ou qui sont entièrement vides doivent être exclues. Avant de finaliser ta réponse, recompte le " +
+      "nombre d'éléments réels identifiables dans le fichier (ex: un agent/cas d'usage par ligne du " +
+      "tableau principal, légende exclue) et vérifie que ton nombre de lignes renvoyées correspond.\n\n" +
       "Pour chaque élément de données identifié, renvoie les valeurs correspondant aux critères que tu " +
       "as définis. Pour un critère de type select/severity/status, chaque valeur doit correspondre " +
       "exactement à la 'value' (pas au 'label') d'une des options définies pour ce critère.",
@@ -162,7 +188,14 @@ export async function analyzeSheetWithAI(
     return dataRow
   })
 
-  return { template, rows, summary: parsed.summary, truncated }
+  return {
+    template,
+    rows,
+    summary: parsed.summary,
+    truncated,
+    sheetRowCount: nonEmptyRowCount,
+    outputTruncated: response.stop_reason === "max_tokens",
+  }
 }
 
 export function describeAiError(error: unknown): string {
