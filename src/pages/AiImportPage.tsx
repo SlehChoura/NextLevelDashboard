@@ -2,11 +2,21 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import * as XLSX from "xlsx"
 import { parseWorkbookFile, readSheet, type ParsedSheet } from "../lib/excelImport"
-import { analyzeSheetWithAI, describeAiError } from "../lib/aiAnalysis"
+import { analyzeSheetWithAI, describeAiError, type AiAnalysisResult } from "../lib/aiAnalysis"
+import {
+  addCriterion,
+  addRow,
+  removeCriterion,
+  removeRow,
+  setStatusKey,
+  updateCell,
+  updateCriterion,
+} from "../lib/aiTemplateEdit"
 import { useAiSettingsStore, type AiModel } from "../store/aiSettingsStore"
 import { useReportStore } from "../store/reportStore"
 import { FileDrop } from "../components/common/FileDrop"
 import { ReportMetaForm } from "../components/dashboard/ReportMetaForm"
+import { AiReviewEditor } from "../components/ai/AiReviewEditor"
 import type { ReportMeta } from "../types"
 
 const MODEL_OPTIONS: { value: AiModel; label: string; hint: string }[] = [
@@ -30,9 +40,11 @@ export function AiImportPage() {
   const [sheet, setSheet] = useState<ParsedSheet | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [analysis, setAnalysis] = useState<AiAnalysisResult | null>(null)
 
   async function handleFile(file: File) {
     setError(null)
+    setAnalysis(null)
     try {
       const wb = await parseWorkbookFile(file)
       setWorkbook(wb)
@@ -48,16 +60,22 @@ export function AiImportPage() {
     setError(null)
     try {
       const result = await analyzeSheetWithAI(sheet, apiKey, model)
-      createReport(result.template, { ...meta, title: meta.title || result.template.name }, result.rows)
-      navigate("/dashboard")
+      setAnalysis(result)
     } catch (e) {
       setError(describeAiError(e))
+    } finally {
       setLoading(false)
     }
   }
 
+  function handleConfirm() {
+    if (!analysis) return
+    createReport(analysis.template, { ...meta, title: meta.title || analysis.template.name }, analysis.rows)
+    navigate("/dashboard")
+  }
+
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
+    <div className={`mx-auto px-6 py-8 ${analysis ? "max-w-5xl" : "max-w-3xl"}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-accent)]">Analyse IA</p>
       <h1 className="mt-1 text-xl font-semibold text-[var(--color-text)]">
         Générer un dashboard à partir d'un fichier, analysé par l'IA
@@ -150,7 +168,7 @@ export function AiImportPage() {
         )}
       </div>
 
-      {apiKey && (
+      {apiKey && !analysis && (
         <>
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <h2 className="text-sm font-semibold text-[var(--color-text)]">Informations du rapport (facultatif)</h2>
@@ -195,12 +213,46 @@ export function AiImportPage() {
                   className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   style={{ backgroundColor: "var(--color-accent)" }}
                 >
-                  {loading ? "Analyse en cours…" : "Analyser avec l'IA et générer le dashboard"}
+                  {loading ? "Analyse en cours…" : "Analyser avec l'IA"}
                 </button>
               </div>
             </div>
           )}
         </>
+      )}
+
+      {analysis && (
+        <AiReviewEditor
+          template={analysis.template}
+          rows={analysis.rows}
+          summary={analysis.summary}
+          truncated={analysis.truncated}
+          onUpdateCriterion={(key, patch) =>
+            setAnalysis((a) => (a ? { ...a, template: updateCriterion(a.template, key, patch) } : a))
+          }
+          onRemoveCriterion={(key) =>
+            setAnalysis((a) => {
+              if (!a) return a
+              const { template, rows: nextRows } = removeCriterion(a.template, a.rows, key)
+              return { ...a, template, rows: nextRows }
+            })
+          }
+          onAddCriterion={() =>
+            setAnalysis((a) => {
+              if (!a) return a
+              const { template, rows: nextRows } = addCriterion(a.template, a.rows)
+              return { ...a, template, rows: nextRows }
+            })
+          }
+          onSetStatusKey={(key) => setAnalysis((a) => (a ? { ...a, template: setStatusKey(a.template, key) } : a))}
+          onUpdateCell={(rowId, key, value) =>
+            setAnalysis((a) => (a ? { ...a, rows: updateCell(a.rows, rowId, key, value) } : a))
+          }
+          onRemoveRow={(rowId) => setAnalysis((a) => (a ? { ...a, rows: removeRow(a.rows, rowId) } : a))}
+          onAddRow={() => setAnalysis((a) => (a ? { ...a, rows: addRow(a.template, a.rows) } : a))}
+          onConfirm={handleConfirm}
+          onDiscard={() => setAnalysis(null)}
+        />
       )}
     </div>
   )

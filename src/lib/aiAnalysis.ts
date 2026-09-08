@@ -60,7 +60,11 @@ const analysisSchema = z.object({
   template: templateSchema,
   rows: z
     .array(z.record(z.string(), rowValueSchema))
-    .describe("une entrée par ligne de données fournie, dans le même ordre, avec une valeur par critère défini"),
+    .describe(
+      "une entrée par élément réel identifié dans les données (ex: un agent/cas d'usage par ligne), " +
+        "avec une valeur par critère défini ; n'inclus jamais une ligne de légende/glossaire, de total, " +
+        "ou entièrement vide",
+    ),
   summary: z.string().describe("synthèse en 3 à 5 phrases, en français, des enseignements clés de l'analyse"),
 })
 
@@ -96,10 +100,22 @@ export async function analyzeSheetWithAI(
       "Détermine toi-même les critères (colonnes) les plus pertinents à suivre : reprends les colonnes " +
       "utiles du fichier, ignore celles qui ne le sont pas, et n'hésite pas à déduire un critère qui " +
       "n'existe pas littéralement comme colonne si l'information est présente ailleurs (par exemple un " +
-      "niveau de maturité déduit d'un commentaire libre). Puis, pour chaque ligne de données fournie, " +
-      "dans le même ordre, renvoie les valeurs correspondant aux critères que tu as définis. Pour un " +
-      "critère de type select/severity/status, chaque valeur de ligne doit correspondre exactement à la " +
-      "'value' (pas au 'label') d'une des options définies pour ce critère.",
+      "niveau de maturité déduit d'un commentaire libre).\n\n" +
+      "Identifie la colonne qui nomme ou identifie chaque élément suivi (ex: un nom de cas d'usage/agent, " +
+      "un identifiant) et donne-lui le rôle 'label' : c'est elle qui répond à la question « quels sont " +
+      "les éléments suivis ? ». Sois vigilant : un fichier Excel contient souvent, à la suite ou à côté " +
+      "du tableau de données, un bloc de légende qui explique la signification des valeurs (par exemple " +
+      "une liste 'valeur → description' pour chaque critère, ou des notes de bas de tableau). Ce bloc " +
+      "n'est jamais une ligne de données réelle : ne l'inclus pas dans les lignes renvoyées, même s'il " +
+      "occupe des lignes ou colonnes proches du tableau principal. De même, ignore les lignes de total, " +
+      "de séparation ou entièrement vides.\n\n" +
+      "Si une cellule contient une note ou un texte libre (ex: 'N/A', 'en cours', un commentaire) plutôt " +
+      "qu'une valeur franche pour un critère par ailleurs numérique, préfère garder ce critère en type " +
+      "'text' pour ne perdre aucune information, plutôt que de forcer un type 'number'/'percent' qui " +
+      "obligerait à jeter ces valeurs.\n\n" +
+      "Pour chaque élément de données identifié, renvoie les valeurs correspondant aux critères que tu " +
+      "as définis. Pour un critère de type select/severity/status, chaque valeur doit correspondre " +
+      "exactement à la 'value' (pas au 'label') d'une des options définies pour ce critère.",
     messages: [
       {
         role: "user",
