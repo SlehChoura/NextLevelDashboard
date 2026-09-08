@@ -3,8 +3,7 @@ import { Logo } from "../common/Logo"
 
 const NAV_ITEMS = [
   { to: "/", label: "Accueil", end: true },
-  { to: "/templates", label: "Templates" },
-  { to: "/ia", label: "Analyse IA" },
+  { to: "/ia", label: "Nouveau rapport" },
   { to: "/mes-rapports", label: "Mes rapports" },
   { to: "/theme", label: "Charte graphique" },
 ]

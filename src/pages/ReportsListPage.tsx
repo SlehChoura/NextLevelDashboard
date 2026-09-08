@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useReportStore } from "../store/reportStore"
-import { resolveReportTemplate } from "../templates"
 
 export function ReportsListPage() {
   const reports = useReportStore((s) => s.reports)
@@ -18,7 +17,7 @@ export function ReportsListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-[var(--color-text)]">Mes rapports</h1>
         <Link
-          to="/templates"
+          to="/ia"
           className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
           style={{ backgroundColor: "var(--color-accent)" }}
         >
@@ -36,31 +35,28 @@ export function ReportsListPage() {
           {reports
             .slice()
             .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-            .map((report) => {
-              const template = resolveReportTemplate(report)
-              return (
-                <div
-                  key={report.id}
-                  className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+            .map((report) => (
+              <div
+                key={report.id}
+                className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+              >
+                <button onClick={() => open(report.id)} className="text-left">
+                  <div className="text-sm font-medium text-[var(--color-text)]">
+                    {report.meta.title || report.template.name || "Rapport sans titre"}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-muted)]">
+                    {report.rows.length} ligne(s) · mis à jour le{" "}
+                    {new Date(report.updatedAt).toLocaleDateString("fr-FR")}
+                  </div>
+                </button>
+                <button
+                  onClick={() => deleteReport(report.id)}
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
                 >
-                  <button onClick={() => open(report.id)} className="text-left">
-                    <div className="text-sm font-medium text-[var(--color-text)]">
-                      {report.meta.title || template?.name || "Rapport sans titre"}
-                    </div>
-                    <div className="text-xs text-[var(--color-text-muted)]">
-                      {template?.shortName ?? "Template inconnu"} · {report.rows.length} ligne(s) · mis à jour
-                      le {new Date(report.updatedAt).toLocaleDateString("fr-FR")}
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => deleteReport(report.id)}
-                    className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              )
-            })}
+                  Supprimer
+                </button>
+              </div>
+            ))}
         </div>
       )}
     </div>

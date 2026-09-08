@@ -21,7 +21,7 @@ export function AiImportPage() {
   const model = useAiSettingsStore((s) => s.model)
   const setApiKey = useAiSettingsStore((s) => s.setApiKey)
   const setModel = useAiSettingsStore((s) => s.setModel)
-  const createReportFromAi = useReportStore((s) => s.createReportFromAi)
+  const createReport = useReportStore((s) => s.createReport)
 
   const [editingKey, setEditingKey] = useState(!apiKey)
   const [keyDraft, setKeyDraft] = useState(apiKey)
@@ -48,7 +48,7 @@ export function AiImportPage() {
     setError(null)
     try {
       const result = await analyzeSheetWithAI(sheet, apiKey, model)
-      createReportFromAi(result.template, { ...meta, title: meta.title || result.template.name }, result.rows)
+      createReport(result.template, { ...meta, title: meta.title || result.template.name }, result.rows)
       navigate("/dashboard")
     } catch (e) {
       setError(describeAiError(e))
@@ -63,16 +63,16 @@ export function AiImportPage() {
         Générer un dashboard à partir d'un fichier, analysé par l'IA
       </h1>
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-        Contrairement aux templates prédéfinis, l'IA détermine elle-même les critères pertinents à
-        partir de votre fichier — utile par exemple pour un portefeuille de cas d'usage IA suivi
-        selon des critères comme la portabilité, la documentation, la formation ou l'adoption par
-        la communauté.
+        L'IA détermine elle-même les critères pertinents à partir de votre fichier, sans template
+        prédéfini — utile par exemple pour un portefeuille de cas d'usage IA suivi selon des
+        critères comme la portabilité, la documentation, la formation ou l'adoption par la
+        communauté.
       </p>
 
       <div className="mt-4 rounded-xl border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/5 p-4 text-sm text-[var(--color-text)]">
         <span className="font-medium">Confidentialité — </span>
-        contrairement au reste de l'application, cette fonctionnalité envoie le contenu du fichier
-        (en-têtes et lignes de données) à l'API d'Anthropic (Claude) pour analyse. N'importez pas
+        cette fonctionnalité envoie le contenu du fichier (en-têtes et lignes de données) à l'API
+        d'Anthropic (Claude) pour analyse. N'importez pas
         de données confidentielles ou personnelles sans vous en assurer au préalable. Votre clé
         API n'est stockée que dans le stockage local de ce navigateur et n'est envoyée qu'à l'API
         Anthropic, jamais ailleurs.

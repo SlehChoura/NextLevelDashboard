@@ -41,7 +41,6 @@ const chartSchema = z.object({
 
 const templateSchema = z.object({
   name: z.string().describe("nom complet du dashboard"),
-  shortName: z.string().describe("nom court, affiché dans la navigation"),
   description: z.string().describe("une phrase décrivant ce que suit ce dashboard"),
   statusKey: z
     .string()
@@ -133,10 +132,7 @@ export async function analyzeSheetWithAI(
   const template: ReportTemplate = {
     id: `ia-${makeId()}`,
     name: parsed.template.name,
-    shortName: parsed.template.shortName,
     description: parsed.template.description,
-    situation: "Dashboard généré par l'IA à partir d'un fichier importé.",
-    category: "ia",
     statusKey: parsed.template.statusKey && criterionKeys.has(parsed.template.statusKey) ? parsed.template.statusKey : undefined,
     criteria,
     charts,

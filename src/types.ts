@@ -1,4 +1,4 @@
-/** Types de critères pris en charge par un template de reporting. */
+/** Types de critères pris en charge par un dashboard de reporting. */
 export type CriterionType =
   | "text"
   | "number"
@@ -23,21 +23,8 @@ export interface Criterion {
   label: string
   type: CriterionType
   role: CriterionRole
-  /** Libellés alternatifs utilisés pour la reconnaissance automatique des colonnes Excel. */
-  aliases?: string[]
   options?: CriterionOption[]
-  required?: boolean
-  /** Utilisé comme placeholder / valeur d'exemple dans le formulaire et l'export Excel type. */
-  example?: string
 }
-
-export type TemplateCategory =
-  | "projet"
-  | "audit"
-  | "vulnerabilites"
-  | "comite"
-  | "incident"
-  | "ia"
 
 export interface ChartSpec {
   id: string
@@ -47,13 +34,11 @@ export interface ChartSpec {
   criterionKey: string
 }
 
+/** Schéma d'un dashboard (critères, graphiques), déterminé par l'analyse IA du fichier importé. */
 export interface ReportTemplate {
   id: string
   name: string
-  shortName: string
   description: string
-  situation: string
-  category: TemplateCategory
   criteria: Criterion[]
   /** Clé du critère utilisé pour la synthèse RAG (rouge/orange/vert) en tête de dashboard. */
   statusKey?: string
@@ -72,9 +57,8 @@ export interface ReportMeta {
 
 export interface ReportData {
   id: string
-  templateId: string
-  /** Template généré dynamiquement par l'analyse IA, quand ce rapport n'utilise pas un template prédéfini. */
-  customTemplate?: ReportTemplate
+  /** Schéma du dashboard, généré par l'analyse IA du fichier importé pour ce rapport. */
+  template: ReportTemplate
   meta: ReportMeta
   rows: DataRow[]
   createdAt: string

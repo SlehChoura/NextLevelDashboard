@@ -7,9 +7,7 @@ interface ReportState {
   reports: ReportData[]
   activeReportId: string | null
   activeReport: () => ReportData | undefined
-  createReport: (templateId: string, meta: Partial<ReportMeta>) => string
-  createReportFromAi: (template: ReportTemplate, meta: Partial<ReportMeta>, rows: DataRow[]) => string
-  setRows: (reportId: string, rows: DataRow[]) => void
+  createReport: (template: ReportTemplate, meta: Partial<ReportMeta>, rows: DataRow[]) => string
   updateMeta: (reportId: string, meta: Partial<ReportMeta>) => void
   deleteReport: (reportId: string) => void
   setActiveReport: (reportId: string | null) => void
@@ -28,27 +26,12 @@ export const useReportStore = create<ReportState>()(
       reports: [],
       activeReportId: null,
       activeReport: () => get().reports.find((r) => r.id === get().activeReportId),
-      createReport: (templateId, meta) => {
+      createReport: (template, meta, rows) => {
         const id = makeId()
         const now = new Date().toISOString()
         const report: ReportData = {
           id,
-          templateId,
-          meta: { ...defaultMeta, ...meta },
-          rows: [],
-          createdAt: now,
-          updatedAt: now,
-        }
-        set((state) => ({ reports: [...state.reports, report], activeReportId: id }))
-        return id
-      },
-      createReportFromAi: (template, meta, rows) => {
-        const id = makeId()
-        const now = new Date().toISOString()
-        const report: ReportData = {
-          id,
-          templateId: template.id,
-          customTemplate: template,
+          template,
           meta: { ...defaultMeta, ...meta },
           rows,
           createdAt: now,
@@ -57,12 +40,6 @@ export const useReportStore = create<ReportState>()(
         set((state) => ({ reports: [...state.reports, report], activeReportId: id }))
         return id
       },
-      setRows: (reportId, rows) =>
-        set((state) => ({
-          reports: state.reports.map((r) =>
-            r.id === reportId ? { ...r, rows, updatedAt: new Date().toISOString() } : r,
-          ),
-        })),
       updateMeta: (reportId, meta) =>
         set((state) => ({
           reports: state.reports.map((r) =>
