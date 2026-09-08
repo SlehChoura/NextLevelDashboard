@@ -66,11 +66,9 @@ export function AiReviewEditor({
   template,
   rows,
   summary,
-  truncated = false,
-  outputTruncated = false,
-  sheetRowCount,
   confirmLabel = "Confirmer et générer le dashboard",
   discardLabel = "Recommencer",
+  confirmDisabled = false,
   onUpdateCriterion,
   onRemoveCriterion,
   onAddCriterion,
@@ -83,14 +81,11 @@ export function AiReviewEditor({
 }: {
   template: ReportTemplate
   rows: DataRow[]
-  /** Synthèse de l'IA. Si omise, le bloc "Analyse de l'IA" n'est pas affiché (cas d'une simple édition). */
+  /** Statut de l'import (nettoyage IA, etc.). Si omis, ce bloc n'est pas affiché. */
   summary?: string
-  truncated?: boolean
-  outputTruncated?: boolean
-  /** Nombre de lignes non vides détectées dans le fichier source, pour comparaison avec le nombre de lignes retenues. */
-  sheetRowCount?: number
   confirmLabel?: string
   discardLabel?: string
+  confirmDisabled?: boolean
   onUpdateCriterion: (key: string, patch: Partial<Pick<Criterion, "label" | "type" | "role">>) => void
   onRemoveCriterion: (key: string) => void
   onAddCriterion: () => void
@@ -102,25 +97,13 @@ export function AiReviewEditor({
   onDiscard: () => void
 }) {
   const statusEligible = template.criteria.filter((c) => BADGE_TYPES.includes(c.type))
-  const possiblyIncomplete = sheetRowCount !== undefined && rows.length < sheetRowCount * 0.5
 
   return (
     <div className="mt-4 space-y-4">
       {summary && (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
-          <p className="font-medium text-[var(--color-text)]">Analyse de l'IA</p>
+          <p className="font-medium text-[var(--color-text)]">Import du fichier</p>
           <p className="mt-1 text-[var(--color-text-muted)]">{summary}</p>
-          {truncated && (
-            <p className="mt-2 text-xs text-[var(--color-warning)]">
-              Le fichier a été tronqué : seules les premières lignes ont été analysées.
-            </p>
-          )}
-          {outputTruncated && (
-            <p className="mt-2 text-xs text-[var(--color-danger)]">
-              La réponse de l'IA a été coupée avant la fin : il manque probablement des lignes.
-              Complétez-les manuellement ci-dessous, ou recommencez.
-            </p>
-          )}
         </div>
       )}
 
@@ -132,7 +115,7 @@ export function AiReviewEditor({
           </button>
         </div>
         <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-          Corrigez tout critère mal identifié par l'IA (libellé, type, rôle) avant de générer le dashboard.
+          Corrigez tout critère mal détecté (libellé, type, rôle) avant de générer le dashboard.
         </p>
 
         <div className="mt-3 space-y-2">
@@ -208,18 +191,8 @@ export function AiReviewEditor({
           </button>
         </div>
         <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-          Supprimez les lignes qui ne sont pas des éléments réels (ex : légende, total) et corrigez les
-          valeurs erronées.
+          Supprimez les lignes qui ne sont pas des éléments réels et corrigez les valeurs erronées.
         </p>
-        {sheetRowCount !== undefined && (
-          <p className={`mt-1 text-xs ${possiblyIncomplete ? "text-[var(--color-danger)]" : "text-[var(--color-text-muted)]"}`}>
-            Le fichier contenait {sheetRowCount} ligne{sheetRowCount > 1 ? "s" : ""} non vide{sheetRowCount > 1 ? "s" : ""}{" "}
-            (légende/totaux compris) ; l'IA en a retenu {rows.length} comme donnée{rows.length > 1 ? "s" : ""} réelle
-            {rows.length > 1 ? "s" : ""}.
-            {possiblyIncomplete &&
-              " L'écart est important : vérifiez qu'aucune ligne n'a été oubliée et ajoutez-la manuellement si besoin."}
-          </p>
-        )}
 
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -273,7 +246,7 @@ export function AiReviewEditor({
         </button>
         <button
           onClick={onConfirm}
-          disabled={template.criteria.length === 0}
+          disabled={template.criteria.length === 0 || confirmDisabled}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           style={{ backgroundColor: "var(--color-accent)" }}
         >

@@ -2,200 +2,75 @@ import Anthropic from "@anthropic-ai/sdk"
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod"
 import { z } from "zod"
 import type { AiModel } from "../store/aiSettingsStore"
-import type { ChartSpec, Criterion, CriterionOption, DataRow, ReportTemplate } from "../types"
-import { makeId } from "./id"
-import type { ParsedSheet } from "./excelImport"
+import type { AmbiguousCell } from "./fixedFormatImport"
 
-/** Nombre de lignes envoyées au modèle : au-delà, le fichier est tronqué (coût / fiabilité). */
-const MAX_ROWS_SENT = 300
-
-const colorSchema = z.enum(["success", "warning", "danger", "info", "neutral"])
-
-const optionSchema = z.object({
-  value: z.string().describe("valeur technique courte, en minuscules, sans accent ni espace"),
-  label: z.string().describe("libellé affiché à l'utilisateur"),
-  color: colorSchema.describe("couleur RAG associée à cette valeur"),
+const normalizationSchema = z.object({
+  normalizations: z.array(
+    z.object({
+      id: z.string().describe("recopie exactement l'id fourni pour cette cellule"),
+      value: z
+        .union([z.number(), z.string(), z.null()])
+        .describe(
+          "la valeur normalisée correspondant au type attendu (nombre 0-100 pour un critère de type " +
+            "'percent', ou texte court sinon) ; null si la valeur brute ne permet vraiment aucune " +
+            "interprétation (ex: 'N/A', une mention explicite de non-applicabilité)",
+        ),
+    }),
+  ),
 })
 
-const criterionSchema = z.object({
-  key: z
-    .string()
-    .describe("clé technique unique en snake_case, sans accent ni espace (ex: 'portabilite')"),
-  label: z.string().describe("libellé affiché en en-tête de colonne et dans les graphiques"),
-  type: z.enum(["text", "number", "percent", "date", "select", "severity", "status"]),
-  role: z
-    .enum(["dimension", "metric", "date", "label", "info"])
-    .describe("dimension: axe de regroupement, metric: valeur numérique moyennée, label: identifiant de la ligne"),
-  options: z
-    .array(optionSchema)
-    .nullable()
-    .describe("obligatoire (non nul, 2 à 6 valeurs) si type vaut select/severity/status ; null sinon"),
-})
-
-const chartSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  kind: z.enum(["bar", "pie"]),
-  criterionKey: z.string().describe("doit correspondre exactement à la clé d'un des critères définis"),
-})
-
-const templateSchema = z.object({
-  name: z.string().describe("nom complet du dashboard"),
-  description: z.string().describe("une phrase décrivant ce que suit ce dashboard"),
-  statusKey: z
-    .string()
-    .nullable()
-    .describe("clé du critère utilisé pour la synthèse globale en tête de dashboard, ou null si aucun ne convient"),
-  criteria: z
-    .array(criterionSchema)
-    .min(1)
-    .max(12)
-    .describe("les critères (colonnes) les plus pertinents à suivre pour ces données"),
-  charts: z.array(chartSchema).min(1).max(4),
-})
-
-const rowValueSchema = z.union([z.string(), z.number(), z.null()])
-
-const analysisSchema = z.object({
-  template: templateSchema,
-  rows: z
-    .array(z.record(z.string(), rowValueSchema))
-    .describe(
-      "une entrée par élément réel identifié dans les données (ex: un agent/cas d'usage par ligne), " +
-        "avec une valeur par critère défini ; n'inclus jamais une ligne de légende/glossaire, de total, " +
-        "ou entièrement vide",
-    ),
-  summary: z.string().describe("synthèse en 3 à 5 phrases, en français, des enseignements clés de l'analyse"),
-})
-
-export interface AiAnalysisResult {
-  template: ReportTemplate
-  rows: DataRow[]
-  summary: string
-  truncated: boolean
-  /** Nombre de lignes non vides du fichier envoyées au modèle (légende/totaux compris) — pour comparaison. */
-  sheetRowCount: number
-  /** La réponse du modèle a été coupée avant la fin (limite de tokens) : des lignes manquent probablement. */
-  outputTruncated: boolean
-}
-
-function sheetToText(
-  sheet: ParsedSheet,
-  maxRows: number,
-): { text: string; truncated: boolean; nonEmptyRowCount: number } {
-  const rows = sheet.rows.slice(0, maxRows)
-  const nonEmptyRowCount = rows.filter((row) => row.some((cell) => String(cell ?? "").trim() !== "")).length
-  const lines = [
-    sheet.headers.join(" | "),
-    ...rows.map((row) => sheet.headers.map((_, i) => String(row[i] ?? "")).join(" | ")),
-  ]
-  return { text: lines.join("\n"), truncated: sheet.rows.length > maxRows, nonEmptyRowCount }
-}
-
-/** Haiku 4.5 ne pense pas de façon adaptative : lui laisser un budget de réflexion explicite
- *  l'aide nettement sur une tâche de discrimination (données réelles vs légende/glossaire). */
-function thinkingConfigFor(model: AiModel) {
-  if (model === "claude-haiku-4-5") {
-    return { type: "enabled" as const, budget_tokens: 3000 }
-  }
-  return { type: "adaptive" as const }
-}
-
-export async function analyzeSheetWithAI(
-  sheet: ParsedSheet,
+/**
+ * Nettoie une petite liste de cellules dont la valeur brute n'a pas pu être interprétée
+ * de façon fiable par le code (ex: "~99%", une faute de frappe, une note en texte libre à la
+ * place d'un pourcentage). Le mapping des colonnes et l'exclusion des lignes hors périmètre
+ * (légende, etc.) restent entièrement déterministes — l'IA n'intervient que sur ces valeurs
+ * déjà localisées, jamais sur la structure du fichier.
+ */
+export async function normalizeAmbiguousCells(
+  cells: AmbiguousCell[],
   apiKey: string,
   model: AiModel,
-): Promise<AiAnalysisResult> {
+): Promise<Map<string, string | number | null>> {
+  const result = new Map<string, string | number | null>()
+  if (cells.length === 0) return result
+
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
-  const { text, truncated, nonEmptyRowCount } = sheetToText(sheet, MAX_ROWS_SENT)
 
   const response = await client.messages.parse({
     model,
-    max_tokens: 16000,
-    thinking: thinkingConfigFor(model),
+    max_tokens: 4096,
+    thinking: model === "claude-haiku-4-5" ? { type: "enabled", budget_tokens: 1024 } : { type: "adaptive" },
     system:
-      "Tu es un analyste qui transforme un export Excel/CSV arbitraire en dashboard de reporting. " +
-      "Détermine toi-même les critères (colonnes) les plus pertinents à suivre : reprends les colonnes " +
-      "utiles du fichier, ignore celles qui ne le sont pas, et n'hésite pas à déduire un critère qui " +
-      "n'existe pas littéralement comme colonne si l'information est présente ailleurs (par exemple un " +
-      "niveau de maturité déduit d'un commentaire libre).\n\n" +
-      "Identifie la colonne qui nomme ou identifie chaque élément suivi (ex: un nom de cas d'usage/agent, " +
-      "un identifiant) et donne-lui le rôle 'label' : c'est elle qui répond à la question « quels sont " +
-      "les éléments suivis ? ». Sois vigilant : un fichier Excel contient souvent, à la suite ou à côté " +
-      "du tableau de données, un bloc de légende qui explique la signification des valeurs (par exemple " +
-      "une liste 'valeur → description' pour chaque critère, ou des notes de bas de tableau). Ce bloc " +
-      "n'est jamais une ligne de données réelle : ne l'inclus pas dans les lignes renvoyées, même s'il " +
-      "occupe des lignes ou colonnes proches du tableau principal. De même, ignore les lignes de total, " +
-      "de séparation ou entièrement vides.\n\n" +
-      "Si une cellule contient une note ou un texte libre (ex: 'N/A', 'en cours', un commentaire) plutôt " +
-      "qu'une valeur franche pour un critère par ailleurs numérique, préfère garder ce critère en type " +
-      "'text' pour ne perdre aucune information, plutôt que de forcer un type 'number'/'percent' qui " +
-      "obligerait à jeter ces valeurs.\n\n" +
-      "Important, ne sous-compte jamais les données : une ligne avec un identifiant/nom renseigné dans " +
-      "la colonne 'label' est un élément de données valide même si la plupart de ses autres cellules " +
-      "sont vides (par exemple un cas d'usage encore au statut 'en cours' sans autre information " +
-      "disponible) — inclus-la quand même, avec des valeurs vides pour les critères non renseignés. " +
-      "Seules les lignes qui reproduisent une légende (association valeur → signification), un total, " +
-      "ou qui sont entièrement vides doivent être exclues. Avant de finaliser ta réponse, recompte le " +
-      "nombre d'éléments réels identifiables dans le fichier (ex: un agent/cas d'usage par ligne du " +
-      "tableau principal, légende exclue) et vérifie que ton nombre de lignes renvoyées correspond.\n\n" +
-      "Pour chaque élément de données identifié, renvoie les valeurs correspondant aux critères que tu " +
-      "as définis. Pour un critère de type select/severity/status, chaque valeur doit correspondre " +
-      "exactement à la 'value' (pas au 'label') d'une des options définies pour ce critère.",
+      "Tu nettoies des valeurs de cellules issues d'un fichier Excel de reporting, pour qu'elles " +
+      "correspondent au type attendu de leur critère. Pour un critère 'percent', déduis un nombre " +
+      "entre 0 et 100 si le texte contient une information exploitable (ex: une note qui décrit " +
+      "clairement un niveau d'avancement), sinon renvoie null plutôt que d'inventer un chiffre. Pour " +
+      "'N/A' ou une mention explicite de non-applicabilité, renvoie toujours null. Ne renvoie jamais " +
+      "d'explication, uniquement les valeurs normalisées demandées.",
     messages: [
       {
         role: "user",
-        content:
-          `Fichier fourni (colonnes séparées par " | ", une ligne d'en-tête puis les lignes de données)` +
-          `${truncated ? ` — seules les ${MAX_ROWS_SENT} premières lignes sont incluses` : ""} :\n\n${text}`,
+        content: JSON.stringify(
+          cells.map((c) => ({
+            id: c.id,
+            element: c.rowLabel,
+            critere: c.criterionLabel,
+            type_attendu: c.criterionType,
+            valeur_brute: c.rawValue,
+          })),
+        ),
       },
     ],
-    output_config: { format: zodOutputFormat(analysisSchema) },
+    output_config: { format: zodOutputFormat(normalizationSchema) },
   })
 
   const parsed = response.parsed_output
   if (!parsed) {
-    throw new Error("L'IA n'a pas pu produire un résultat exploitable pour ce fichier.")
+    throw new Error("L'IA n'a pas pu produire de résultat exploitable pour le nettoyage des valeurs.")
   }
 
-  const criteria: Criterion[] = parsed.template.criteria.map((c) => ({
-    key: c.key,
-    label: c.label,
-    type: c.type,
-    role: c.role,
-    options: c.options?.map(
-      (o): CriterionOption => ({ value: o.value, label: o.label, color: o.color }),
-    ),
-  }))
-  const criterionKeys = new Set(criteria.map((c) => c.key))
-
-  const charts: ChartSpec[] = parsed.template.charts.filter((chart) => criterionKeys.has(chart.criterionKey))
-
-  const template: ReportTemplate = {
-    id: `ia-${makeId()}`,
-    name: parsed.template.name,
-    description: parsed.template.description,
-    statusKey: parsed.template.statusKey && criterionKeys.has(parsed.template.statusKey) ? parsed.template.statusKey : undefined,
-    criteria,
-    charts,
-  }
-
-  const rows: DataRow[] = parsed.rows.map((row) => {
-    const dataRow: DataRow = { __id: makeId() }
-    for (const c of criteria) {
-      dataRow[c.key] = row[c.key] ?? ""
-    }
-    return dataRow
-  })
-
-  return {
-    template,
-    rows,
-    summary: parsed.summary,
-    truncated,
-    sheetRowCount: nonEmptyRowCount,
-    outputTruncated: response.stop_reason === "max_tokens",
-  }
+  for (const n of parsed.normalizations) result.set(n.id, n.value)
+  return result
 }
 
 export function describeAiError(error: unknown): string {
@@ -212,5 +87,5 @@ export function describeAiError(error: unknown): string {
     return `Erreur de l'API Anthropic (${error.status}) : ${error.message}`
   }
   if (error instanceof Error) return error.message
-  return "Une erreur inattendue est survenue pendant l'analyse."
+  return "Une erreur inattendue est survenue pendant le nettoyage des valeurs."
 }

@@ -1,35 +1,39 @@
 # NextLevelDashboard
 
 Application web pour consultants en cybersécurité : transformez un fichier Excel ou CSV de
-suivi en dashboard de reporting, analysé par l'IA (Claude), avec une charte graphique
-personnalisable.
+suivi de cas d'usage en dashboard de reporting, avec une charte graphique personnalisable.
 
-Les rapports générés restent stockés dans le navigateur (`localStorage`), rien n'est envoyé à
-un serveur applicatif. En revanche, générer un dashboard envoie le contenu du fichier analysé à
-l'API d'Anthropic, avec la clé API personnelle de l'utilisateur (voir « Analyse IA » ci-dessous).
+L'application ne prend en charge qu'**un seul format de fichier** : la première colonne liste
+les éléments suivis (ex : des agents/cas d'usage IA), les colonnes suivantes portent leurs
+critères de reporting (statut, portabilité, documentation…), associés à chacun. L'import est
+entièrement local et déterministe (aucune IA, aucune clé API requise) ; une IA optionnelle peut
+ensuite clarifier les quelques valeurs de cellules ambiguës que l'import n'aurait pas su
+interpréter avec certitude.
+
+Les rapports générés et le fichier importé restent dans le navigateur (`localStorage`), rien
+n'est envoyé à un serveur applicatif. Seule exception : si des valeurs ambiguës existent et
+qu'une clé API est configurée, ces quelques valeurs (jamais le fichier entier) sont envoyées à
+l'API d'Anthropic pour être clarifiées.
 
 ## Fonctionnalités
 
-- **Analyse IA** (nécessite une clé API Anthropic personnelle) : dépôt d'un fichier `.xlsx` /
-  `.xls` / `.csv` quelconque, sans template ni format de colonnes imposé. L'IA (Claude) détermine
-  elle-même les critères pertinents à suivre — utile par exemple pour un portefeuille de cas
-  d'usage IA suivi selon des critères comme la portabilité, la documentation, la formation ou
-  l'adoption par la communauté. Elle peut aussi déduire une valeur qui n'est pas une colonne
-  explicite du fichier (ex : un niveau de maturité à partir d'un commentaire libre). La clé API
-  et le modèle choisi sont stockés uniquement dans le `localStorage` du navigateur ; le contenu
-  du fichier est envoyé directement du navigateur vers l'API Anthropic (pas de backend
-  intermédiaire).
-- **Relecture et correction avant génération** : l'analyse de l'IA n'est jamais appliquée à
-  l'aveugle. Un écran de relecture affiche sa synthèse, les critères qu'elle a détectés (libellé,
-  type, rôle, modifiables ou supprimables), un comparatif entre le nombre de lignes non vides du
-  fichier et le nombre de lignes retenues comme données réelles (avec alerte si l'écart est
-  important — l'IA a pu en oublier), et les données ligne par ligne (éditables, lignes
-  ajoutables/supprimables) — utile par exemple pour retirer une ligne de légende que l'IA aurait
-  mal identifiée comme une donnée, ou pour compléter des lignes manquantes, avant de confirmer la
-  génération du dashboard.
-- **Édition après génération** : le bouton « Modifier les données » du dashboard rouvre le même
-  écran de relecture/édition sur un rapport déjà généré — pour ajouter, corriger ou supprimer des
-  lignes ou des critères à tout moment, sans avoir à relancer une analyse IA.
+- **Import déterministe** : la première colonne du fichier identifie chaque élément suivi, les
+  colonnes suivantes (dont l'en-tête n'est pas vide) deviennent ses critères de reporting. Une
+  ligne est reconnue comme donnée réelle si sa première colonne est renseignée — ce qui exclut
+  naturellement les blocs de légende ou de notes qui suivent souvent un tableau Excel, sans avoir
+  à les deviner. Le type de chaque critère (pourcentage, statut à choix, texte libre) est déduit
+  automatiquement des valeurs de sa colonne.
+- **Nettoyage IA optionnel** : les valeurs qui ne correspondent pas clairement au type attendu de
+  leur critère (ex : `"~99%"`, une faute de frappe, une note en texte libre à la place d'un
+  pourcentage) sont proposées à une IA (Claude) pour normalisation, si une clé API personnelle
+  est configurée — sinon elles restent éditables manuellement. La clé API et le modèle choisi
+  sont stockés uniquement dans le `localStorage` du navigateur ; seules les valeurs ambiguës
+  identifiées (pas le fichier) sont envoyées à l'API Anthropic, directement depuis le navigateur.
+- **Relecture et correction, avant et après génération** : un écran de relecture affiche les
+  critères détectés (libellé, type, rôle — modifiables ou supprimables) et les données ligne par
+  ligne (éditables, lignes ajoutables/supprimables) avant de confirmer la génération du dashboard.
+  Le bouton « Modifier les données » du dashboard rouvre le même écran sur un rapport déjà
+  généré, à tout moment.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +
@@ -58,8 +62,8 @@ Puis ouvrez `http://localhost:5173`.
 - Tailwind CSS v4 (thème piloté par variables CSS, appliquées dynamiquement par `ThemeProvider`)
 - `xlsx` (SheetJS, build CDN patché — la version npm publique porte des CVE non corrigées) pour
   la lecture des fichiers Excel
-- `@anthropic-ai/sdk` (appelé directement depuis le navigateur) + `zod` pour l'analyse IA et la
-  génération du schéma de dashboard (sortie structurée validée)
+- `@anthropic-ai/sdk` (appelé directement depuis le navigateur) + `zod` pour le nettoyage IA
+  optionnel des valeurs ambiguës (sortie structurée validée)
 - `recharts` pour les graphiques
 - `zustand` (avec persistance `localStorage`) pour l'état des rapports, du thème et des
   paramètres IA
@@ -72,13 +76,22 @@ src/
   types.ts            Modèle de données (critères, dashboard, rapports, thème)
   themes/               Palettes prédéfinies + application des variables CSS
   store/                État global (rapports, thème, paramètres IA), persisté en localStorage
-  lib/                  Parsing Excel, appel à l'API Anthropic + schéma de sortie structurée
-  components/           Composants réutilisables (dashboard, graphiques, thème)
-  pages/                Pages routées (accueil, analyse IA, dashboard, mes rapports, thème)
+  lib/
+    excelImport.ts       Lecture brute d'un classeur Excel/CSV
+    fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
+                          des valeurs ambiguës
+    aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
+    aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
+  components/           Composants réutilisables (dashboard, graphiques, thème, relecture IA)
+  pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports, thème)
 ```
 
 ## Notes de conception
 
+- **Un seul format** : l'application ne devine pas la structure d'un fichier quelconque — elle
+  attend toujours la même forme (1re colonne = élément suivi, colonnes suivantes = critères). Ce
+  choix élimine les erreurs d'analyse (confusion avec un bloc de légende, oubli de lignes) qu'une
+  IA à qui l'on demanderait de reconstruire le schéma à chaque import peut produire.
 - **Charte Wavestone** : la palette fournie est une base indicative (encre foncée + framboise),
   pas une reproduction officielle de la charte graphique du cabinet. Pour un rendu fidèle,
   utilisez l'éditeur de thème (page « Charte graphique ») pour saisir vos codes couleur et
@@ -86,5 +99,3 @@ src/
 - **Export PDF** : réalisé via l'impression navigateur (`window.print()`) avec une feuille de
   style dédiée à l'impression plutôt qu'une librairie de rendu canvas, pour un rendu texte net
   et un poids d'application réduit.
-- **Fichiers volumineux** : seules les 300 premières lignes du fichier sont envoyées à l'IA pour
-  analyse (coût et fiabilité de la réponse) ; le dashboard le signale si le fichier a été tronqué.
