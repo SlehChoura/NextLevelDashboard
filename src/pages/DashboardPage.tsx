@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useReportStore } from "../store/reportStore"
-import { getTemplate } from "../templates"
+import { resolveReportTemplate } from "../templates"
 import { DashboardHeader } from "../components/dashboard/DashboardHeader"
 import { RagSummary } from "../components/dashboard/RagSummary"
 import { KpiCard } from "../components/common/KpiCard"
@@ -30,7 +30,7 @@ export function DashboardPage() {
     )
   }
 
-  const template = getTemplate(report.templateId)
+  const template = resolveReportTemplate(report)
   if (!template) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-[var(--color-text-muted)]">
@@ -39,6 +39,7 @@ export function DashboardPage() {
     )
   }
 
+  const isCustomTemplate = Boolean(report.customTemplate)
   const statusCriterion = template.criteria.find((c) => c.key === template.statusKey)
   const metricCriteria = template.criteria.filter((c) => c.role === "metric")
 
@@ -48,12 +49,14 @@ export function DashboardPage() {
         <Link to="/mes-rapports" className="text-sm text-[var(--color-text-muted)] hover:underline">
           ← Mes rapports
         </Link>
-        <button
-          onClick={() => navigate(`/nouveau/${template.id}/formulaire`, { state: { editReportId: report.id } })}
-          className="text-sm text-[var(--color-text-muted)] hover:underline"
-        >
-          Modifier les données
-        </button>
+        {!isCustomTemplate && (
+          <button
+            onClick={() => navigate(`/nouveau/${template.id}/formulaire`, { state: { editReportId: report.id } })}
+            className="text-sm text-[var(--color-text-muted)] hover:underline"
+          >
+            Modifier les données
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -77,13 +80,18 @@ export function DashboardPage() {
 
         {report.rows.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-text-muted)]">
-            Ce rapport ne contient aucune donnée pour le moment.{" "}
-            <button
-              onClick={() => navigate(`/nouveau/${template.id}/formulaire`, { state: { editReportId: report.id } })}
-              className="underline"
-            >
-              Ajouter des données
-            </button>
+            Ce rapport ne contient aucune donnée pour le moment.
+            {!isCustomTemplate && (
+              <>
+                {" "}
+                <button
+                  onClick={() => navigate(`/nouveau/${template.id}/formulaire`, { state: { editReportId: report.id } })}
+                  className="underline"
+                >
+                  Ajouter des données
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>

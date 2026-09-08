@@ -6,7 +6,9 @@ situations types (suivi de projet, audit/pentest, vulnérabilités, comité de p
 incidents), avec une charte graphique personnalisable.
 
 Application 100 % côté client : aucune donnée (fichiers importés, saisies, rapports) n'est
-envoyée à un serveur, tout reste dans le navigateur (`localStorage`).
+envoyée à un serveur, tout reste dans le navigateur (`localStorage`). Seule exception : la
+fonctionnalité optionnelle « Analyse IA » (voir plus bas), qui envoie le contenu du fichier
+analysé à l'API d'Anthropic si l'utilisateur choisit de l'activer avec sa propre clé API.
 
 ## Fonctionnalités
 
@@ -19,6 +21,15 @@ envoyée à un serveur, tout reste dans le navigateur (`localStorage`).
   template.
 - **Saisie via formulaire** (optionnel) : mêmes critères que l'import Excel, saisis ligne par
   ligne, sans fichier.
+- **Analyse IA** (optionnel, nécessite une clé API Anthropic personnelle) : contrairement aux
+  templates prédéfinis (dont les critères sont fixes), l'IA (Claude) lit un fichier Excel/CSV
+  quelconque et détermine elle-même les critères pertinents à suivre — utile par exemple pour un
+  portefeuille de cas d'usage IA suivi selon des critères comme la portabilité, la documentation,
+  la formation ou l'adoption par la communauté. L'IA peut aussi déduire une valeur qui n'est pas
+  une colonne explicite du fichier (ex : un niveau de maturité à partir d'un commentaire libre).
+  La clé API et le modèle choisi sont stockés uniquement dans le `localStorage` du navigateur ;
+  le contenu du fichier est envoyé directement du navigateur vers l'API Anthropic (pas de
+  backend intermédiaire).
 - **Dashboard généré** : synthèse RAG, indicateurs clés, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +
@@ -47,6 +58,7 @@ Puis ouvrez `http://localhost:5173`.
 - Tailwind CSS v4 (thème piloté par variables CSS, appliquées dynamiquement par `ThemeProvider`)
 - `xlsx` (SheetJS, build CDN patché — la version npm publique porte des CVE non corrigées) pour
   la lecture/génération de fichiers Excel
+- `@anthropic-ai/sdk` (appelé directement depuis le navigateur) + `zod` pour l'analyse IA
 - `recharts` pour les graphiques
 - `zustand` (avec persistance `localStorage`) pour l'état des rapports et du thème
 - `react-router-dom` pour la navigation

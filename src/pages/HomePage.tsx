@@ -6,6 +6,10 @@ const FEATURES = [
     text: "Déposez votre fichier de suivi : les critères importants (statut, sévérité, échéances…) sont reconnus automatiquement à partir des en-têtes de colonnes.",
   },
   {
+    title: "Analyse IA",
+    text: "Pas de template qui correspond ? L'IA (Claude) lit votre fichier et détermine elle-même les critères pertinents à suivre — nécessite une clé API personnelle.",
+  },
+  {
     title: "Saisie via formulaire",
     text: "Pas de fichier Excel sous la main ? Renseignez les mêmes critères via un formulaire pour générer le rapport.",
   },
@@ -62,8 +66,9 @@ export function HomePage() {
       <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
         toutes les données (fichiers importés, saisies, rapports) restent dans votre navigateur ;
-        rien n'est envoyé à un serveur. Pensez tout de même à vider le stockage local sur un
-        poste partagé.
+        rien n'est envoyé à un serveur. Seule exception : la fonctionnalité « Analyse IA », qui
+        envoie le contenu du fichier analysé à l'API d'Anthropic si vous choisissez de l'utiliser.
+        Pensez tout de même à vider le stockage local sur un poste partagé.
       </div>
     </div>
   )

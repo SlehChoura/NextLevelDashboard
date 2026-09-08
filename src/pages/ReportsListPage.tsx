@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useReportStore } from "../store/reportStore"
-import { getTemplate } from "../templates"
+import { resolveReportTemplate } from "../templates"
 
 export function ReportsListPage() {
   const reports = useReportStore((s) => s.reports)
@@ -37,7 +37,7 @@ export function ReportsListPage() {
             .slice()
             .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
             .map((report) => {
-              const template = getTemplate(report.templateId)
+              const template = resolveReportTemplate(report)
               return (
                 <div
                   key={report.id}

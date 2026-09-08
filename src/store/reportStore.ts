@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { DataRow, ReportData, ReportMeta } from "../types"
+import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
 import { makeId } from "../lib/id"
 
 interface ReportState {
@@ -8,6 +8,7 @@ interface ReportState {
   activeReportId: string | null
   activeReport: () => ReportData | undefined
   createReport: (templateId: string, meta: Partial<ReportMeta>) => string
+  createReportFromAi: (template: ReportTemplate, meta: Partial<ReportMeta>, rows: DataRow[]) => string
   setRows: (reportId: string, rows: DataRow[]) => void
   updateMeta: (reportId: string, meta: Partial<ReportMeta>) => void
   deleteReport: (reportId: string) => void
@@ -35,6 +36,21 @@ export const useReportStore = create<ReportState>()(
           templateId,
           meta: { ...defaultMeta, ...meta },
           rows: [],
+          createdAt: now,
+          updatedAt: now,
+        }
+        set((state) => ({ reports: [...state.reports, report], activeReportId: id }))
+        return id
+      },
+      createReportFromAi: (template, meta, rows) => {
+        const id = makeId()
+        const now = new Date().toISOString()
+        const report: ReportData = {
+          id,
+          templateId: template.id,
+          customTemplate: template,
+          meta: { ...defaultMeta, ...meta },
+          rows,
           createdAt: now,
           updatedAt: now,
         }

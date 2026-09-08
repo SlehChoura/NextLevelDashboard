@@ -37,6 +37,7 @@ export type TemplateCategory =
   | "vulnerabilites"
   | "comite"
   | "incident"
+  | "ia"
 
 export interface ChartSpec {
   id: string
@@ -72,6 +73,8 @@ export interface ReportMeta {
 export interface ReportData {
   id: string
   templateId: string
+  /** Template généré dynamiquement par l'analyse IA, quand ce rapport n'utilise pas un template prédéfini. */
+  customTemplate?: ReportTemplate
   meta: ReportMeta
   rows: DataRow[]
   createdAt: string
