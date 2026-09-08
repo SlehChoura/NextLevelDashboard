@@ -19,6 +19,12 @@ l'API d'Anthropic, avec la clé API personnelle de l'utilisateur (voir « Analys
   et le modèle choisi sont stockés uniquement dans le `localStorage` du navigateur ; le contenu
   du fichier est envoyé directement du navigateur vers l'API Anthropic (pas de backend
   intermédiaire).
+- **Relecture et correction avant génération** : l'analyse de l'IA n'est jamais appliquée à
+  l'aveugle. Un écran de relecture affiche sa synthèse, les critères qu'elle a détectés (libellé,
+  type, rôle, modifiables ou supprimables) et les données ligne par ligne (éditables, lignes
+  ajoutables/supprimables) — utile par exemple pour retirer une ligne de légende que l'IA aurait
+  mal identifiée comme une donnée, ou corriger un critère mal typé, avant de confirmer la
+  génération du dashboard.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +
