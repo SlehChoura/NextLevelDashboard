@@ -2,16 +2,16 @@ import { Link } from "react-router-dom"
 
 const FEATURES = [
   {
-    title: "Import Excel",
-    text: "Déposez votre fichier de suivi : les critères importants (statut, sévérité, échéances…) sont reconnus automatiquement à partir des en-têtes de colonnes.",
+    title: "Analyse par l'IA",
+    text: "Déposez un fichier Excel ou CSV quelconque : Claude détermine lui-même les critères pertinents à suivre — pas besoin de template prédéfini ni de colonnes formatées d'une façon précise.",
   },
   {
-    title: "Saisie via formulaire",
-    text: "Pas de fichier Excel sous la main ? Renseignez les mêmes critères via un formulaire pour générer le rapport.",
+    title: "Déductions au-delà des colonnes",
+    text: "L'IA peut déduire une valeur qui n'est pas une colonne explicite du fichier, par exemple un niveau de maturité à partir d'un commentaire libre.",
   },
   {
-    title: "Templates métier",
-    text: "Suivi de projet, audit & pentest, vulnérabilités, comité de pilotage, incidents : partez d'un modèle adapté à votre situation.",
+    title: "Dashboard prêt à présenter",
+    text: "Synthèse RAG, indicateurs clés, graphiques et export PDF (impression navigateur), générés automatiquement à partir de l'analyse.",
   },
   {
     title: "Charte graphique",
@@ -26,21 +26,21 @@ export function HomePage() {
         Reporting cybersécurité
       </p>
       <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">
-        Transformez vos suivis de projet en dashboards de reporting, en quelques minutes.
+        Transformez un fichier Excel en dashboard de reporting, analysé par l'IA.
       </h1>
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Importez un fichier Excel ou saisissez vos critères, choisissez un template adapté à
-        votre situation, et obtenez un dashboard prêt à présenter — aux couleurs de votre
-        charte graphique.
+        Importez votre fichier de suivi : l'IA (Claude) analyse son contenu, détermine les
+        critères pertinents à suivre et génère un dashboard prêt à présenter — aux couleurs de
+        votre charte graphique. Nécessite votre propre clé API Anthropic.
       </p>
 
       <div className="mt-6 flex gap-3">
         <Link
-          to="/templates"
+          to="/ia"
           className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white"
           style={{ backgroundColor: "var(--color-accent)" }}
         >
-          Créer un dashboard
+          Générer un dashboard
         </Link>
         <Link
           to="/theme"
@@ -61,9 +61,11 @@ export function HomePage() {
 
       <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
-        toutes les données (fichiers importés, saisies, rapports) restent dans votre navigateur ;
-        rien n'est envoyé à un serveur. Pensez tout de même à vider le stockage local sur un
-        poste partagé.
+        les rapports générés restent stockés dans votre navigateur (localStorage), rien n'est
+        envoyé à un serveur applicatif. En revanche, générer un dashboard envoie le contenu du
+        fichier analysé à l'API d'Anthropic (Claude), avec votre propre clé API — n'importez pas
+        de données confidentielles ou personnelles sans vous en assurer au préalable. Pensez à
+        vider le stockage local sur un poste partagé.
       </div>
     </div>
   )
