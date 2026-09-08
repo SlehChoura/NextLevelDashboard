@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  /* Theme tokens — overridden at runtime by ThemeProvider from the active palette. */
+  --color-primary: #1c2d5a;
+  --color-primary-dark: #10193a;
+  --color-accent: #e6007e;
+  --color-accent-dark: #a8005e;
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-border: #e2e4ea;
+  --color-text: #171923;
+  --color-text-muted: #5c6270;
+  --color-success: #1b8a5a;
+  --color-warning: #c98a00;
+  --color-danger: #c22a2a;
+  --color-info: #2563a8;
+  --font-family: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  font-family: var(--font-family);
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body,
+  #root {
+    background: #fff !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .print-break-avoid {
+    break-inside: avoid;
+  }
+}
