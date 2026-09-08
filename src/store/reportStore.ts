@@ -8,6 +8,7 @@ interface ReportState {
   activeReportId: string | null
   activeReport: () => ReportData | undefined
   createReport: (template: ReportTemplate, meta: Partial<ReportMeta>, rows: DataRow[]) => string
+  updateData: (reportId: string, template: ReportTemplate, rows: DataRow[]) => void
   updateMeta: (reportId: string, meta: Partial<ReportMeta>) => void
   deleteReport: (reportId: string) => void
   setActiveReport: (reportId: string | null) => void
@@ -40,6 +41,12 @@ export const useReportStore = create<ReportState>()(
         set((state) => ({ reports: [...state.reports, report], activeReportId: id }))
         return id
       },
+      updateData: (reportId, template, rows) =>
+        set((state) => ({
+          reports: state.reports.map((r) =>
+            r.id === reportId ? { ...r, template, rows, updatedAt: new Date().toISOString() } : r,
+          ),
+        })),
       updateMeta: (reportId, meta) =>
         set((state) => ({
           reports: state.reports.map((r) =>

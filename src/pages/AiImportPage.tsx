@@ -227,6 +227,8 @@ export function AiImportPage() {
           rows={analysis.rows}
           summary={analysis.summary}
           truncated={analysis.truncated}
+          outputTruncated={analysis.outputTruncated}
+          sheetRowCount={analysis.sheetRowCount}
           onUpdateCriterion={(key, patch) =>
             setAnalysis((a) => (a ? { ...a, template: updateCriterion(a.template, key, patch) } : a))
           }
