@@ -2,20 +2,20 @@ import { Link } from "react-router-dom"
 
 const FEATURES = [
   {
-    title: "Analyse par l'IA",
-    text: "Déposez un fichier Excel ou CSV quelconque : Claude détermine lui-même les critères pertinents à suivre — pas besoin de template prédéfini ni de colonnes formatées d'une façon précise.",
+    title: "Import instantané, sans IA",
+    text: "La première colonne de votre fichier liste les éléments suivis (ex : des agents/cas d'usage), les colonnes suivantes sont leurs critères de reporting. Le mapping et la lecture des données sont entièrement déterministes — aucune clé API requise pour cette étape.",
   },
   {
-    title: "Déductions au-delà des colonnes",
-    text: "L'IA peut déduire une valeur qui n'est pas une colonne explicite du fichier, par exemple un niveau de maturité à partir d'un commentaire libre.",
+    title: "IA optionnelle pour les cas ambigus",
+    text: "Si une cellule contient une valeur inattendue (texte au lieu d'un nombre, faute de frappe), une IA (Claude) peut proposer une valeur nettoyée — avec votre propre clé API. Le reste de l'import n'y a jamais recours.",
+  },
+  {
+    title: "Relecture et édition",
+    text: "Avant et après génération, un écran de relecture permet de corriger les critères détectés et les données ligne par ligne — pour ajuster, ajouter ou supprimer ce que l'import automatique n'aurait pas bien identifié.",
   },
   {
     title: "Dashboard prêt à présenter",
-    text: "Synthèse RAG, indicateurs clés, graphiques et export PDF (impression navigateur), générés automatiquement à partir de l'analyse.",
-  },
-  {
-    title: "Charte graphique",
-    text: "Thème inspiré Wavestone par défaut, personnalisable intégralement (couleurs, logo) pour coller à votre charte ou celle de votre client.",
+    text: "Synthèse RAG, indicateurs clés, graphiques et export PDF (impression navigateur), avec une charte graphique personnalisable (couleurs, logo).",
   },
 ]
 
@@ -26,12 +26,13 @@ export function HomePage() {
         Reporting cybersécurité
       </p>
       <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">
-        Transformez un fichier Excel en dashboard de reporting, analysé par l'IA.
+        Transformez un fichier Excel en dashboard de suivi de cas d'usage.
       </h1>
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Importez votre fichier de suivi : l'IA (Claude) analyse son contenu, détermine les
-        critères pertinents à suivre et génère un dashboard prêt à présenter — aux couleurs de
-        votre charte graphique. Nécessite votre propre clé API Anthropic.
+        Importez votre fichier de suivi : la première colonne liste les éléments suivis, les
+        autres colonnes leurs critères de reporting. L'import est lu localement, sans IA — une IA
+        optionnelle peut ensuite clarifier les quelques valeurs ambiguës qu'il n'aurait pas su
+        interpréter avec certitude.
       </p>
 
       <div className="mt-6 flex gap-3">
@@ -61,11 +62,11 @@ export function HomePage() {
 
       <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
-        les rapports générés restent stockés dans votre navigateur (localStorage), rien n'est
-        envoyé à un serveur applicatif. En revanche, générer un dashboard envoie le contenu du
-        fichier analysé à l'API d'Anthropic (Claude), avec votre propre clé API — n'importez pas
-        de données confidentielles ou personnelles sans vous en assurer au préalable. Pensez à
-        vider le stockage local sur un poste partagé.
+        les rapports générés et l'import du fichier restent dans votre navigateur (localStorage),
+        rien n'est envoyé à un serveur applicatif. Seule exception : si le fichier contient des
+        valeurs ambiguës et qu'une clé API est configurée, ces quelques valeurs (pas le fichier
+        entier) sont envoyées à l'API d'Anthropic pour être clarifiées. Pensez à vider le stockage
+        local sur un poste partagé.
       </div>
     </div>
   )
