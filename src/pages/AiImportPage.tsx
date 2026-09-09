@@ -1,24 +1,13 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import * as XLSX from "xlsx"
-import { parseWorkbookFile, readSheet, type ParsedSheet } from "../lib/excelImport"
-import { buildFromSheet, applyNormalizations, type AmbiguousCell } from "../lib/fixedFormatImport"
-import { normalizeAmbiguousCells, describeAiError } from "../lib/aiAnalysis"
-import {
-  addCriterion,
-  addRow,
-  removeCriterion,
-  removeRow,
-  setStatusKey,
-  updateCell,
-  updateCriterion,
-} from "../lib/aiTemplateEdit"
+import { useFileImport } from "../hooks/useFileImport"
+import { reviewEditorHandlers } from "../lib/aiTemplateEdit"
 import { useAiSettingsStore, type AiModel } from "../store/aiSettingsStore"
 import { useReportStore } from "../store/reportStore"
 import { FileDrop } from "../components/common/FileDrop"
 import { ReportMetaForm } from "../components/dashboard/ReportMetaForm"
 import { AiReviewEditor } from "../components/ai/AiReviewEditor"
-import type { DataRow, ReportMeta, ReportTemplate } from "../types"
+import type { ReportMeta } from "../types"
 
 const MODEL_OPTIONS: { value: AiModel; label: string; hint: string }[] = [
   { value: "claude-haiku-4-5", label: "Claude Haiku 4.5", hint: "le plus rapide et économique" },
@@ -37,91 +26,14 @@ export function AiImportPage() {
   const [editingKey, setEditingKey] = useState(false)
   const [keyDraft, setKeyDraft] = useState(apiKey)
   const [meta, setMeta] = useState<ReportMeta>({ title: "", client: "", author: "", period: "" })
-  const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null)
-  const [sheet, setSheet] = useState<ParsedSheet | null>(null)
-  const [draft, setDraft] = useState<{ template: ReportTemplate; rows: DataRow[] } | null>(null)
-  const [ambiguousCells, setAmbiguousCells] = useState<AmbiguousCell[]>([])
-  const [cleaning, setCleaning] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  function runImport(parsed: ParsedSheet) {
-    setError(null)
-    const { template, rows, ambiguousCells: ambiguous } = buildFromSheet(parsed)
-    setDraft({ template, rows })
-    setAmbiguousCells(ambiguous)
-    if (ambiguous.length > 0 && apiKey) {
-      void cleanup(ambiguous, rows)
-    }
-  }
-
-  async function cleanup(cells: AmbiguousCell[], rows: DataRow[]) {
-    setCleaning(true)
-    setError(null)
-    try {
-      const normalizations = await normalizeAmbiguousCells(cells, apiKey, model)
-      setDraft((d) => (d ? { ...d, rows: applyNormalizations(rows, normalizations) } : d))
-    } catch (e) {
-      setError(describeAiError(e))
-    } finally {
-      setCleaning(false)
-    }
-  }
-
-  async function handleFile(file: File) {
-    setError(null)
-    try {
-      const wb = await parseWorkbookFile(file)
-      setWorkbook(wb)
-      const parsed = readSheet(wb, wb.SheetNames[0])
-      setSheet(parsed)
-      runImport(parsed)
-    } catch {
-      setError("Impossible de lire ce fichier. Vérifiez qu'il s'agit bien d'un fichier Excel (.xlsx) ou CSV valide.")
-    }
-  }
-
-  function handleSheetChange(name: string) {
-    if (!workbook) return
-    const parsed = readSheet(workbook, name)
-    setSheet(parsed)
-    runImport(parsed)
-  }
+  const { workbook, sheet, draft, setDraft, cleaning, error, summary, handleFile, handleSheetChange, reset } =
+    useFileImport()
 
   function handleConfirm() {
     if (!draft || cleaning) return
     createReport(draft.template, { ...meta, title: meta.title || draft.template.name }, draft.rows)
     navigate("/dashboard")
-  }
-
-  function handleDiscard() {
-    setDraft(null)
-    setWorkbook(null)
-    setSheet(null)
-    setAmbiguousCells([])
-  }
-
-  const unresolvedCount = draft
-    ? ambiguousCells.filter((c) => {
-        const row = draft.rows.find((r) => r.__id === c.rowId)
-        return row && (row[c.criterionKey] === "" || row[c.criterionKey] === undefined)
-      }).length
-    : 0
-  const resolvedCount = ambiguousCells.length - unresolvedCount
-
-  let summary: string | undefined
-  if (ambiguousCells.length === 0 && draft) {
-    summary = "Fichier importé sans valeur ambiguë : aucun nettoyage par l'IA n'a été nécessaire."
-  } else if (cleaning) {
-    summary = `Nettoyage de ${ambiguousCells.length} valeur(s) ambiguë(s) par l'IA…`
-  } else if (ambiguousCells.length > 0 && !apiKey) {
-    summary =
-      `${ambiguousCells.length} valeur(s) n'ont pas pu être interprétées automatiquement (texte au lieu ` +
-      `d'un nombre attendu, par exemple). Configurez une clé API pour les nettoyer automatiquement, ou ` +
-      `corrigez-les manuellement ci-dessous.`
-  } else if (ambiguousCells.length > 0) {
-    summary =
-      `${resolvedCount} valeur(s) ambiguë(s) nettoyée(s) automatiquement par l'IA` +
-      (unresolvedCount > 0 ? `, ${unresolvedCount} n'ont pas pu être interprétées — à vérifier manuellement ci-dessous.` : ".")
   }
 
   return (
@@ -248,40 +160,16 @@ export function AiImportPage() {
         </label>
       )}
 
-      {draft && error && (
-        <p className="mt-3 text-sm text-[var(--color-danger)]">{error}</p>
-      )}
+      {draft && error && <p className="mt-3 text-sm text-[var(--color-danger)]">{error}</p>}
 
       {draft && (
         <AiReviewEditor
           template={draft.template}
           rows={draft.rows}
           summary={summary}
-          onUpdateCriterion={(key, patch) =>
-            setDraft((d) => (d ? { ...d, template: updateCriterion(d.template, key, patch) } : d))
-          }
-          onRemoveCriterion={(key) =>
-            setDraft((d) => {
-              if (!d) return d
-              const { template, rows: nextRows } = removeCriterion(d.template, d.rows, key)
-              return { template, rows: nextRows }
-            })
-          }
-          onAddCriterion={() =>
-            setDraft((d) => {
-              if (!d) return d
-              const { template, rows: nextRows } = addCriterion(d.template, d.rows)
-              return { template, rows: nextRows }
-            })
-          }
-          onSetStatusKey={(key) => setDraft((d) => (d ? { ...d, template: setStatusKey(d.template, key) } : d))}
-          onUpdateCell={(rowId, key, value) =>
-            setDraft((d) => (d ? { ...d, rows: updateCell(d.rows, rowId, key, value) } : d))
-          }
-          onRemoveRow={(rowId) => setDraft((d) => (d ? { ...d, rows: removeRow(d.rows, rowId) } : d))}
-          onAddRow={() => setDraft((d) => (d ? { ...d, rows: addRow(d.template, d.rows) } : d))}
+          {...reviewEditorHandlers(setDraft)}
           onConfirm={handleConfirm}
-          onDiscard={handleDiscard}
+          onDiscard={reset}
           confirmLabel={cleaning ? "Nettoyage en cours…" : "Confirmer et générer le dashboard"}
           discardLabel="Recommencer"
           confirmDisabled={cleaning}

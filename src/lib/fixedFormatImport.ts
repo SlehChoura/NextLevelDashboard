@@ -174,6 +174,15 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
   return { template, rows, ambiguousCells }
 }
 
+/**
+ * Un statut "présentable" ou "déployable" en contexte client (options générées par `inferColumn`,
+ * dont la valeur technique est produite par `slugify` — donc déjà sans accent, en minuscules).
+ */
+export function isClientReadyStatus(value: string): boolean {
+  const v = value.toLowerCase()
+  return v.includes("contexte_client") && (v.startsWith("presentable") || v.startsWith("deployable"))
+}
+
 /** Réapplique les valeurs normalisées par l'IA (ou choisies manuellement) sur les lignes concernées. */
 export function applyNormalizations(rows: DataRow[], normalizations: Map<string, string | number | null>): DataRow[] {
   if (normalizations.size === 0) return rows

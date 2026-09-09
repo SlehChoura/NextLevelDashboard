@@ -34,7 +34,11 @@ l'API d'Anthropic pour être clarifiées.
   ligne (éditables, lignes ajoutables/supprimables) avant de confirmer la génération du dashboard.
   Le bouton « Modifier les données » du dashboard rouvre le même écran sur un rapport déjà
   généré, à tout moment.
-- **Dashboard généré** : synthèse RAG, indicateurs clés, graphiques (barres/anneau) par
+- **Mise à jour depuis un nouveau fichier** : le bouton « Mettre à jour avec un fichier » du
+  dashboard réimporte un fichier plus récent (même suivi, export à jour) et remplace les critères
+  et données du rapport après relecture — sans créer un nouveau rapport ni perdre son titre/client.
+- **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
+  est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +
   framboise), 3 autres palettes neutres, et un éditeur complet (couleurs, logo, nom) pour
@@ -76,10 +80,13 @@ src/
   types.ts            Modèle de données (critères, dashboard, rapports, thème)
   themes/               Palettes prédéfinies + application des variables CSS
   store/                État global (rapports, thème, paramètres IA), persisté en localStorage
+  hooks/
+    useFileImport.ts     Import + nettoyage IA optionnel, partagé entre nouveau rapport et
+                          mise à jour d'un rapport existant
   lib/
     excelImport.ts       Lecture brute d'un classeur Excel/CSV
     fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
-                          des valeurs ambiguës
+                          des valeurs ambiguës, détection des statuts "prêts client"
     aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
   components/           Composants réutilisables (dashboard, graphiques, thème, relecture IA)
