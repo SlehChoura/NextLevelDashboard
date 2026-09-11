@@ -5,6 +5,7 @@ import { useFileImport } from "../hooks/useFileImport"
 import { DashboardHeader } from "../components/dashboard/DashboardHeader"
 import { RagSummary } from "../components/dashboard/RagSummary"
 import { ClientReadyAgents } from "../components/dashboard/ClientReadyAgents"
+import { MissionsPodium } from "../components/dashboard/MissionsPodium"
 import { KpiCard } from "../components/common/KpiCard"
 import { DistributionBarChart } from "../components/charts/DistributionBarChart"
 import { DistributionPieChart } from "../components/charts/DistributionPieChart"
@@ -162,6 +163,8 @@ export function DashboardPage() {
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
           <ClientReadyAgents template={template} rows={report.rows} />
+
+          <MissionsPodium template={template} rows={report.rows} />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard label="Éléments suivis" value={String(report.rows.length)} />

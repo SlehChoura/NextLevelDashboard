@@ -41,22 +41,31 @@ interface ColumnInference {
   options?: CriterionOption[]
 }
 
-function inferColumn(values: string[]): ColumnInference {
+/** Un compteur (ex: "nombre de missions") n'est pas un pourcentage, même si ses valeurs sont numériques. */
+const COUNT_HEADER = /nombre|compte|count/i
+
+function inferColumn(values: string[], header: string): ColumnInference {
   const nonEmpty = values.filter((v) => v !== "")
   if (nonEmpty.length === 0) return { type: "text", role: "info" }
 
   const numericish = nonEmpty.filter((v) => LEADING_NUMBER.test(v))
   if (numericish.length / nonEmpty.length >= 0.6) {
-    return { type: "percent", role: "metric" }
+    return COUNT_HEADER.test(header) ? { type: "number", role: "metric" } : { type: "percent", role: "metric" }
   }
 
   const distinct = Array.from(new Set(nonEmpty))
   const looksLikeCategory = distinct.length <= 6 && distinct.every((v) => v.length <= 60 && !v.includes("\n"))
   if (looksLikeCategory) {
+    let paletteIndex = 0
     return {
       type: "select",
       role: "dimension",
-      options: distinct.map((v, i) => ({ value: slugify(v), label: v, color: PALETTE[i % PALETTE.length] })),
+      // "N/A" est toujours neutre, quel que soit son ordre d'apparition dans les données.
+      options: distinct.map((v) => ({
+        value: slugify(v),
+        label: v,
+        color: isNotApplicable(v) ? "neutral" : PALETTE[paletteIndex++ % PALETTE.length],
+      })),
     }
   }
 
@@ -99,7 +108,7 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
     { key: "label", label: labelHeader, type: "text", role: "label" },
     ...criterionColumns.map(({ index, header }) => {
       const values = dataSourceRows.map((row) => String(row[index] ?? "").trim())
-      const inferred = inferColumn(values)
+      const inferred = inferColumn(values, header)
       return {
         key: uniqueKey(slugify(header), usedKeys),
         label: header,
@@ -159,6 +168,27 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
         return
       }
 
+      if (criterion.type === "number") {
+        const n = extractLeadingNumber(raw)
+        if (n !== null) {
+          dataRow[criterion.key] = n
+          return
+        }
+        dataRow[criterion.key] = ""
+        if (!isNotApplicable(raw)) {
+          ambiguousCells.push({
+            id: `${rowId}::${criterion.key}`,
+            rowId,
+            rowLabel,
+            criterionKey: criterion.key,
+            criterionLabel: criterion.label,
+            criterionType: criterion.type,
+            rawValue: raw,
+          })
+        }
+        return
+      }
+
       if (criterion.type === "select") {
         const match = criterion.options?.find((o) => o.label === raw || o.value === slugify(raw))
         dataRow[criterion.key] = match ? match.value : raw
@@ -181,6 +211,17 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
 export function isClientReadyStatus(value: string): boolean {
   const v = value.toLowerCase()
   return v.includes("contexte_client") && (v.startsWith("presentable") || v.startsWith("deployable"))
+}
+
+/** "N/A" (brut ou déjà passé par `slugify`) : une valeur explicitement non applicable. */
+function isNotApplicable(value: string): boolean {
+  const v = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
+  return v === "" || v === "na"
+}
+
+/** Une "propale type" existe pour l'agent (cellule renseignée et différente de "N/A"). */
+export function hasPropaleType(value: string): boolean {
+  return !isNotApplicable(value)
 }
 
 /** Réapplique les valeurs normalisées par l'IA (ou choisies manuellement) sur les lignes concernées. */
