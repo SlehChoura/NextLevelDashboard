@@ -1,0 +1,43 @@
+name: Publish compiled site to the "site" branch
+
+# Produit une branche `site` ne contenant que le résultat de `npm run build` (HTML/CSS/JS
+# compilés), sans le code source, `package.json`, la configuration ou `node_modules`. À utiliser
+# comme cible pour un hébergement qui se contente de pointer vers un dépôt/une branche Git sans
+# exécuter d'étape de build lui-même : il ne sert alors jamais que les fichiers statiques
+# compilés, jamais le code source du projet.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-static-site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publier dist/ sur la branche site (historique à plat, un commit par publication)
+        working-directory: dist
+        run: |
+          git init -q
+          git checkout -q -b site
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Site compilé depuis ${{ github.sha }}"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push --force origin site

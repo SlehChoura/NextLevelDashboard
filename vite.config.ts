@@ -3,9 +3,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
-  // GitHub Pages sert le projet sous /NextLevelDashboard/ : les assets doivent
-  // être référencés avec ce préfixe en build, mais pas en dev local.
-  base: command === 'build' ? '/NextLevelDashboard/' : '/',
+export default defineConfig({
+  // Chemins relatifs : le build fonctionne quel que soit le sous-dossier (ou la racine)
+  // sous lequel il est servi, sans dépendre d'un préfixe d'hébergement particulier.
+  base: './',
   plugins: [react(), tailwindcss()],
-}))
+})
