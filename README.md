@@ -60,6 +60,24 @@ Puis ouvrez `http://localhost:5173`.
 - `npm run preview` — prévisualisation du build
 - `npm run lint` — lint (oxlint)
 
+## Déploiement
+
+Le build (`npm run build`) génère un site 100 % statique dans `dist/` (HTML/CSS/JS compilés,
+chemins relatifs — fonctionne quel que soit le sous-dossier ou domaine sous lequel il est servi,
+sans configuration particulière). C'est **uniquement ce dossier** qui doit être exposé
+publiquement : jamais la racine du dépôt (code source, `package.json`, configuration
+TypeScript/Vite…), qui n'a aucune raison d'être accessible depuis le site publié.
+
+- **GitHub Pages** : le workflow `.github/workflows/deploy-pages.yml` build et publie `dist/`
+  automatiquement à chaque push sur `main`, sans passer par une branche.
+- **Hébergement pointant directement vers le dépôt Git** (sans étape de build de son côté) : le
+  workflow `.github/workflows/publish-static-site.yml` build à chaque push sur `main` et publie
+  le contenu de `dist/` sur une branche dédiée `site` (historique à plat, régénéré à chaque
+  publication). Configurez votre hébergement pour qu'il pointe sur cette branche `site` plutôt
+  que sur `main` : il ne servira alors jamais que les fichiers statiques compilés.
+- **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
+  configurez la commande `npm run build` et le dossier de publication `dist`.
+
 ## Stack technique
 
 - React + TypeScript + Vite
