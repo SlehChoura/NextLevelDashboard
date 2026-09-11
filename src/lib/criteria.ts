@@ -1,4 +1,16 @@
-import type { Criterion, CriterionOption, DataRow } from "../types"
+import type { Criterion, CriterionOption, DataRow, ReportTemplate } from "../types"
+
+const DIACRITICS = new RegExp(String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f), "g")
+
+function normalizeText(text: string): string {
+  return text.normalize("NFD").replace(DIACRITICS, "").toLowerCase()
+}
+
+/** Trouve un critère par un mot-clé contenu dans son libellé (insensible aux accents/casse). */
+export function findCriterionByKeyword(template: ReportTemplate, keyword: string): Criterion | undefined {
+  const needle = normalizeText(keyword)
+  return template.criteria.find((c) => normalizeText(c.label).includes(needle))
+}
 
 export function getOption(criterion: Criterion, rawValue: unknown): CriterionOption | undefined {
   if (!criterion.options) return undefined
