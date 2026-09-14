@@ -15,10 +15,15 @@ export function DistributionBarChart({
   title,
   criterion,
   rows,
+  onSelect,
+  selectedKey,
 }: {
   title: string
   criterion: Criterion
   rows: DataRow[]
+  /** Appelé avec la catégorie cliquée, pour afficher un focus sur ses agents. */
+  onSelect?: (entry: { key: string; label: string }) => void
+  selectedKey?: string
 }) {
   const data = countByCriterion(rows, criterion)
 
@@ -27,6 +32,9 @@ export function DistributionBarChart({
   return (
     <div className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="text-sm font-medium text-[var(--color-text)]">{title}</div>
+      {onSelect && (
+        <div className="text-xs text-[var(--color-text-muted)]">Cliquez sur une barre pour voir le détail</div>
+      )}
       <div className="mt-2 h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -46,9 +54,19 @@ export function DistributionBarChart({
                 border: "1px solid var(--color-border)",
               }}
             />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            <Bar
+              dataKey="count"
+              radius={[4, 4, 0, 0]}
+              isAnimationActive={false}
+              onClick={onSelect ? (bar) => onSelect(bar.payload ?? bar) : undefined}
+              cursor={onSelect ? "pointer" : undefined}
+            >
               {data.map((d, i) => (
-                <Cell key={d.key} fill={colorFor(d.color, i)} />
+                <Cell
+                  key={d.key}
+                  fill={colorFor(d.color, i)}
+                  opacity={selectedKey && selectedKey !== d.key ? 0.35 : 1}
+                />
               ))}
             </Bar>
           </BarChart>

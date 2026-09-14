@@ -124,7 +124,7 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
 
   const template: ReportTemplate = {
     id: `ia4cyb-${makeId()}`,
-    name: "Portefeuille de cas d'usage IA",
+    name: "Portefeuille des agents IA4CYB",
     description: `Suivi des éléments listés sous « ${labelHeader} », par critère de reporting.`,
     statusKey: statusCriterion?.key,
     criteria,
