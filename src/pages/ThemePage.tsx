@@ -60,8 +60,7 @@ export function ThemePage() {
       <p className="mt-1 text-sm text-[var(--color-text-muted)]">
         Choisissez une palette prête à l'emploi ou personnalisez entièrement les couleurs et le
         logo pour coller à la charte de votre cabinet ou de votre client. Le thème
-        « Wavestone » est une base indicative — importez vos codes couleur et votre logo
-        officiels pour un rendu fidèle.
+        « Wavestone » reprend les codes couleur et le logo officiels du cabinet.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

@@ -40,9 +40,9 @@ l'API d'Anthropic pour être clarifiées.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
-- **Charte graphique** : thème par défaut inspiré de l'identité Wavestone (encre foncée +
-  framboise), 3 autres palettes neutres, et un éditeur complet (couleurs, logo, nom) pour
-  s'adapter à n'importe quelle charte — la vôtre ou celle d'un client.
+- **Charte graphique** : thème par défaut reprenant la charte graphique officielle Wavestone
+  (couleurs et logo), 3 autres palettes neutres, et un éditeur complet (couleurs, logo, nom)
+  pour s'adapter à n'importe quelle charte — la vôtre ou celle d'un client.
 
 ## Démarrage
 
@@ -117,10 +117,9 @@ src/
   attend toujours la même forme (1re colonne = élément suivi, colonnes suivantes = critères). Ce
   choix élimine les erreurs d'analyse (confusion avec un bloc de légende, oubli de lignes) qu'une
   IA à qui l'on demanderait de reconstruire le schéma à chaque import peut produire.
-- **Charte Wavestone** : la palette fournie est une base indicative (encre foncée + framboise),
-  pas une reproduction officielle de la charte graphique du cabinet. Pour un rendu fidèle,
-  utilisez l'éditeur de thème (page « Charte graphique ») pour saisir vos codes couleur et
-  importer votre logo officiels.
+- **Charte Wavestone** : couleurs et logo extraits du template de présentation corporate officiel
+  (violet de marque `#451DC7`, vert et corail). Pour un client externe, utilisez l'éditeur de
+  thème (page « Charte graphique ») pour saisir ses propres codes couleur et importer son logo.
 - **Export PDF** : réalisé via l'impression navigateur (`window.print()`) avec une feuille de
   style dédiée à l'impression plutôt qu'une librairie de rendu canvas, pour un rendu texte net
   et un poids d'application réduit.

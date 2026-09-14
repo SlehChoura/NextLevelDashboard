@@ -6,6 +6,7 @@ import { DashboardHeader } from "../components/dashboard/DashboardHeader"
 import { RagSummary } from "../components/dashboard/RagSummary"
 import { ClientReadyAgents } from "../components/dashboard/ClientReadyAgents"
 import { MissionsPodium } from "../components/dashboard/MissionsPodium"
+import { CategoryFocus } from "../components/dashboard/CategoryFocus"
 import { KpiCard } from "../components/common/KpiCard"
 import { DistributionBarChart } from "../components/charts/DistributionBarChart"
 import { DistributionPieChart } from "../components/charts/DistributionPieChart"
@@ -22,6 +23,7 @@ export function DashboardPage() {
   const updateData = useReportStore((s) => s.updateData)
   const [mode, setMode] = useState<Mode>("view")
   const [editDraft, setEditDraft] = useState<ImportDraft | null>(null)
+  const [focus, setFocus] = useState<{ criterionKey: string; criterionLabel: string; value: string; label: string } | null>(null)
   const fileImport = useFileImport()
 
   if (!report) {
@@ -44,10 +46,12 @@ export function DashboardPage() {
   const template = report.template
   const statusCriterion = template.criteria.find((c) => c.key === template.statusKey)
   const metricCriteria = template.criteria.filter((c) => c.role === "metric")
+  const labelCriterion = template.criteria.find((c) => c.role === "label")
 
   function exitToView() {
     setMode("view")
     setEditDraft(null)
+    setFocus(null)
     fileImport.reset()
   }
 
@@ -167,7 +171,7 @@ export function DashboardPage() {
           <MissionsPodium template={template} rows={report.rows} />
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <KpiCard label="Éléments suivis" value={String(report.rows.length)} />
+            <KpiCard label="Agents IA4CYB suivis" value={String(report.rows.length)} />
             {metricCriteria.map((c) => {
               const avg = averageOfNumeric(report.rows, c.key)
               return (
@@ -192,12 +196,48 @@ export function DashboardPage() {
                 {template.charts.map((chart) => {
                   const criterion = template.criteria.find((c) => c.key === chart.criterionKey)
                   if (!criterion) return null
+                  const isFocusedChart = focus?.criterionKey === criterion.key
+                  const handleSelect = (entry: { key: string; label: string }) =>
+                    setFocus(
+                      isFocusedChart && focus?.value === entry.key
+                        ? null
+                        : { criterionKey: criterion.key, criterionLabel: criterion.label, value: entry.key, label: entry.label },
+                    )
                   if (chart.kind === "pie") {
-                    return <DistributionPieChart key={chart.id} title={chart.title} criterion={criterion} rows={report.rows} />
+                    return (
+                      <DistributionPieChart
+                        key={chart.id}
+                        title={chart.title}
+                        criterion={criterion}
+                        rows={report.rows}
+                        onSelect={handleSelect}
+                        selectedKey={isFocusedChart ? focus?.value : undefined}
+                      />
+                    )
                   }
-                  return <DistributionBarChart key={chart.id} title={chart.title} criterion={criterion} rows={report.rows} />
+                  return (
+                    <DistributionBarChart
+                      key={chart.id}
+                      title={chart.title}
+                      criterion={criterion}
+                      rows={report.rows}
+                      onSelect={handleSelect}
+                      selectedKey={isFocusedChart ? focus?.value : undefined}
+                    />
+                  )
                 })}
               </div>
+
+              {focus && labelCriterion && (
+                <CategoryFocus
+                  title={`${focus.criterionLabel} — ${focus.label}`}
+                  labelCriterion={labelCriterion}
+                  rows={report.rows.filter(
+                    (row) => String(row[focus.criterionKey] ?? "").trim().toLowerCase() === focus.value,
+                  )}
+                  onClose={() => setFocus(null)}
+                />
+              )}
 
               <DataTable template={template} rows={report.rows} />
             </>

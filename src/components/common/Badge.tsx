@@ -12,11 +12,11 @@ export function Badge({ label, color = "neutral" }: { label: string; color?: Bad
   const c = COLOR_VAR[color]
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      className="inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
       style={{ color: c, backgroundColor: `color-mix(in srgb, ${c} 14%, transparent)` }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c }} />
-      {label}
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: c }} />
+      <span className="min-w-0 break-words">{label}</span>
     </span>
   )
 }

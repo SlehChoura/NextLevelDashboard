@@ -18,7 +18,7 @@ export function ClientReadyAgents({ template, rows }: { template: ReportTemplate
   return (
     <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-4">
       <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-accent)]">
-        À mettre en avant — {matches.length} prêt{matches.length > 1 ? "s" : ""} pour un contexte client
+        Nos agents prêt pour un contexte client ({matches.length})
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {matches.map((row) => {
