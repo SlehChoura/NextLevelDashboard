@@ -24,8 +24,8 @@ export function MissionsPodium({ template, rows }: { template: ReportTemplate; r
   if (ranked.length === 0) return null
 
   return (
-    <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-accent)]">
+    <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/[0.04] p-4 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
         🏆 Classement — agents les plus mobilisés en mission client
       </div>
       <ol className="mt-3 space-y-2">
