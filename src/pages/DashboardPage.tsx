@@ -164,7 +164,7 @@ export function DashboardPage() {
       )}
 
       {mode === "view" && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
           <ClientReadyAgents template={template} rows={report.rows} />
@@ -241,7 +241,7 @@ export function DashboardPage() {
               )}
 
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
+                <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
                   Détail par agent
                 </div>
                 <button

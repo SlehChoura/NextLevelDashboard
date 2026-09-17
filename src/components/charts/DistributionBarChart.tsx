@@ -30,7 +30,7 @@ export function DistributionBarChart({
   if (data.length === 0) return null
 
   return (
-    <div className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+    <div className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
       <div className="text-sm font-medium text-[var(--color-text)]">{title}</div>
       {onSelect && (
         <div className="text-xs text-[var(--color-text-muted)]">Cliquez sur une barre pour voir le détail</div>

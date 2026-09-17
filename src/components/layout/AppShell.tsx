@@ -11,11 +11,13 @@ const NAV_ITEMS = [
 export function AppShell() {
   return (
     <div className="min-h-screen">
-      <header className="no-print sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <NavLink to="/" className="flex items-center gap-2">
-            <Logo />
-            <span className="text-sm font-semibold text-[var(--color-text)]">NextLevelDashboard</span>
+      <header className="no-print sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+          <NavLink to="/" className="flex items-center gap-2.5">
+            <Logo size={32} />
+            <span className="text-sm font-semibold tracking-tight text-[var(--color-text)]">
+              Dashboard IA4CYB Agents
+            </span>
           </NavLink>
           <nav className="flex gap-1">
             {NAV_ITEMS.map((item) => (
