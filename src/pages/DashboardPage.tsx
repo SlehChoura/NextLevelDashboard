@@ -24,6 +24,7 @@ export function DashboardPage() {
   const [mode, setMode] = useState<Mode>("view")
   const [editDraft, setEditDraft] = useState<ImportDraft | null>(null)
   const [focus, setFocus] = useState<{ criterionKey: string; criterionLabel: string; value: string; label: string } | null>(null)
+  const [showTable, setShowTable] = useState(true)
   const fileImport = useFileImport()
 
   if (!report) {
@@ -239,7 +240,19 @@ export function DashboardPage() {
                 />
               )}
 
-              <DataTable template={template} rows={report.rows} />
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
+                  Détail par agent
+                </div>
+                <button
+                  onClick={() => setShowTable((v) => !v)}
+                  className="no-print text-xs font-medium text-[var(--color-accent)] underline"
+                >
+                  {showTable ? "Masquer le tableau" : "Afficher le tableau"}
+                </button>
+              </div>
+
+              {showTable && <DataTable template={template} rows={report.rows} />}
             </>
           )}
         </div>
