@@ -62,21 +62,30 @@ Puis ouvrez `http://localhost:5173`.
 
 ## Déploiement
 
-Le build (`npm run build`) génère un site 100 % statique dans `dist/` (HTML/CSS/JS compilés,
+Le build (`npm run build`) génère un site 100 % statique dans `public/` (HTML/CSS/JS compilés,
 chemins relatifs — fonctionne quel que soit le sous-dossier ou domaine sous lequel il est servi,
 sans configuration particulière). C'est **uniquement ce dossier** qui doit être exposé
 publiquement : jamais la racine du dépôt (code source, `package.json`, configuration
 TypeScript/Vite…), qui n'a aucune raison d'être accessible depuis le site publié.
 
-- **GitHub Pages** : le workflow `.github/workflows/deploy-pages.yml` build et publie `dist/`
+Attention : `public/` porte ici le résultat du build (`build.outDir`), pas le dossier
+d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `static/` (favicon…) pour
+éviter le conflit.
+
+- **GitHub Pages** : le workflow `.github/workflows/deploy-pages.yml` build et publie `public/`
   automatiquement à chaque push sur `main`, sans passer par une branche.
-- **Hébergement pointant directement vers le dépôt Git** (sans étape de build de son côté) : le
-  workflow `.github/workflows/publish-static-site.yml` build à chaque push sur `main` et publie
-  le contenu de `dist/` sur une branche dédiée `site` (historique à plat, régénéré à chaque
-  publication). Configurez votre hébergement pour qu'il pointe sur cette branche `site` plutôt
-  que sur `main` : il ne servira alors jamais que les fichiers statiques compilés.
+- **Hébergement pointant directement vers le dépôt Git** (sans étape de build de son côté) :
+  - *Avec choix de branche* : le workflow `.github/workflows/publish-static-site.yml` build à
+    chaque push sur `main` et publie le contenu sur une branche dédiée `site` (historique à
+    plat, régénéré à chaque publication) — pointez votre hébergement sur cette branche plutôt
+    que sur `main`.
+  - *Avec choix d'un dossier sur `main`* : le dossier `public/` est aussi versionné directement
+    sur `main` — pointez votre hébergement sur `main` + dossier `public`. **Ce dossier n'est pas
+    régénéré automatiquement** : après toute modification du code, relancez `npm run build` et
+    committez le nouveau contenu de `public/` avant de publier (ou demandez la mise en place
+    d'une régénération automatique si cet usage devient la norme).
 - **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
-  configurez la commande `npm run build` et le dossier de publication `dist`.
+  configurez la commande `npm run build` et le dossier de publication `public`.
 
 ## Stack technique
 
