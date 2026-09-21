@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Accueil", end: true },
   { to: "/ia", label: "Nouveau rapport" },
   { to: "/mes-rapports", label: "Mes rapports" },
+  { to: "/kpis", label: "KPI" },
   { to: "/theme", label: "Charte graphique" },
 ]
 
