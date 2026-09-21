@@ -1,5 +1,14 @@
 import { Link } from "react-router-dom"
 
+const PILOTAGE_OBJECTIVES = [
+  "Développer les compétences IA (formations, Cyber Academy, certifications)",
+  "Accélérer l'adoption des agents IA (AI&ME, usage des agents)",
+  "Développer de nouveaux agents",
+  "Industrialiser et maintenir les agents existants",
+  "Assurer la disponibilité et la performance de la plateforme IA et de la chaîne CI/CD",
+  "Mesurer la valeur créée et l'usage réel des agents dans les missions",
+]
+
 const FEATURES = [
   {
     title: "Import instantané, sans IA",
@@ -51,7 +60,28 @@ export function HomePage() {
         </Link>
       </div>
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2">
+      <div className="mt-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <h2 className="text-sm font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
+        <ul className="mt-3 space-y-2">
+          {PILOTAGE_OBJECTIVES.map((objective) => (
+            <li key={objective} className="flex gap-2.5 text-sm text-[var(--color-text-muted)]">
+              <span
+                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: "var(--color-accent)" }}
+              />
+              <span>{objective}</span>
+            </li>
+          ))}
+        </ul>
+        <Link
+          to="/kpis"
+          className="mt-4 inline-block text-sm font-medium text-[var(--color-accent)] hover:underline"
+        >
+          Voir les KPI suivis →
+        </Link>
+      </div>
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {FEATURES.map((f) => (
           <div key={f.title} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <h2 className="text-sm font-semibold text-[var(--color-text)]">{f.title}</h2>
