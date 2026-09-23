@@ -7,6 +7,7 @@ const AiImportPage = lazy(() => import("./pages/AiImportPage").then((m) => ({ de
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })))
 const ReportsListPage = lazy(() => import("./pages/ReportsListPage").then((m) => ({ default: m.ReportsListPage })))
 const KpisPage = lazy(() => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })))
+const PilotagePage = lazy(() => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })))
 const ThemePage = lazy(() => import("./pages/ThemePage").then((m) => ({ default: m.ThemePage })))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
 
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="ia" element={<AiImportPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="mes-rapports" element={<ReportsListPage />} />
+            <Route path="pilotage" element={<PilotagePage />} />
             <Route path="kpis" element={<KpisPage />} />
             <Route path="theme" element={<ThemePage />} />
             <Route path="*" element={<NotFoundPage />} />
