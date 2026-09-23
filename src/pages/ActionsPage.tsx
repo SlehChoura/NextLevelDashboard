@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react"
-import { FileDrop } from "../components/common/FileDrop"
+import { Link } from "react-router-dom"
 import { useActionsStore } from "../store/actionsStore"
 import { ACTION_STATUS_LABELS, type ActionStatus } from "../lib/actions"
-import { downloadActionsTemplate, parseActionsFile } from "../lib/actionsImport"
 import { CATEGORY_LABELS, PILOTAGE_OBJECTIVES } from "../lib/pilotage"
 
 const STATUS_TEXT_CLASS: Record<ActionStatus, string> = {
@@ -26,14 +25,11 @@ export function ActionsPage() {
   const addAction = useActionsStore((s) => s.addAction)
   const updateAction = useActionsStore((s) => s.updateAction)
   const deleteAction = useActionsStore((s) => s.deleteAction)
-  const mergeActions = useActionsStore((s) => s.mergeActions)
 
   const [form, setForm] = useState(emptyForm)
   const [objectiveFilter, setObjectiveFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<ActionStatus | "all">("all")
   const [search, setSearch] = useState("")
-  const [importOpen, setImportOpen] = useState(false)
-  const [importMessage, setImportMessage] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -51,25 +47,6 @@ export function ActionsPage() {
     if (!form.title.trim() || !form.owner.trim()) return
     addAction({ ...form, title: form.title.trim(), owner: form.owner.trim() })
     setForm(emptyForm)
-  }
-
-  async function handleImportFile(file: File) {
-    setImportMessage(null)
-    try {
-      const existingIds = new Set(actions.map((a) => a.id))
-      const { actions: imported, created, updated, unmatchedObjectives, skippedNoTitle } = await parseActionsFile(
-        file,
-        existingIds,
-      )
-      if (imported.length > 0) mergeActions(imported)
-      const parts = [`${created} action(s) créée(s)`, `${updated} mise(s) à jour`]
-      if (skippedNoTitle > 0) parts.push(`${skippedNoTitle} ligne(s) ignorée(s) (titre manquant)`)
-      if (unmatchedObjectives.length > 0) parts.push(`${unmatchedObjectives.length} objectif(s) non reconnu(s) (laissé vide)`)
-      setImportMessage(parts.join(" — ") + ".")
-      setImportOpen(false)
-    } catch {
-      setImportMessage("Impossible de lire ce fichier. Vérifiez qu'il s'agit bien d'un export du modèle (.xlsx).")
-    }
   }
 
   return (
@@ -160,35 +137,14 @@ export function ActionsPage() {
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Actions en cours</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => downloadActionsTemplate(actions)}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
-          >
-            Télécharger le modèle
-          </button>
-          <button
-            onClick={() => setImportOpen((v) => !v)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-            style={{ backgroundColor: "var(--color-accent)" }}
-          >
-            Importer un fichier
-          </button>
-        </div>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Import en masse depuis un fichier : voir le modèle complet sur la page{" "}
+          <Link to="/pilotage" className="font-medium text-[var(--color-accent)] hover:underline">
+            Pilotage
+          </Link>
+          .
+        </p>
       </div>
-
-      {importOpen && (
-        <div className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Téléchargez d'abord le modèle (actions existantes ou exemple), complétez-le — ajoutez
-            des lignes pour de nouvelles actions, laissez la colonne « Clé » pour mettre à jour une
-            action existante — puis réimportez-le ici.
-          </p>
-          <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
-        </div>
-      )}
-
-      {importMessage && <p className="mt-3 text-sm text-[var(--color-text)]">{importMessage}</p>}
 
       <div className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <label className="min-w-[200px] flex-1 text-xs">
