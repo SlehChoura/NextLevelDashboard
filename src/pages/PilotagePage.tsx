@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react"
 import { FileDrop } from "../components/common/FileDrop"
 import { usePilotageStore } from "../store/pilotageStore"
+import { useActionsStore } from "../store/actionsStore"
+import { useReportStore } from "../store/reportStore"
 import {
   CATEGORY_LABELS,
   computeStatus,
@@ -14,13 +16,12 @@ import {
   type PilotageOwner,
   type VisiblePilotageStatus,
 } from "../lib/pilotage"
-import { downloadPilotageTemplate, parsePilotageFile } from "../lib/pilotageImport"
+import { downloadCombinedTemplate, parseCombinedFile } from "../lib/combinedImport"
 
 const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   competences: "🎓",
   agents: "⚙️",
   plateforme: "🛡",
-  impact: "🎯",
 }
 
 const STATUS_BADGE_CLASS: Record<VisiblePilotageStatus, string> = {
@@ -175,6 +176,16 @@ export function PilotagePage() {
   const setValues = usePilotageStore((s) => s.setValues)
   const setTarget = usePilotageStore((s) => s.setTarget)
   const setTargets = usePilotageStore((s) => s.setTargets)
+  const dashboardReportId = usePilotageStore((s) => s.dashboardReportId)
+  const setDashboardReportId = usePilotageStore((s) => s.setDashboardReportId)
+
+  const actions = useActionsStore((s) => s.actions)
+  const mergeActions = useActionsStore((s) => s.mergeActions)
+
+  const reports = useReportStore((s) => s.reports)
+  const createReport = useReportStore((s) => s.createReport)
+  const updateReportData = useReportStore((s) => s.updateData)
+  const setActiveReport = useReportStore((s) => s.setActiveReport)
 
   const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<VisiblePilotageStatus | "all">("all")
@@ -220,14 +231,50 @@ export function PilotagePage() {
   async function handleImportFile(file: File) {
     setImportMessage(null)
     try {
-      const { valueUpdates, targetUpdates, unmatched } = await parsePilotageFile(file)
-      const touched = new Set([...Object.keys(valueUpdates), ...Object.keys(targetUpdates)])
-      if (Object.keys(valueUpdates).length > 0) setValues(valueUpdates)
-      if (Object.keys(targetUpdates).length > 0) setTargets(targetUpdates)
+      const existingActionIds = new Set(actions.map((a) => a.id))
+      const result = await parseCombinedFile(file, existingActionIds)
+      const parts: string[] = []
+
+      if (result.pilotage) {
+        const { valueUpdates, targetUpdates, unmatched } = result.pilotage
+        const touched = new Set([...Object.keys(valueUpdates), ...Object.keys(targetUpdates)])
+        if (Object.keys(valueUpdates).length > 0) setValues(valueUpdates)
+        if (Object.keys(targetUpdates).length > 0) setTargets(targetUpdates)
+        parts.push(
+          `Pilotage : ${touched.size} objectif(s) mis à jour` +
+            (unmatched.length > 0 ? ` (${unmatched.length} ligne(s) ignorée(s))` : "") +
+            ".",
+        )
+      }
+
+      if (result.actions) {
+        const { actions: imported, created, updated, unmatchedObjectives, skippedNoTitle } = result.actions
+        if (imported.length > 0) mergeActions(imported)
+        parts.push(
+          `Actions : ${created} créée(s), ${updated} mise(s) à jour` +
+            (skippedNoTitle > 0 ? `, ${skippedNoTitle} ligne(s) sans titre ignorée(s)` : "") +
+            (unmatchedObjectives.length > 0 ? `, ${unmatchedObjectives.length} objectif(s) non reconnu(s)` : "") +
+            ".",
+        )
+      }
+
+      if (result.dashboard) {
+        const { template, rows } = result.dashboard
+        const stillExists = dashboardReportId && reports.some((r) => r.id === dashboardReportId)
+        if (stillExists && dashboardReportId) {
+          updateReportData(dashboardReportId, template, rows)
+          setActiveReport(dashboardReportId)
+        } else {
+          const newId = createReport(template, { title: "Agents IA4CYB (import global)" }, rows)
+          setDashboardReportId(newId)
+        }
+        parts.push(`Dashboard : ${rows.length} agent(s) importé(s), rapport « Agents IA4CYB » ${stillExists ? "mis à jour" : "généré"}.`)
+      }
+
       setImportMessage(
-        touched.size === 0
-          ? "Aucune valeur reconnue dans ce fichier. Utilisez le modèle téléchargé et ne modifiez que les colonnes « Valeur actuelle » et « Cible »."
-          : `${touched.size} objectif(s) mis à jour.${unmatched.length > 0 ? ` ${unmatched.length} ligne(s) non reconnue(s) ignorée(s).` : ""}`,
+        parts.length > 0
+          ? parts.join(" ")
+          : "Aucun onglet reconnu dans ce fichier. Utilisez le modèle téléchargé (onglets « Suivi pilotage », « Actions », « Agents IA4CYB »).",
       )
       setImportOpen(false)
     } catch {
@@ -246,6 +293,48 @@ export function PilotagePage() {
         KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
         manuellement ou par import d'un fichier de suivi.
       </p>
+
+      <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--color-text)]">
+              Import global — Pilotage, Actions et Dashboard
+            </h2>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              Un seul fichier Excel à 3 onglets (« Suivi pilotage », « Actions », « Agents IA4CYB »)
+              pour mettre à jour les objectifs, les actions et générer le dashboard des agents en un
+              seul import.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => downloadCombinedTemplate(values, targets, actions)}
+              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[var(--color-text)]"
+            >
+              Télécharger le modèle complet
+            </button>
+            <button
+              onClick={() => setImportOpen((v) => !v)}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white"
+              style={{ backgroundColor: "var(--color-accent)" }}
+            >
+              Importer le fichier complet
+            </button>
+          </div>
+        </div>
+
+        {importOpen && (
+          <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Téléchargez d'abord le modèle, complétez un ou plusieurs onglets, puis réimportez-le
+              ici. Un onglet absent du fichier est simplement ignoré.
+            </p>
+            <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
+          </div>
+        )}
+
+        {importMessage && <p className="mt-3 text-sm text-[var(--color-text)]">{importMessage}</p>}
+      </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -292,38 +381,7 @@ export function PilotagePage() {
         </div>
       )}
 
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => downloadPilotageTemplate(values, targets)}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
-          >
-            Télécharger le modèle
-          </button>
-          <button
-            onClick={() => setImportOpen((v) => !v)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-            style={{ backgroundColor: "var(--color-accent)" }}
-          >
-            Importer un fichier
-          </button>
-        </div>
-      </div>
-
-      {importOpen && (
-        <div className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Téléchargez d'abord le modèle, complétez les colonnes « Valeur actuelle » et/ou
-            « Cible », puis réimportez-le ici pour mettre à jour l'avancement.
-          </p>
-          <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
-        </div>
-      )}
-
-      {importMessage && (
-        <p className="mt-3 text-sm text-[var(--color-text)]">{importMessage}</p>
-      )}
+      <h2 className="mt-10 text-lg font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
 
       <div className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <label className="min-w-[160px] flex-1 text-xs">
