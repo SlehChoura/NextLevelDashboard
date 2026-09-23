@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { ActionItem } from "../lib/actions"
 import { makeId } from "../lib/id"
+import { SEED_ACTIONS } from "../lib/seedData"
 
 interface ActionsState {
   actions: ActionItem[]
@@ -15,7 +16,7 @@ interface ActionsState {
 export const useActionsStore = create<ActionsState>()(
   persist(
     (set) => ({
-      actions: [],
+      actions: [...SEED_ACTIONS],
       addAction: (input) => set((state) => ({ actions: [...state.actions, { ...input, id: makeId() }] })),
       updateAction: (id, patch) =>
         set((state) => ({
