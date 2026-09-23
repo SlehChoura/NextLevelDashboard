@@ -1,4 +1,4 @@
-export type PilotageCategory = "competences" | "agents" | "plateforme" | "impact"
+export type PilotageCategory = "competences" | "agents" | "plateforme"
 export type PilotageOwner = "academy" | "plateforme" | "missions" | "finops"
 export type PilotageDirection = "up" | "down"
 export type PilotageStatus = "unlocked" | "progress" | "accelerate" | "risk"
@@ -20,7 +20,6 @@ export const CATEGORY_LABELS: Record<PilotageCategory, string> = {
   competences: "Compétences",
   agents: "Agents IA",
   plateforme: "Plateforme",
-  impact: "Impact",
 }
 
 export const OWNER_LABELS: Record<PilotageOwner, string> = {
@@ -43,7 +42,7 @@ export const VISIBLE_STATUS_LABELS: Record<VisiblePilotageStatus, string> = {
   accelerate: "À accélérer",
 }
 
-/** Un objectif par KPI suivi dans la page KPI (Compétences, Agents IA, Plateforme, Impact). */
+/** Un objectif par KPI suivi dans la page KPI (Compétences, Agents IA, Plateforme). */
 export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
   {
     id: "cyber_academy_ia",
@@ -53,8 +52,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Diffuser un contenu dédié à l'IA dans les modules Cyber Academy existants.",
     unit: "Cyber Academy",
     direction: "up",
-    target: 5,
-    defaultCurrent: 2,
+    target: 1,
+    defaultCurrent: 1,
   },
   {
     id: "bt_academy_transformees",
@@ -64,8 +63,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Faire évoluer les Business Trainings existants pour intégrer les usages de l'IA.",
     unit: "BT Academy",
     direction: "up",
-    target: 8,
-    defaultCurrent: 3,
+    target: 5,
+    defaultCurrent: 1,
   },
   {
     id: "consultants_vibe_coding",
@@ -75,8 +74,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Développer l'autonomie des équipes dans la conception accélérée de solutions IA.",
     unit: "consultants",
     direction: "up",
-    target: 50,
-    defaultCurrent: 42,
+    target: 500,
+    defaultCurrent: 250,
   },
   {
     id: "certifications_claude",
@@ -86,8 +85,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Valider la montée en compétence individuelle sur les outils Claude.",
     unit: "certifications",
     direction: "up",
-    target: 20,
-    defaultCurrent: 9,
+    target: 30,
+    defaultCurrent: 10,
   },
   {
     id: "agents_disponibles",
@@ -98,7 +97,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 20,
-    defaultCurrent: 14,
+    defaultCurrent: 9,
   },
   {
     id: "agents_industrialises",
@@ -108,8 +107,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Faire passer les agents prioritaires du prototype à une exploitation robuste et sécurisée.",
     unit: "agents",
     direction: "up",
-    target: 12,
-    defaultCurrent: 8,
+    target: 9,
+    defaultCurrent: 5,
   },
   {
     id: "missions_avec_agents",
@@ -119,8 +118,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Démontrer l'adoption opérationnelle des agents IA dans les missions en cours.",
     unit: "missions",
     direction: "up",
-    target: 15,
-    defaultCurrent: 11,
+    target: 50,
+    defaultCurrent: 21,
   },
   {
     id: "disponibilite_cicd",
@@ -130,19 +129,8 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Garantir une chaîne CI/CD disponible et fiable pour les équipes de développement.",
     unit: "%",
     direction: "up",
-    target: 99.5,
-    defaultCurrent: 99.2,
-  },
-  {
-    id: "missions_realisees",
-    category: "impact",
-    owner: "missions",
-    label: "Missions réalisées avec les agents",
-    description: "Mesurer la valeur créée et l'usage réel des agents dans les missions livrées.",
-    unit: "missions",
-    direction: "up",
-    target: 10,
-    defaultCurrent: 14,
+    target: 100,
+    defaultCurrent: 60,
   },
 ]
 

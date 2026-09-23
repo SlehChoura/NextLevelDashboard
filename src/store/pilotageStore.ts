@@ -14,6 +14,9 @@ interface PilotageState {
   setTarget: (objectiveId: string, target: number) => void
   setTargets: (targets: PilotageValues) => void
   resetValues: () => void
+  /** Id du rapport dashboard généré par le dernier import combiné (réutilisé pour le mettre à jour plutôt que le dupliquer). */
+  dashboardReportId: string | null
+  setDashboardReportId: (id: string | null) => void
 }
 
 const defaultValues: PilotageValues = Object.fromEntries(
@@ -37,6 +40,8 @@ export const usePilotageStore = create<PilotageState>()(
         set((state) => ({ targets: { ...state.targets, [objectiveId]: target } })),
       setTargets: (targets) => set((state) => ({ targets: { ...state.targets, ...targets } })),
       resetValues: () => set({ values: { ...defaultValues }, targets: { ...defaultTargets } }),
+      dashboardReportId: null,
+      setDashboardReportId: (id) => set({ dashboardReportId: id }),
     }),
     { name: "nld-pilotage" },
   ),

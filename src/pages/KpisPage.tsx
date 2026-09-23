@@ -25,10 +25,6 @@ const KPI_CATEGORIES: KpiCategory[] = [
     title: "Plateforme",
     kpis: ["Disponibilité de la chaîne CI/CD"],
   },
-  {
-    title: "Impact",
-    kpis: ["Nombre de missions réalisées avec les agents"],
-  },
 ]
 
 export function KpisPage() {
@@ -40,7 +36,7 @@ export function KpisPage() {
       <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">KPI suivis</h1>
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
         Indicateurs clés utilisés pour piloter le développement des compétences, l'adoption des
-        agents IA, la plateforme et l'impact sur les missions.
+        agents IA et la plateforme.
       </p>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
