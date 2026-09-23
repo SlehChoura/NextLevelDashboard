@@ -10,13 +10,13 @@ const COL_TARGET = "Cible"
 const COL_UNIT = "Unité"
 
 /** Génère et télécharge le modèle à compléter (une ligne par objectif suivi). */
-export function downloadPilotageTemplate(values: Record<string, number>): void {
+export function downloadPilotageTemplate(values: Record<string, number>, targets: Record<string, number>): void {
   const rows = PILOTAGE_OBJECTIVES.map((o) => ({
     [COL_KEY]: o.id,
     [COL_CATEGORY]: CATEGORY_LABELS[o.category],
     [COL_LABEL]: o.label,
     [COL_CURRENT]: values[o.id] ?? o.defaultCurrent,
-    [COL_TARGET]: o.target,
+    [COL_TARGET]: targets[o.id] ?? o.target,
     [COL_UNIT]: o.unit,
   }))
   const sheet = XLSX.utils.json_to_sheet(rows)
@@ -28,7 +28,9 @@ export function downloadPilotageTemplate(values: Record<string, number>): void {
 
 export interface PilotageImportResult {
   /** Nouvelles valeurs "Valeur actuelle" par identifiant d'objectif, prêtes à enregistrer. */
-  updates: Record<string, number>
+  valueUpdates: Record<string, number>
+  /** Nouvelles valeurs "Cible" par identifiant d'objectif, prêtes à enregistrer. */
+  targetUpdates: Record<string, number>
   /** Lignes dont l'objectif n'a pas pu être identifié (clé et libellé inconnus). */
   unmatched: string[]
 }
@@ -53,22 +55,24 @@ export async function parsePilotageFile(file: File): Promise<PilotageImportResul
   const sheet = workbook.Sheets[sheetName]
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
 
-  const updates: Record<string, number> = {}
+  const valueUpdates: Record<string, number> = {}
+  const targetUpdates: Record<string, number> = {}
   const unmatched: string[] = []
 
   for (const row of rows) {
     const rawKey = String(row[COL_KEY] ?? "").trim()
     const rawLabel = String(row[COL_LABEL] ?? "").trim()
     const id = knownIds.has(rawKey) ? rawKey : labelToId.get(rawLabel.toLowerCase())
-    const current = parseNumber(row[COL_CURRENT])
 
     if (!id) {
       if (rawKey || rawLabel) unmatched.push(rawLabel || rawKey)
       continue
     }
-    if (current === null) continue
-    updates[id] = current
+    const current = parseNumber(row[COL_CURRENT])
+    if (current !== null) valueUpdates[id] = current
+    const target = parseNumber(row[COL_TARGET])
+    if (target !== null) targetUpdates[id] = target
   }
 
-  return { updates, unmatched }
+  return { valueUpdates, targetUpdates, unmatched }
 }
