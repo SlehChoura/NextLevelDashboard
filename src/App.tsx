@@ -8,6 +8,7 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ 
 const ReportsListPage = lazy(() => import("./pages/ReportsListPage").then((m) => ({ default: m.ReportsListPage })))
 const KpisPage = lazy(() => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })))
 const PilotagePage = lazy(() => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })))
+const ActionsPage = lazy(() => import("./pages/ActionsPage").then((m) => ({ default: m.ActionsPage })))
 const ThemePage = lazy(() => import("./pages/ThemePage").then((m) => ({ default: m.ThemePage })))
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
 
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="mes-rapports" element={<ReportsListPage />} />
             <Route path="pilotage" element={<PilotagePage />} />
+            <Route path="actions" element={<ActionsPage />} />
             <Route path="kpis" element={<KpisPage />} />
             <Route path="theme" element={<ThemePage />} />
             <Route path="*" element={<NotFoundPage />} />
