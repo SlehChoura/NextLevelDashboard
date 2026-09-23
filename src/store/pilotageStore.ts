@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { PILOTAGE_OBJECTIVES } from "../lib/pilotage"
+import { SEED_REPORT_ID } from "../lib/seedData"
 
 type PilotageValues = Record<string, number>
 
@@ -40,7 +41,7 @@ export const usePilotageStore = create<PilotageState>()(
         set((state) => ({ targets: { ...state.targets, [objectiveId]: target } })),
       setTargets: (targets) => set((state) => ({ targets: { ...state.targets, ...targets } })),
       resetValues: () => set({ values: { ...defaultValues }, targets: { ...defaultTargets } }),
-      dashboardReportId: null,
+      dashboardReportId: SEED_REPORT_ID,
       setDashboardReportId: (id) => set({ dashboardReportId: id }),
     }),
     { name: "nld-pilotage" },
