@@ -37,6 +37,12 @@ export const STATUS_LABELS: Record<PilotageStatus, string> = {
   risk: "À sécuriser",
 }
 
+/** Libellés des statuts affichés à l'utilisateur (voir {@link visibleStatus}). */
+export const VISIBLE_STATUS_LABELS: Record<VisiblePilotageStatus, string> = {
+  unlocked: "Succès débloqué",
+  accelerate: "À accélérer",
+}
+
 /** Un objectif par KPI suivi dans la page KPI (Compétences, Agents IA, Plateforme, Impact). */
 export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
   {
@@ -60,17 +66,6 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     direction: "up",
     target: 8,
     defaultCurrent: 3,
-  },
-  {
-    id: "sessions_agents_ia",
-    category: "competences",
-    owner: "academy",
-    label: "Sessions dédiées aux agents IA",
-    description: "Accélérer la diffusion des pratiques et des retours d'expérience auprès des équipes.",
-    unit: "sessions",
-    direction: "up",
-    target: 6,
-    defaultCurrent: 7,
   },
   {
     id: "consultants_vibe_coding",
@@ -139,28 +134,6 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     defaultCurrent: 99.2,
   },
   {
-    id: "consommation_api",
-    category: "plateforme",
-    owner: "finops",
-    label: "Consommation des clés/API",
-    description: "Maintenir la consommation sous le seuil défini tout en préservant les usages prioritaires.",
-    unit: "% du budget",
-    direction: "down",
-    target: 85,
-    defaultCurrent: 92,
-  },
-  {
-    id: "couts_hebergement",
-    category: "plateforme",
-    owner: "finops",
-    label: "Coûts d'hébergement",
-    description: "Maîtriser les coûts d'infrastructure de la plateforme IA.",
-    unit: "k€/mois",
-    direction: "down",
-    target: 5,
-    defaultCurrent: 4.2,
-  },
-  {
     id: "missions_realisees",
     category: "impact",
     owner: "missions",
@@ -176,22 +149,36 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
 const PROGRESS_THRESHOLD = 0.8
 const RISK_OVERSHOOT = 1.05
 
-/** Ratio d'avancement vers la cible, 1 = cible atteinte (peut dépasser 1). */
-export function progressRatio(objective: PilotageObjective, current: number): number {
+/**
+ * Ratio d'avancement vers la cible, 1 = cible atteinte (peut dépasser 1). La cible peut être
+ * surchargée (valeur ajustée manuellement) — par défaut celle de l'objectif est utilisée.
+ */
+export function progressRatio(objective: PilotageObjective, current: number, target = objective.target): number {
   if (objective.direction === "up") {
-    return objective.target > 0 ? current / objective.target : 0
+    return target > 0 ? current / target : 0
   }
-  return current > 0 ? objective.target / current : 1
+  return current > 0 ? target / current : 1
 }
 
 /** Arrondi à l'entier inférieur pour ne jamais afficher 100 % avant que la cible ne soit réellement atteinte. */
-export function progressPercent(objective: PilotageObjective, current: number): number {
-  return Math.floor(progressRatio(objective, current) * 100)
+export function progressPercent(objective: PilotageObjective, current: number, target = objective.target): number {
+  return Math.floor(progressRatio(objective, current, target) * 100)
 }
 
-export function computeStatus(objective: PilotageObjective, current: number): PilotageStatus {
-  const ratio = progressRatio(objective, current)
+export function computeStatus(objective: PilotageObjective, current: number, target = objective.target): PilotageStatus {
+  const ratio = progressRatio(objective, current, target)
   if (ratio >= 1) return "unlocked"
-  if (objective.direction === "down" && current > objective.target * RISK_OVERSHOOT) return "risk"
+  if (objective.direction === "down" && current > target * RISK_OVERSHOOT) return "risk"
   return ratio >= PROGRESS_THRESHOLD ? "progress" : "accelerate"
+}
+
+/**
+ * Statut simplifié affiché pour le moment dans l'interface : les nuances "en bonne voie" et
+ * "à sécuriser" sont temporairement masquées (regroupées avec "à accélérer") le temps de fiabiliser
+ * ces trajectoires intermédiaires.
+ */
+export type VisiblePilotageStatus = "unlocked" | "accelerate"
+
+export function visibleStatus(status: PilotageStatus): VisiblePilotageStatus {
+  return status === "unlocked" ? "unlocked" : "accelerate"
 }
