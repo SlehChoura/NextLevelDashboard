@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
 import { makeId } from "../lib/id"
+import { SEED_REPORT, SEED_REPORT_ID } from "../lib/seedData"
 
 interface ReportState {
   reports: ReportData[]
@@ -24,8 +25,8 @@ const defaultMeta: ReportMeta = {
 export const useReportStore = create<ReportState>()(
   persist(
     (set, get) => ({
-      reports: [],
-      activeReportId: null,
+      reports: [SEED_REPORT],
+      activeReportId: SEED_REPORT_ID,
       activeReport: () => get().reports.find((r) => r.id === get().activeReportId),
       createReport: (template, meta, rows) => {
         const id = makeId()

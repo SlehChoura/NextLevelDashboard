@@ -119,7 +119,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "missions",
     direction: "up",
     target: 50,
-    defaultCurrent: 21,
+    defaultCurrent: 24,
   },
   {
     id: "disponibilite_cicd",
