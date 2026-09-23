@@ -7,11 +7,12 @@ import {
   OWNER_LABELS,
   PILOTAGE_OBJECTIVES,
   progressPercent,
-  STATUS_LABELS,
+  visibleStatus,
+  VISIBLE_STATUS_LABELS,
   type PilotageCategory,
   type PilotageObjective,
   type PilotageOwner,
-  type PilotageStatus,
+  type VisiblePilotageStatus,
 } from "../lib/pilotage"
 import { downloadPilotageTemplate, parsePilotageFile } from "../lib/pilotageImport"
 
@@ -22,18 +23,14 @@ const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   impact: "🎯",
 }
 
-const STATUS_BADGE_CLASS: Record<PilotageStatus, string> = {
+const STATUS_BADGE_CLASS: Record<VisiblePilotageStatus, string> = {
   unlocked: "text-[var(--color-success)] bg-[var(--color-success)]/12",
-  progress: "text-[var(--color-info)] bg-[var(--color-info)]/12",
   accelerate: "text-[var(--color-warning)] bg-[var(--color-warning)]/12",
-  risk: "text-[var(--color-danger)] bg-[var(--color-danger)]/12",
 }
 
-const PROGRESS_BAR_COLOR: Record<PilotageStatus, string> = {
+const PROGRESS_BAR_COLOR: Record<VisiblePilotageStatus, string> = {
   unlocked: "var(--color-success)",
-  progress: "var(--color-info)",
   accelerate: "var(--color-warning)",
-  risk: "var(--color-danger)",
 }
 
 function formatNumber(value: number): string {
@@ -43,21 +40,25 @@ function formatNumber(value: number): string {
 function AchievementCard({
   objective,
   current,
+  target,
   onSave,
 }: {
   objective: PilotageObjective
   current: number
-  onSave: (value: number) => void
+  target: number
+  onSave: (current: number, target: number) => void
 }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(String(current))
-  const status = computeStatus(objective, current)
-  const percent = progressPercent(objective, current)
+  const [currentDraft, setCurrentDraft] = useState(String(current))
+  const [targetDraft, setTargetDraft] = useState(String(target))
+  const status = visibleStatus(computeStatus(objective, current, target))
+  const percent = progressPercent(objective, current, target)
   const barWidth = Math.max(0, Math.min(100, percent))
 
   function save() {
-    const n = Number(draft.replace(",", "."))
-    if (Number.isFinite(n)) onSave(n)
+    const nCurrent = Number(currentDraft.replace(",", "."))
+    const nTarget = Number(targetDraft.replace(",", "."))
+    if (Number.isFinite(nCurrent) && Number.isFinite(nTarget)) onSave(nCurrent, nTarget)
     setEditing(false)
   }
 
@@ -76,7 +77,7 @@ function AchievementCard({
           </div>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}>
-          {STATUS_LABELS[status]}
+          {VISIBLE_STATUS_LABELS[status]}
         </span>
       </div>
 
@@ -88,7 +89,7 @@ function AchievementCard({
           <span className="text-xs text-[var(--color-text-muted)]">{objective.unit} actuel(le)</span>
         </div>
         <div className="text-right">
-          <strong className="block text-2xl font-bold text-[var(--color-text-muted)]">{formatNumber(objective.target)}</strong>
+          <strong className="block text-2xl font-bold text-[var(--color-text-muted)]">{formatNumber(target)}</strong>
           <span className="text-xs text-[var(--color-text-muted)]">cible</span>
         </div>
       </div>
@@ -110,38 +111,56 @@ function AchievementCard({
 
       <div className="mt-auto pt-4">
         {editing ? (
-          <div className="flex items-center gap-2 border-t border-[var(--color-border)] pt-3">
-            <input
-              type="number"
-              step="any"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              autoFocus
-              className="w-full rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-sm"
-            />
-            <button
-              onClick={save}
-              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-              style={{ backgroundColor: "var(--color-accent)" }}
-            >
-              Enregistrer
-            </button>
-            <button
-              onClick={() => setEditing(false)}
-              className="shrink-0 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
-            >
-              Annuler
-            </button>
+          <div className="space-y-2 border-t border-[var(--color-border)] pt-3">
+            <div className="flex items-center gap-2">
+              <label className="flex-1 text-xs text-[var(--color-text-muted)]">
+                Valeur actuelle
+                <input
+                  type="number"
+                  step="any"
+                  value={currentDraft}
+                  onChange={(e) => setCurrentDraft(e.target.value)}
+                  autoFocus
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-sm text-[var(--color-text)]"
+                />
+              </label>
+              <label className="flex-1 text-xs text-[var(--color-text-muted)]">
+                Cible
+                <input
+                  type="number"
+                  step="any"
+                  value={targetDraft}
+                  onChange={(e) => setTargetDraft(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-sm text-[var(--color-text)]"
+                />
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={save}
+                className="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ backgroundColor: "var(--color-accent)" }}
+              >
+                Enregistrer
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="flex-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
+              >
+                Annuler
+              </button>
+            </div>
           </div>
         ) : (
           <button
             onClick={() => {
-              setDraft(String(current))
+              setCurrentDraft(String(current))
+              setTargetDraft(String(target))
               setEditing(true)
             }}
             className="w-full rounded-lg border border-[var(--color-border)] py-1.5 text-xs font-medium text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
-            Modifier la valeur actuelle
+            Modifier la valeur ou la cible
           </button>
         )}
       </div>
@@ -151,11 +170,14 @@ function AchievementCard({
 
 export function PilotagePage() {
   const values = usePilotageStore((s) => s.values)
+  const targets = usePilotageStore((s) => s.targets)
   const setValue = usePilotageStore((s) => s.setValue)
   const setValues = usePilotageStore((s) => s.setValues)
+  const setTarget = usePilotageStore((s) => s.setTarget)
+  const setTargets = usePilotageStore((s) => s.setTargets)
 
   const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">("all")
-  const [statusFilter, setStatusFilter] = useState<PilotageStatus | "all">("all")
+  const [statusFilter, setStatusFilter] = useState<VisiblePilotageStatus | "all">("all")
   const [ownerFilter, setOwnerFilter] = useState<PilotageOwner | "all">("all")
   const [importOpen, setImportOpen] = useState(false)
   const [importMessage, setImportMessage] = useState<string | null>(null)
@@ -164,25 +186,26 @@ export function PilotagePage() {
     () =>
       PILOTAGE_OBJECTIVES.map((objective) => {
         const current = values[objective.id] ?? objective.defaultCurrent
+        const target = targets[objective.id] ?? objective.target
         return {
           objective,
           current,
-          status: computeStatus(objective, current),
-          percent: progressPercent(objective, current),
+          target,
+          status: visibleStatus(computeStatus(objective, current, target)),
+          percent: progressPercent(objective, current, target),
         }
       }),
-    [values],
+    [values, targets],
   )
 
   const unlockedCount = computed.filter((c) => c.status === "unlocked").length
-  const progressCount = computed.filter((c) => c.status === "progress").length
-  const riskItems = computed.filter((c) => c.status === "risk")
+  const accelerateCount = computed.filter((c) => c.status === "accelerate").length
   const averageProgress = Math.round(
     computed.reduce((sum, c) => sum + Math.min(100, c.percent), 0) / computed.length,
   )
 
   const nextSuccess = computed
-    .filter((c) => c.status === "progress" || c.status === "accelerate")
+    .filter((c) => c.status === "accelerate")
     .sort((a, b) => b.percent - a.percent)[0]
 
   const filtered = computed.filter(
@@ -197,13 +220,14 @@ export function PilotagePage() {
   async function handleImportFile(file: File) {
     setImportMessage(null)
     try {
-      const { updates, unmatched } = await parsePilotageFile(file)
-      const count = Object.keys(updates).length
-      if (count > 0) setValues(updates)
+      const { valueUpdates, targetUpdates, unmatched } = await parsePilotageFile(file)
+      const touched = new Set([...Object.keys(valueUpdates), ...Object.keys(targetUpdates)])
+      if (Object.keys(valueUpdates).length > 0) setValues(valueUpdates)
+      if (Object.keys(targetUpdates).length > 0) setTargets(targetUpdates)
       setImportMessage(
-        count === 0
-          ? "Aucune valeur reconnue dans ce fichier. Utilisez le modèle téléchargé et ne modifiez que la colonne « Valeur actuelle »."
-          : `${count} valeur(s) mise(s) à jour.${unmatched.length > 0 ? ` ${unmatched.length} ligne(s) non reconnue(s) ignorée(s).` : ""}`,
+        touched.size === 0
+          ? "Aucune valeur reconnue dans ce fichier. Utilisez le modèle téléchargé et ne modifiez que les colonnes « Valeur actuelle » et « Cible »."
+          : `${touched.size} objectif(s) mis à jour.${unmatched.length > 0 ? ` ${unmatched.length} ligne(s) non reconnue(s) ignorée(s).` : ""}`,
       )
       setImportOpen(false)
     } catch {
@@ -219,11 +243,11 @@ export function PilotagePage() {
       <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
         Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
-        KPI suivis dans la page « KPI ». Ajustez l'avancement au fil de l'eau, manuellement ou par
-        import d'un fichier de suivi.
+        KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
+        manuellement ou par import d'un fichier de suivi.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
             Succès débloqués
@@ -233,17 +257,10 @@ export function PilotagePage() {
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-            En progression
+            À accélérer
           </p>
-          <p className="mt-2 text-3xl font-bold text-[var(--color-info)]">{progressCount}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">trajectoires favorables</p>
-        </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
-            À sécuriser
-          </p>
-          <p className="mt-2 text-3xl font-bold text-[var(--color-danger)]">{riskItems.length}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">nécessitent une décision</p>
+          <p className="mt-2 text-3xl font-bold text-[var(--color-warning)]">{accelerateCount}</p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">objectifs restants</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -265,7 +282,7 @@ export function PilotagePage() {
             </p>
             <h3 className="text-base font-semibold text-[var(--color-text)]">{nextSuccess.objective.label}</h3>
             <p className="text-sm text-[var(--color-text-muted)]">
-              {formatNumber(nextSuccess.current)} / {formatNumber(nextSuccess.objective.target)} {nextSuccess.objective.unit}
+              {formatNumber(nextSuccess.current)} / {formatNumber(nextSuccess.target)} {nextSuccess.objective.unit}
             </p>
           </div>
           <div className="text-right">
@@ -279,7 +296,7 @@ export function PilotagePage() {
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
         <div className="flex gap-2">
           <button
-            onClick={() => downloadPilotageTemplate(values)}
+            onClick={() => downloadPilotageTemplate(values, targets)}
             className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
           >
             Télécharger le modèle
@@ -297,8 +314,8 @@ export function PilotagePage() {
       {importOpen && (
         <div className="mt-3 space-y-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-xs text-[var(--color-text-muted)]">
-            Téléchargez d'abord le modèle, complétez la colonne « Valeur actuelle », puis
-            réimportez-le ici pour mettre à jour l'avancement.
+            Téléchargez d'abord le modèle, complétez les colonnes « Valeur actuelle » et/ou
+            « Cible », puis réimportez-le ici pour mettre à jour l'avancement.
           </p>
           <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
         </div>
@@ -332,13 +349,13 @@ export function PilotagePage() {
           </span>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as PilotageStatus | "all")}
+            onChange={(e) => setStatusFilter(e.target.value as VisiblePilotageStatus | "all")}
             className="w-full rounded-lg border border-[var(--color-border)] px-2.5 py-2 text-sm"
           >
             <option value="all">Tous les statuts</option>
-            {(Object.keys(STATUS_LABELS) as PilotageStatus[]).map((s) => (
+            {(Object.keys(VISIBLE_STATUS_LABELS) as VisiblePilotageStatus[]).map((s) => (
               <option key={s} value={s}>
-                {STATUS_LABELS[s]}
+                {VISIBLE_STATUS_LABELS[s]}
               </option>
             ))}
           </select>
@@ -382,12 +399,16 @@ export function PilotagePage() {
         </div>
       ) : (
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          {filtered.map(({ objective, current }) => (
+          {filtered.map(({ objective, current, target }) => (
             <AchievementCard
               key={objective.id}
               objective={objective}
               current={current}
-              onSave={(value) => setValue(objective.id, value)}
+              target={target}
+              onSave={(newCurrent, newTarget) => {
+                setValue(objective.id, newCurrent)
+                setTarget(objective.id, newTarget)
+              }}
             />
           ))}
         </div>
@@ -397,36 +418,15 @@ export function PilotagePage() {
         <div className="mt-10">
           <h2 className="text-lg font-semibold text-[var(--color-text)]">Succès débloqués</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {unlockedItems.map(({ objective, current }) => (
+            {unlockedItems.map(({ objective, current, target }) => (
               <div
                 key={objective.id}
                 className="rounded-xl border border-[var(--color-success)]/25 bg-[var(--color-success)]/8 p-4"
               >
                 <strong className="block text-sm text-[var(--color-text)]">✓ {objective.label}</strong>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  {formatNumber(current)} / {formatNumber(objective.target)} {objective.unit}
+                  {formatNumber(current)} / {formatNumber(target)} {objective.unit}
                 </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {riskItems.length > 0 && (
-        <div className="mt-10">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">Objectifs à sécuriser</h2>
-          <div className="mt-4 space-y-3">
-            {riskItems.map(({ objective, current }) => (
-              <div
-                key={objective.id}
-                className="rounded-xl border border-[var(--color-danger)]/25 bg-[var(--color-danger)]/8 p-5"
-              >
-                <h3 className="text-sm font-semibold text-[var(--color-text)]">
-                  {objective.label} — {formatNumber(current)} {objective.unit} (cible : {formatNumber(objective.target)} {objective.unit})
-                </h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  Écart à analyser avec {OWNER_LABELS[objective.owner]} avant que la trajectoire ne se dégrade davantage.
-                </p>
               </div>
             ))}
           </div>

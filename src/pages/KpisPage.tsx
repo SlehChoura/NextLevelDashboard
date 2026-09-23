@@ -9,7 +9,6 @@ const KPI_CATEGORIES: KpiCategory[] = [
     kpis: [
       "Nombre de Cyber Academy avec contenu IA",
       "Nombre de BT Academy transformées",
-      "Nombre de sessions dédiées aux agents IA",
       "Nombre de consultants formés au Vibe Coding",
       "Nombre de certifications Claude obtenues",
     ],
@@ -24,11 +23,7 @@ const KPI_CATEGORIES: KpiCategory[] = [
   },
   {
     title: "Plateforme",
-    kpis: [
-      "Disponibilité de la chaîne CI/CD",
-      "Consommation des clés/API",
-      "Coûts d'hébergement",
-    ],
+    kpis: ["Disponibilité de la chaîne CI/CD"],
   },
   {
     title: "Impact",
