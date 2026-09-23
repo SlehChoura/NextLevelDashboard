@@ -1,13 +1,6 @@
 import { Link } from "react-router-dom"
-
-const PILOTAGE_OBJECTIVES = [
-  "Développer les compétences IA (formations, Cyber Academy, certifications)",
-  "Accélérer l'adoption des agents IA (AI&ME, usage des agents)",
-  "Développer de nouveaux agents",
-  "Industrialiser et maintenir les agents existants",
-  "Assurer la disponibilité et la performance de la plateforme IA et de la chaîne CI/CD",
-  "Mesurer la valeur créée et l'usage réel des agents dans les missions",
-]
+import { usePilotageStore } from "../store/pilotageStore"
+import { computeStatus, PILOTAGE_OBJECTIVES, progressPercent } from "../lib/pilotage"
 
 const FEATURES = [
   {
@@ -29,6 +22,17 @@ const FEATURES = [
 ]
 
 export function HomePage() {
+  const values = usePilotageStore((s) => s.values)
+  const unlockedCount = PILOTAGE_OBJECTIVES.filter(
+    (o) => computeStatus(o, values[o.id] ?? o.defaultCurrent) === "unlocked",
+  ).length
+  const averageProgress = Math.round(
+    PILOTAGE_OBJECTIVES.reduce(
+      (sum, o) => sum + Math.min(100, progressPercent(o, values[o.id] ?? o.defaultCurrent)),
+      0,
+    ) / PILOTAGE_OBJECTIVES.length,
+  )
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-14">
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
@@ -61,24 +65,40 @@ export function HomePage() {
       </div>
 
       <div className="mt-12 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <h2 className="text-sm font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
-        <ul className="mt-3 space-y-2">
-          {PILOTAGE_OBJECTIVES.map((objective) => (
-            <li key={objective} className="flex gap-2.5 text-sm text-[var(--color-text-muted)]">
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ backgroundColor: "var(--color-accent)" }}
-              />
-              <span>{objective}</span>
-            </li>
-          ))}
-        </ul>
-        <Link
-          to="/kpis"
-          className="mt-4 inline-block text-sm font-medium text-[var(--color-accent)] hover:underline"
-        >
-          Voir les KPI suivis →
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--color-text)]">Pilotage IA4CYB — succès à atteindre</h2>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              Développement des compétences, adoption des agents, industrialisation, disponibilité
+              de la plateforme et valeur créée : {PILOTAGE_OBJECTIVES.length} objectifs suivis,
+              reliés aux KPI de la page « KPI ».
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-[var(--color-success)]">{unlockedCount}</p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">débloqués</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--color-accent)]">{averageProgress}%</p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">avancement</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex gap-4">
+          <Link
+            to="/pilotage"
+            className="text-sm font-medium text-[var(--color-accent)] hover:underline"
+          >
+            Voir mes succès à atteindre →
+          </Link>
+          <Link
+            to="/kpis"
+            className="text-sm font-medium text-[var(--color-accent)] hover:underline"
+          >
+            Voir les KPI suivis →
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
