@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { to: "/pilotage", label: "Pilotage" },
   { to: "/actions", label: "Actions" },
   { to: "/kpis", label: "KPI" },
-  { to: "/theme", label: "Charte graphique" },
 ]
 
 export function AppShell() {
