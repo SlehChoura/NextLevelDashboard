@@ -1,7 +1,7 @@
 # NextLevelDashboard
 
 Application web pour consultants en cybersécurité : transformez un fichier Excel ou CSV de
-suivi de cas d'usage en dashboard de reporting, avec une charte graphique personnalisable.
+suivi de cas d'usage en dashboard de reporting, à la charte graphique officielle Wavestone.
 
 L'application ne prend en charge qu'**un seul format de fichier** : la première colonne liste
 les éléments suivis (ex : des agents/cas d'usage IA), les colonnes suivantes portent leurs
@@ -40,9 +40,8 @@ l'API d'Anthropic pour être clarifiées.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
-- **Charte graphique** : thème par défaut reprenant la charte graphique officielle Wavestone
-  (couleurs et logo), 3 autres palettes neutres, et un éditeur complet (couleurs, logo, nom)
-  pour s'adapter à n'importe quelle charte — la vôtre ou celle d'un client.
+- **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
+  graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
 
 ## Démarrage
 
@@ -90,23 +89,22 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 ## Stack technique
 
 - React + TypeScript + Vite
-- Tailwind CSS v4 (thème piloté par variables CSS, appliquées dynamiquement par `ThemeProvider`)
+- Tailwind CSS v4 (charte graphique pilotée par variables CSS, définies dans `src/index.css`)
 - `xlsx` (SheetJS, build CDN patché — la version npm publique porte des CVE non corrigées) pour
   la lecture des fichiers Excel
 - `@anthropic-ai/sdk` (appelé directement depuis le navigateur) + `zod` pour le nettoyage IA
   optionnel des valeurs ambiguës (sortie structurée validée)
 - `recharts` pour les graphiques
-- `zustand` (avec persistance `localStorage`) pour l'état des rapports, du thème et des
-  paramètres IA
+- `zustand` (avec persistance `localStorage`) pour l'état des rapports et des paramètres IA
 - `react-router-dom` pour la navigation
 
 ## Structure
 
 ```
 src/
-  types.ts            Modèle de données (critères, dashboard, rapports, thème)
-  themes/               Palettes prédéfinies + application des variables CSS
-  store/                État global (rapports, thème, paramètres IA), persisté en localStorage
+  types.ts            Modèle de données (critères, dashboard, rapports)
+  store/                État global (rapports, pilotage, actions, paramètres IA), persisté en
+                          localStorage
   hooks/
     useFileImport.ts     Import + nettoyage IA optionnel, partagé entre nouveau rapport et
                           mise à jour d'un rapport existant
@@ -116,8 +114,10 @@ src/
                           des valeurs ambiguës, détection des statuts "prêts client"
     aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
-  components/           Composants réutilisables (dashboard, graphiques, thème, relecture IA)
-  pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports, thème)
+    combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
+  components/           Composants réutilisables (dashboard, graphiques, relecture IA)
+  pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports,
+                          pilotage, actions, KPI)
 ```
 
 ## Notes de conception
@@ -126,9 +126,9 @@ src/
   attend toujours la même forme (1re colonne = élément suivi, colonnes suivantes = critères). Ce
   choix élimine les erreurs d'analyse (confusion avec un bloc de légende, oubli de lignes) qu'une
   IA à qui l'on demanderait de reconstruire le schéma à chaque import peut produire.
-- **Charte Wavestone** : couleurs et logo extraits du template de présentation corporate officiel
-  (violet de marque `#451DC7`, vert et corail). Pour un client externe, utilisez l'éditeur de
-  thème (page « Charte graphique ») pour saisir ses propres codes couleur et importer son logo.
+- **Charte Wavestone** : couleurs (Vibrant Blue `#451DC7`, Deep Blue `#250F6B`), logo et police
+  (Poppins) conformes aux Wavestone Brand Guidelines, fixés dans `src/index.css` — aucun éditeur
+  de thème dans l'application, cet outil étant à usage interne exclusivement.
 - **Export PDF** : réalisé via l'impression navigateur (`window.print()`) avec une feuille de
   style dédiée à l'impression plutôt qu'une librairie de rendu canvas, pour un rendu texte net
   et un poids d'application réduit.
