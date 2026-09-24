@@ -64,30 +64,3 @@ export interface ReportData {
   createdAt: string
   updatedAt: string
 }
-
-export interface ThemeColors {
-  primary: string
-  primaryDark: string
-  accent: string
-  accentDark: string
-  bg: string
-  surface: string
-  border: string
-  text: string
-  textMuted: string
-  success: string
-  warning: string
-  danger: string
-  info: string
-}
-
-export interface ThemeConfig {
-  id: string
-  name: string
-  description: string
-  colors: ThemeColors
-  fontFamily: string
-  logoDataUrl?: string
-  /** true pour les palettes fournies par l'app (non supprimables), false pour un thème personnalisé. */
-  builtIn: boolean
-}

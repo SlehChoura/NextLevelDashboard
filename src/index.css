@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  /* Theme tokens — overridden at runtime by ThemeProvider from the active palette. */
-  --color-primary: #1c2d5a;
-  --color-primary-dark: #10193a;
-  --color-accent: #e6007e;
-  --color-accent-dark: #a8005e;
-  --color-bg: #f5f6f8;
+  /*
+   * Charte graphique officielle Wavestone (Vibrant Blue #451DC7 + Deep Blue #250F6B, Poppins).
+   * Le vert et le corail de marque sont trop clairs/saturés pour du texte ou des badges lisibles
+   * (contraste insuffisant) : les couleurs sémantiques "succès", "info" et "critique" en
+   * reprennent la teinte dans une version plus foncée, accessible.
+   */
+  --color-primary: #250f6b;
+  --color-primary-dark: #000000;
+  --color-accent: #451dc7;
+  --color-accent-dark: #250f6b;
+  --color-bg: #f6f6f6;
   --color-surface: #ffffff;
-  --color-border: #e2e4ea;
-  --color-text: #171923;
-  --color-text-muted: #5c6270;
-  --color-success: #1b8a5a;
+  --color-border: #e4e2ec;
+  --color-text: #14101f;
+  --color-text-muted: #615c73;
+  --color-success: #0b8a4b;
   --color-warning: #c98a00;
-  --color-danger: #c22a2a;
-  --color-info: #2563a8;
-  --font-family: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --color-danger: #ff2a49;
+  --color-info: #00477f;
+  --font-family: "Poppins", system-ui, "Segoe UI", Roboto, sans-serif;
 }
 
 html {
