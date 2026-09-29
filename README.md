@@ -11,11 +11,9 @@ ensuite clarifier les quelques valeurs de cellules ambiguës que l'import n'aura
 interpréter avec certitude.
 
 Les rapports générés et le fichier importé restent dans le navigateur (`localStorage`), rien
-n'est envoyé à un serveur applicatif. Deux exceptions : (1) si des valeurs ambiguës existent et
+n'est envoyé à un serveur applicatif. Seule exception : si des valeurs ambiguës existent et
 qu'une clé API est configurée, ces quelques valeurs (jamais le fichier entier) sont envoyées à
-l'API d'Anthropic pour être clarifiées ; (2) la synchronisation SharePoint télécharge le fichier
-Excel de pilotage directement depuis le navigateur — voir
-[Synchronisation SharePoint](#synchronisation-sharepoint).
+l'API d'Anthropic pour être clarifiées.
 
 ## Fonctionnalités
 
@@ -44,10 +42,6 @@ Excel de pilotage directement depuis le navigateur — voir
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
   graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
-- **Synchronisation SharePoint** : récupère automatiquement les dernières valeurs du fichier
-  Excel de pilotage IA4CYB partagé sur SharePoint — à l'ouverture de la page et à intervalle
-  régulier, ou à la demande. Nécessite que le fichier soit partagé via un lien public en lecture
-  seule — voir [Synchronisation SharePoint](#synchronisation-sharepoint).
 
 ## Démarrage
 
@@ -92,35 +86,6 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 - **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
   configurez la commande `npm run build` et le dossier de publication `public`.
 
-## Synchronisation SharePoint
-
-Récupère automatiquement les valeurs du fichier Excel de pilotage IA4CYB partagé sur SharePoint
-(mêmes onglets que le modèle combiné — « Suivi pilotage », « Actions », « Agents IA4CYB »), sans
-connexion ni identifiant : un simple téléchargement du fichier depuis le navigateur (`fetch`),
-via son lien de partage public en lecture seule. Synchronisation à l'ouverture de la page, toutes
-les 15 minutes, et à la demande (bouton « Synchroniser maintenant » sur la page d'accueil).
-
-**Condition requise, à faire une seule fois sur SharePoint** : le lien de partage du fichier
-(`src/lib/sharePointSync.ts`, constante `SHAREPOINT_FILE_URL`) doit être défini sur *« Toute
-personne disposant du lien »* (accès anonyme, en lecture seule) plutôt que *« Personnes de
-[l'organisation] »*. Dans SharePoint/OneDrive : ouvrir le fichier → **Partager** → *Personnes
-disposant du lien* → passer sur **Toute personne disposant du lien peut afficher** → copier le
-nouveau lien et mettre à jour la constante `SHAREPOINT_FILE_URL` si l'URL a changé.
-
-⚠️ **Contrepartie à avoir en tête** : ce lien devient alors accessible à quiconque le connaît,
-sans authentification — il n'est plus limité aux comptes de votre organisation. Il reste non
-indexé et difficile à deviner (jeton aléatoire dans l'URL), mais n'importe qui à qui il serait
-transmis (mail, capture d'écran, poste partagé) peut consulter le fichier tant que ce paramètre
-de partage est actif. Si cette exposition n'est pas acceptable pour ce fichier, revenez à un
-partage restreint et utilisez uniquement l'import manuel du fichier Excel ci-dessus (retirez
-alors la carte « Synchronisation SharePoint » de `src/pages/HomePage.tsx`).
-
-Techniquement, le lien de partage est transformé en URL de téléchargement direct (paramètre
-`download=1`) puis récupéré par un simple `fetch()` — sans bibliothèque d'authentification, sans
-jeton, sans backend. Selon la configuration CORS du tenant SharePoint, ce téléchargement direct
-peut occasionnellement échouer depuis un navigateur (message d'erreur affiché sur la carte) :
-dans ce cas, l'import manuel du fichier reste toujours disponible en repli.
-
 ## Stack technique
 
 - React + TypeScript + Vite
@@ -143,9 +108,6 @@ src/
   hooks/
     useFileImport.ts     Import + nettoyage IA optionnel, partagé entre nouveau rapport et
                           mise à jour d'un rapport existant
-    useCombinedImport.ts Application du fichier combiné aux stores, partagée entre l'import
-                          manuel (accueil, pilotage) et la synchronisation SharePoint
-    useSharePointSync.ts Synchronisation SharePoint à l'ouverture de la page et périodique
   lib/
     excelImport.ts       Lecture brute d'un classeur Excel/CSV
     fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
@@ -153,7 +115,6 @@ src/
     aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
-    sharePointSync.ts     Téléchargement anonyme du fichier SharePoint (lien de partage public)
   components/           Composants réutilisables (dashboard, graphiques, relecture IA)
   pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports,
                           pilotage, actions, KPI)

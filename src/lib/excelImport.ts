@@ -7,7 +7,7 @@ export interface ParsedSheet {
   rows: unknown[][]
 }
 
-export async function parseWorkbookFile(file: Blob): Promise<XLSX.WorkBook> {
+export async function parseWorkbookFile(file: File): Promise<XLSX.WorkBook> {
   const buffer = await file.arrayBuffer()
   return XLSX.read(buffer, { cellDates: true })
 }
