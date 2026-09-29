@@ -83,47 +83,20 @@ export function HomePage() {
           <div>
             <h2 className="text-sm font-semibold text-[var(--color-text)]">Synchronisation SharePoint</h2>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              Se connecter avec votre compte Microsoft pour récupérer automatiquement les
-              dernières valeurs du fichier de pilotage IA4CYB partagé sur SharePoint (avec vos
-              propres autorisations d'accès). Synchronisation à la connexion, à l'ouverture de la
-              page et toutes les {Math.round(AUTO_SYNC_INTERVAL_MS / 60000)} minutes.
+              Récupère automatiquement les dernières valeurs du fichier de pilotage IA4CYB
+              partagé sur SharePoint (lien public, en lecture seule). Synchronisation à
+              l'ouverture de la page et toutes les {Math.round(AUTO_SYNC_INTERVAL_MS / 60000)}{" "}
+              minutes, ou à la demande.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {!sharePointSync.isConfigured ? (
-              <span className="rounded-lg bg-[var(--color-bg)] px-3 py-1.5 text-xs text-[var(--color-text-muted)]">
-                Non configuré — voir README (Azure AD App Registration)
-              </span>
-            ) : sharePointSync.account ? (
-              <>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  Connecté : {sharePointSync.account.username}
-                </span>
-                <button
-                  onClick={() => sharePointSync.syncNow()}
-                  disabled={sharePointSync.status === "syncing"}
-                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[var(--color-text)] disabled:opacity-50"
-                >
-                  {sharePointSync.status === "syncing" ? "Synchronisation…" : "Synchroniser maintenant"}
-                </button>
-                <button
-                  onClick={() => sharePointSync.signOut()}
-                  className="rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                >
-                  Se déconnecter
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => sharePointSync.signIn()}
-                disabled={sharePointSync.status === "connecting"}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white disabled:opacity-50"
-                style={{ backgroundColor: "var(--color-accent)" }}
-              >
-                {sharePointSync.status === "connecting" ? "Connexion…" : "Se connecter avec Microsoft"}
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => sharePointSync.syncNow()}
+            disabled={sharePointSync.status === "syncing"}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white disabled:opacity-50"
+            style={{ backgroundColor: "var(--color-accent)" }}
+          >
+            {sharePointSync.status === "syncing" ? "Synchronisation…" : "Synchroniser maintenant"}
+          </button>
         </div>
 
         {sharePointSync.errorMessage && (
@@ -293,9 +266,9 @@ export function HomePage() {
       <div className="mt-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
         les données importées restent dans votre navigateur (localStorage), rien n'est envoyé à un
-        serveur applicatif. La synchronisation SharePoint, si utilisée, lit le fichier directement
-        depuis votre navigateur avec votre propre compte et vos autorisations Microsoft. Pensez à
-        vous déconnecter et à vider le stockage local sur un poste partagé.
+        serveur applicatif. La synchronisation SharePoint télécharge le fichier directement depuis
+        votre navigateur, via son lien de partage public. Pensez à vider le stockage local sur un
+        poste partagé.
       </div>
     </div>
   )

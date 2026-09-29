@@ -13,9 +13,8 @@ interpréter avec certitude.
 Les rapports générés et le fichier importé restent dans le navigateur (`localStorage`), rien
 n'est envoyé à un serveur applicatif. Deux exceptions : (1) si des valeurs ambiguës existent et
 qu'une clé API est configurée, ces quelques valeurs (jamais le fichier entier) sont envoyées à
-l'API d'Anthropic pour être clarifiées ; (2) si la synchronisation SharePoint (optionnelle) est
-configurée et utilisée, le fichier Excel est lu directement depuis le navigateur via l'API
-Microsoft Graph, avec le compte et les autorisations de l'utilisateur connecté — voir
+l'API d'Anthropic pour être clarifiées ; (2) la synchronisation SharePoint télécharge le fichier
+Excel de pilotage directement depuis le navigateur — voir
 [Synchronisation SharePoint](#synchronisation-sharepoint).
 
 ## Fonctionnalités
@@ -45,11 +44,10 @@ Microsoft Graph, avec le compte et les autorisations de l'utilisateur connecté 
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
   graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
-- **Synchronisation SharePoint (optionnelle)** : en se connectant avec son propre compte
-  Microsoft, récupère automatiquement les dernières valeurs du fichier Excel de pilotage IA4CYB
-  partagé sur SharePoint — à la connexion, à l'ouverture de la page et à intervalle régulier.
-  Nécessite une configuration préalable (app registration Azure AD) — voir
-  [Synchronisation SharePoint](#synchronisation-sharepoint).
+- **Synchronisation SharePoint** : récupère automatiquement les dernières valeurs du fichier
+  Excel de pilotage IA4CYB partagé sur SharePoint — à l'ouverture de la page et à intervalle
+  régulier, ou à la demande. Nécessite que le fichier soit partagé via un lien public en lecture
+  seule — voir [Synchronisation SharePoint](#synchronisation-sharepoint).
 
 ## Démarrage
 
@@ -96,53 +94,32 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 
 ## Synchronisation SharePoint
 
-Fonctionnalité optionnelle : récupère automatiquement les valeurs du fichier Excel de pilotage
-IA4CYB partagé sur SharePoint (mêmes onglets que le modèle combiné — « Suivi pilotage »,
-« Actions », « Agents IA4CYB »), **avec le compte et les autorisations de l'utilisateur
-connecté** (jamais un compte de service). Techniquement : connexion Microsoft déléguée
-(OAuth2/PKCE, [MSAL.js](https://github.com/AzureAD/microsoft-authentication-library-for-js)) puis
-lecture du fichier via l'API Microsoft Graph (`GET /shares/{shareId}/driveItem/content`), le tout
-directement depuis le navigateur — cohérent avec une application 100 % statique, sans backend.
-Aucun mot de passe ni jeton n'est géré ou stocké par l'application elle-même : l'authentification
-et les jetons d'accès sont entièrement gérés par MSAL.js face à Microsoft.
+Récupère automatiquement les valeurs du fichier Excel de pilotage IA4CYB partagé sur SharePoint
+(mêmes onglets que le modèle combiné — « Suivi pilotage », « Actions », « Agents IA4CYB »), sans
+connexion ni identifiant : un simple téléchargement du fichier depuis le navigateur (`fetch`),
+via son lien de partage public en lecture seule. Synchronisation à l'ouverture de la page, toutes
+les 15 minutes, et à la demande (bouton « Synchroniser maintenant » sur la page d'accueil).
 
-Sans configuration, cette fonctionnalité est simplement **désactivée** (la carte « Synchronisation
-SharePoint » de la page d'accueil l'indique) — l'import manuel du fichier Excel reste disponible
-dans tous les cas.
+**Condition requise, à faire une seule fois sur SharePoint** : le lien de partage du fichier
+(`src/lib/sharePointSync.ts`, constante `SHAREPOINT_FILE_URL`) doit être défini sur *« Toute
+personne disposant du lien »* (accès anonyme, en lecture seule) plutôt que *« Personnes de
+[l'organisation] »*. Dans SharePoint/OneDrive : ouvrir le fichier → **Partager** → *Personnes
+disposant du lien* → passer sur **Toute personne disposant du lien peut afficher** → copier le
+nouveau lien et mettre à jour la constante `SHAREPOINT_FILE_URL` si l'URL a changé.
 
-### 1. Créer une app registration Azure AD (Entra ID)
+⚠️ **Contrepartie à avoir en tête** : ce lien devient alors accessible à quiconque le connaît,
+sans authentification — il n'est plus limité aux comptes de votre organisation. Il reste non
+indexé et difficile à deviner (jeton aléatoire dans l'URL), mais n'importe qui à qui il serait
+transmis (mail, capture d'écran, poste partagé) peut consulter le fichier tant que ce paramètre
+de partage est actif. Si cette exposition n'est pas acceptable pour ce fichier, revenez à un
+partage restreint et utilisez uniquement l'import manuel du fichier Excel ci-dessus (retirez
+alors la carte « Synchronisation SharePoint » de `src/pages/HomePage.tsx`).
 
-Cette étape ne peut être réalisée que par vous (ou un administrateur de votre tenant Microsoft
-365) — elle nécessite un accès au [portail Azure](https://portal.azure.com) de l'organisation
-propriétaire du fichier SharePoint (ici `digiplace.sharepoint.com`).
-
-1. **Azure Portal → Microsoft Entra ID → App registrations → New registration.**
-2. Nom : par exemple `Dashboard IA4CYB`.
-3. Comptes pris en charge : *Comptes dans cet annuaire organisationnel uniquement* (recommandé,
-   limite la connexion aux comptes du tenant propriétaire du fichier).
-4. Redirect URI : plateforme **Single-page application (SPA)**, valeur = l'URL exacte à laquelle
-   le dashboard est/sera publié (ex. `https://<org>.github.io/NextLevelDashboard/`, slash final
-   inclus). Ajoutez aussi `http://localhost:5173/` si vous testez en local (`npm run dev`).
-5. Une fois créée, notez sur la page *Overview* : **Application (client) ID** et
-   **Directory (tenant) ID**.
-6. **API permissions → Add a permission → Microsoft Graph → Delegated permissions →
-   `Files.Read.All`** → Add permissions. Si votre tenant l'exige, un administrateur doit ensuite
-   cliquer sur **Grant admin consent**.
-7. Aucun secret client n'est nécessaire (l'app est un client public SPA, authentification par
-   PKCE) — ne créez pas de "Client secret".
-
-### 2. Configurer l'application
-
-- **En local** : copiez `.env.example` en `.env.local` et renseignez `VITE_MSAL_CLIENT_ID` (et
-  `VITE_MSAL_TENANT_ID`, sinon la valeur par défaut `organizations` est utilisée — à réserver
-  aux tenants qui l'acceptent, sinon renseignez l'ID précis obtenu à l'étape précédente).
-- **Pour le déploiement GitHub Pages** (`deploy-pages.yml` / `publish-static-site.yml`) : ajoutez
-  deux secrets au dépôt (*Settings → Secrets and variables → Actions → New repository secret*) :
-  `MSAL_CLIENT_ID` et `MSAL_TENANT_ID`. Les workflows les injectent automatiquement au build
-  suivant. Un déploiement sans ces secrets reste valide, la fonctionnalité est alors désactivée.
-
-Le fichier SharePoint synchronisé est déclaré en dur dans `src/lib/sharePointSync.ts`
-(`SHAREPOINT_FILE_URL`) — changez cette constante si l'emplacement du fichier de pilotage évolue.
+Techniquement, le lien de partage est transformé en URL de téléchargement direct (paramètre
+`download=1`) puis récupéré par un simple `fetch()` — sans bibliothèque d'authentification, sans
+jeton, sans backend. Selon la configuration CORS du tenant SharePoint, ce téléchargement direct
+peut occasionnellement échouer depuis un navigateur (message d'erreur affiché sur la carte) :
+dans ce cas, l'import manuel du fichier reste toujours disponible en repli.
 
 ## Stack technique
 
@@ -155,8 +132,6 @@ Le fichier SharePoint synchronisé est déclaré en dur dans `src/lib/sharePoint
 - `recharts` pour les graphiques
 - `zustand` (avec persistance `localStorage`) pour l'état des rapports et des paramètres IA
 - `react-router-dom` pour la navigation
-- `@azure/msal-browser` pour la connexion Microsoft déléguée (synchronisation SharePoint,
-  optionnelle)
 
 ## Structure
 
@@ -170,7 +145,7 @@ src/
                           mise à jour d'un rapport existant
     useCombinedImport.ts Application du fichier combiné aux stores, partagée entre l'import
                           manuel (accueil, pilotage) et la synchronisation SharePoint
-    useSharePointSync.ts Connexion Microsoft, synchronisation à l'ouverture et périodique
+    useSharePointSync.ts Synchronisation SharePoint à l'ouverture de la page et périodique
   lib/
     excelImport.ts       Lecture brute d'un classeur Excel/CSV
     fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
@@ -178,8 +153,7 @@ src/
     aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
-    sharePointSync.ts     Connexion Microsoft (MSAL.js) et lecture du fichier SharePoint
-                          (Microsoft Graph), avec le compte de l'utilisateur connecté
+    sharePointSync.ts     Téléchargement anonyme du fichier SharePoint (lien de partage public)
   components/           Composants réutilisables (dashboard, graphiques, relecture IA)
   pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports,
                           pilotage, actions, KPI)
