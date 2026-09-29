@@ -25,6 +25,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Synchronisation SharePoint (optionnelle) : Client ID / Tenant ID de l'app registration
+          # Azure AD, à définir comme secrets du dépôt si la fonctionnalité est activée — voir
+          # le README, section "Synchronisation SharePoint". Le build reste valide sans eux
+          # (la fonctionnalité est alors simplement désactivée dans l'app publiée).
+          VITE_MSAL_CLIENT_ID: ${{ secrets.MSAL_CLIENT_ID }}
+          VITE_MSAL_TENANT_ID: ${{ secrets.MSAL_TENANT_ID }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
