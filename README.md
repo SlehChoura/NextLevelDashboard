@@ -11,9 +11,12 @@ ensuite clarifier les quelques valeurs de cellules ambiguës que l'import n'aura
 interpréter avec certitude.
 
 Les rapports générés et le fichier importé restent dans le navigateur (`localStorage`), rien
-n'est envoyé à un serveur applicatif. Seule exception : si des valeurs ambiguës existent et
+n'est envoyé à un serveur applicatif. Deux exceptions : (1) si des valeurs ambiguës existent et
 qu'une clé API est configurée, ces quelques valeurs (jamais le fichier entier) sont envoyées à
-l'API d'Anthropic pour être clarifiées.
+l'API d'Anthropic pour être clarifiées ; (2) si la synchronisation SharePoint (optionnelle) est
+configurée et utilisée, le fichier Excel est lu directement depuis le navigateur via l'API
+Microsoft Graph, avec le compte et les autorisations de l'utilisateur connecté — voir
+[Synchronisation SharePoint](#synchronisation-sharepoint).
 
 ## Fonctionnalités
 
@@ -42,6 +45,11 @@ l'API d'Anthropic pour être clarifiées.
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
   graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
+- **Synchronisation SharePoint (optionnelle)** : en se connectant avec son propre compte
+  Microsoft, récupère automatiquement les dernières valeurs du fichier Excel de pilotage IA4CYB
+  partagé sur SharePoint — à la connexion, à l'ouverture de la page et à intervalle régulier.
+  Nécessite une configuration préalable (app registration Azure AD) — voir
+  [Synchronisation SharePoint](#synchronisation-sharepoint).
 
 ## Démarrage
 
@@ -86,6 +94,56 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 - **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
   configurez la commande `npm run build` et le dossier de publication `public`.
 
+## Synchronisation SharePoint
+
+Fonctionnalité optionnelle : récupère automatiquement les valeurs du fichier Excel de pilotage
+IA4CYB partagé sur SharePoint (mêmes onglets que le modèle combiné — « Suivi pilotage »,
+« Actions », « Agents IA4CYB »), **avec le compte et les autorisations de l'utilisateur
+connecté** (jamais un compte de service). Techniquement : connexion Microsoft déléguée
+(OAuth2/PKCE, [MSAL.js](https://github.com/AzureAD/microsoft-authentication-library-for-js)) puis
+lecture du fichier via l'API Microsoft Graph (`GET /shares/{shareId}/driveItem/content`), le tout
+directement depuis le navigateur — cohérent avec une application 100 % statique, sans backend.
+Aucun mot de passe ni jeton n'est géré ou stocké par l'application elle-même : l'authentification
+et les jetons d'accès sont entièrement gérés par MSAL.js face à Microsoft.
+
+Sans configuration, cette fonctionnalité est simplement **désactivée** (la carte « Synchronisation
+SharePoint » de la page d'accueil l'indique) — l'import manuel du fichier Excel reste disponible
+dans tous les cas.
+
+### 1. Créer une app registration Azure AD (Entra ID)
+
+Cette étape ne peut être réalisée que par vous (ou un administrateur de votre tenant Microsoft
+365) — elle nécessite un accès au [portail Azure](https://portal.azure.com) de l'organisation
+propriétaire du fichier SharePoint (ici `digiplace.sharepoint.com`).
+
+1. **Azure Portal → Microsoft Entra ID → App registrations → New registration.**
+2. Nom : par exemple `Dashboard IA4CYB`.
+3. Comptes pris en charge : *Comptes dans cet annuaire organisationnel uniquement* (recommandé,
+   limite la connexion aux comptes du tenant propriétaire du fichier).
+4. Redirect URI : plateforme **Single-page application (SPA)**, valeur = l'URL exacte à laquelle
+   le dashboard est/sera publié (ex. `https://<org>.github.io/NextLevelDashboard/`, slash final
+   inclus). Ajoutez aussi `http://localhost:5173/` si vous testez en local (`npm run dev`).
+5. Une fois créée, notez sur la page *Overview* : **Application (client) ID** et
+   **Directory (tenant) ID**.
+6. **API permissions → Add a permission → Microsoft Graph → Delegated permissions →
+   `Files.Read.All`** → Add permissions. Si votre tenant l'exige, un administrateur doit ensuite
+   cliquer sur **Grant admin consent**.
+7. Aucun secret client n'est nécessaire (l'app est un client public SPA, authentification par
+   PKCE) — ne créez pas de "Client secret".
+
+### 2. Configurer l'application
+
+- **En local** : copiez `.env.example` en `.env.local` et renseignez `VITE_MSAL_CLIENT_ID` (et
+  `VITE_MSAL_TENANT_ID`, sinon la valeur par défaut `organizations` est utilisée — à réserver
+  aux tenants qui l'acceptent, sinon renseignez l'ID précis obtenu à l'étape précédente).
+- **Pour le déploiement GitHub Pages** (`deploy-pages.yml` / `publish-static-site.yml`) : ajoutez
+  deux secrets au dépôt (*Settings → Secrets and variables → Actions → New repository secret*) :
+  `MSAL_CLIENT_ID` et `MSAL_TENANT_ID`. Les workflows les injectent automatiquement au build
+  suivant. Un déploiement sans ces secrets reste valide, la fonctionnalité est alors désactivée.
+
+Le fichier SharePoint synchronisé est déclaré en dur dans `src/lib/sharePointSync.ts`
+(`SHAREPOINT_FILE_URL`) — changez cette constante si l'emplacement du fichier de pilotage évolue.
+
 ## Stack technique
 
 - React + TypeScript + Vite
@@ -97,6 +155,8 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 - `recharts` pour les graphiques
 - `zustand` (avec persistance `localStorage`) pour l'état des rapports et des paramètres IA
 - `react-router-dom` pour la navigation
+- `@azure/msal-browser` pour la connexion Microsoft déléguée (synchronisation SharePoint,
+  optionnelle)
 
 ## Structure
 
@@ -108,6 +168,9 @@ src/
   hooks/
     useFileImport.ts     Import + nettoyage IA optionnel, partagé entre nouveau rapport et
                           mise à jour d'un rapport existant
+    useCombinedImport.ts Application du fichier combiné aux stores, partagée entre l'import
+                          manuel (accueil, pilotage) et la synchronisation SharePoint
+    useSharePointSync.ts Connexion Microsoft, synchronisation à l'ouverture et périodique
   lib/
     excelImport.ts       Lecture brute d'un classeur Excel/CSV
     fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
@@ -115,6 +178,8 @@ src/
     aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
+    sharePointSync.ts     Connexion Microsoft (MSAL.js) et lecture du fichier SharePoint
+                          (Microsoft Graph), avec le compte de l'utilisateur connecté
   components/           Composants réutilisables (dashboard, graphiques, relecture IA)
   pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports,
                           pilotage, actions, KPI)

@@ -29,6 +29,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Voir .github/workflows/deploy-pages.yml et le README ("Synchronisation SharePoint").
+          VITE_MSAL_CLIENT_ID: ${{ secrets.MSAL_CLIENT_ID }}
+          VITE_MSAL_TENANT_ID: ${{ secrets.MSAL_TENANT_ID }}
 
       - name: Publier public/ sur la branche site (historique à plat, un commit par publication)
         working-directory: public

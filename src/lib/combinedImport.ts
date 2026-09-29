@@ -297,7 +297,7 @@ export interface CombinedImportResult {
  * "Actions" et "Agents IA4CYB"). Chaque onglet absent du fichier importé est simplement ignoré —
  * un fichier ne contenant qu'un seul des trois onglets fonctionne aussi.
  */
-export async function parseCombinedFile(file: File, existingActionIds: Set<string>): Promise<CombinedImportResult> {
+export async function parseCombinedFile(file: Blob, existingActionIds: Set<string>): Promise<CombinedImportResult> {
   const workbook = await parseWorkbookFile(file)
   return {
     pilotage: readPilotageSheet(workbook),
