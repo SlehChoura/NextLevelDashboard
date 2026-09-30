@@ -1,5 +1,5 @@
-export type PilotageCategory = "competences" | "agents" | "plateforme"
-export type PilotageOwner = "academy" | "plateforme" | "missions" | "finops"
+export type PilotageCategory = "competences" | "agents" | "plateforme" | "notoriete"
+export type PilotageOwner = "academy" | "plateforme" | "missions" | "finops" | "communication"
 export type PilotageDirection = "up" | "down"
 export type PilotageStatus = "unlocked" | "progress" | "accelerate" | "risk"
 
@@ -20,6 +20,7 @@ export const CATEGORY_LABELS: Record<PilotageCategory, string> = {
   competences: "Compétences",
   agents: "Agents IA",
   plateforme: "Plateforme",
+  notoriete: "Notoriété",
 }
 
 export const OWNER_LABELS: Record<PilotageOwner, string> = {
@@ -27,6 +28,7 @@ export const OWNER_LABELS: Record<PilotageOwner, string> = {
   plateforme: "Équipe plateforme",
   missions: "Responsables de mission",
   finops: "FinOps",
+  communication: "Communication",
 }
 
 export const STATUS_LABELS: Record<PilotageStatus, string> = {
@@ -42,7 +44,7 @@ export const VISIBLE_STATUS_LABELS: Record<VisiblePilotageStatus, string> = {
   accelerate: "À accélérer",
 }
 
-/** Un objectif par KPI suivi dans la page KPI (Compétences, Agents IA, Plateforme). */
+/** Un objectif par KPI suivi dans la page KPI (Compétences, Agents IA, Plateforme, Notoriété). */
 export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
   {
     id: "cyber_academy_ia",
@@ -97,7 +99,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 20,
-    defaultCurrent: 9,
+    defaultCurrent: 10,
   },
   {
     id: "agents_industrialises",
@@ -108,7 +110,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 9,
-    defaultCurrent: 5,
+    defaultCurrent: 8,
   },
   {
     id: "missions_avec_agents",
@@ -130,9 +132,67 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "%",
     direction: "up",
     target: 100,
+    defaultCurrent: 100,
+  },
+  {
+    id: "description_cicd",
+    category: "plateforme",
+    owner: "plateforme",
+    label: "Description et How to de la chaîne CI/CD",
+    description: "Documenter la chaîne CI/CD et son mode d'emploi pour faciliter son adoption par les équipes.",
+    unit: "%",
+    direction: "up",
+    target: 100,
     defaultCurrent: 60,
   },
+  {
+    id: "guidelines_cicd",
+    category: "plateforme",
+    owner: "plateforme",
+    label: "Centraliser les guidelines pour un secure vibe coding",
+    description: "Regrouper en un point unique les bonnes pratiques de sécurité pour le vibe coding.",
+    unit: "%",
+    direction: "up",
+    target: 100,
+    defaultCurrent: 10,
+  },
+  {
+    id: "publication_ai_showcase",
+    category: "notoriete",
+    owner: "communication",
+    label: "Publication d'agents AI4CYB sur le site AI Showcase",
+    description: "Donner de la visibilité aux agents AI4CYB en les publiant sur le site AI Showcase.",
+    unit: "agents",
+    direction: "up",
+    target: 10,
+    defaultCurrent: 6,
+  },
 ]
+
+/**
+ * Retrouve l'identifiant d'un objectif à partir d'une clé saisie dans un fichier importé, sans tenir
+ * compte de la casse ni des séparateurs (ex: "Publication_AIShowcase" → "publication_ai_showcase").
+ */
+export function findObjectiveIdByKey(rawKey: string): string | undefined {
+  const needle = compactKey(rawKey)
+  if (!needle) return undefined
+  return PILOTAGE_OBJECTIVES.find((o) => compactKey(o.id) === needle)?.id
+}
+
+/** Retrouve l'identifiant d'un objectif à partir de son libellé (insensible à la casse et aux accents). */
+export function findObjectiveIdByLabel(rawLabel: string): string | undefined {
+  const needle = compactKey(rawLabel)
+  if (!needle) return undefined
+  return PILOTAGE_OBJECTIVES.find((o) => compactKey(o.label) === needle)?.id
+}
+
+function compactKey(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+}
 
 const PROGRESS_THRESHOLD = 0.8
 const RISK_OVERSHOOT = 1.05

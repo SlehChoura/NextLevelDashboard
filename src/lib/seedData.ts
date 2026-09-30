@@ -9,7 +9,15 @@ import type { ReportData } from "../types"
  * chargement, sans import manuel. Un import (page Pilotage) écrase ensuite ces valeurs de départ.
  */
 
-const DASHBOARD_HEADERS = [
+/**
+ * Version des données initiales. À incrémenter à chaque mise à jour de ce fichier : les stores
+ * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
+ * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
+ */
+export const SEED_VERSION = 2
+
+/** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
+export const DASHBOARD_HEADERS = [
   "Nos agents IA4CYB",
   "Status",
   "Portabilité",
@@ -18,14 +26,51 @@ const DASHBOARD_HEADERS = [
   "Communauté",
   "Ready to market",
   "Propale type",
-  "Nombre de missions réalisées",
+  "Lien AI Showcase",
   "Publication dans le showcase AI",
+  "Nombre de missions réalisées",
 ]
 
 const DASHBOARD_ROWS: unknown[][] = [
-  ["Smart Identity Analyzer", "Présentable en contexte client", 0.75, 0.9, 0.5, 0.5, 0.55, "", "", ""],
-  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.25, 0.5, 0.5, "N/A", 3, "En cours"],
-  ["Booster EBIOS RM - Analyse de risques", "Présentable en contexte client", 0.5, 0.75, 0.75, 0.5, 0.5, "", 2, ""],
+  [
+    "Smart Identity Analyzer",
+    "Présentable en contexte client",
+    0.75,
+    0.9,
+    0.5,
+    0.5,
+    0.55,
+    "Lien Deck Smart Identity Analyzer",
+    "AI makers - Smart Identity Analyzer",
+    "Oui",
+    "",
+  ],
+  [
+    "Crisis Maker",
+    "Déployable en contexte client",
+    1,
+    1,
+    0.25,
+    0.5,
+    0.5,
+    "Lien Deck Crisis Maker",
+    "Sharepoint - Crisis Maker",
+    "Oui",
+    "",
+  ],
+  [
+    "Booster EBIOS RM - Analyse de risques",
+    "Présentable en contexte client",
+    0.5,
+    0.75,
+    0.75,
+    0.5,
+    0.5,
+    "Lien Deck Booster EBIOS RM - Analyse de risques",
+    "",
+    "Oui",
+    "2 (+ un POC et une mission à lancer prochainement)",
+  ],
   [
     "The Web Recon Accelerator - Local-LLM Powered Pentest Assistant",
     "Présentable en contexte client",
@@ -34,11 +79,24 @@ const DASHBOARD_ROWS: unknown[][] = [
     "",
     "",
     1,
-    "",
-    15,
+    "Lien Deck The Web Recon Accelerator",
+    "AI makers - The Web Recon Accelerator – Local-LLM Powered Pentest Assistant",
+    "Oui",
     "",
   ],
-  ["The CyberBench Intelligence Orchestrator ", "WIP", 0.5, 0.33, 0, 1, 0.25, "En cours", 2, ""],
+  [
+    "The CyberBench Intelligence Orchestrator ",
+    "WIP",
+    0.5,
+    0.33,
+    0,
+    1,
+    0.25,
+    "Pitch Cyberbench Orchestrator",
+    "AI makers - The CyberBench Intelligence Orchestrator – End-to-End Audit Automation",
+    "Oui",
+    "2 (en mode test)",
+  ],
   [
     "The CTI Exposure Scout – Autonomous Attack Surface Intelligence",
     "WIP",
@@ -48,11 +106,36 @@ const DASHBOARD_ROWS: unknown[][] = [
     0,
     0.25,
     "",
+    "AI makers - The CTI Exposure Scout – Autonomous Attack Surface Intelligence",
+    "En cours",
     "",
-    "Prévue courant septembre (avec warning sur les limites actuelles). ",
   ],
-  ["AI‑Powered NIS2 Intelligence & Compliance Assistant", "WIP", "", "", "", "", "", "", "", ""],
-  ["Cyber-by-Design Project Assistant", "Présentable en contexte client", 0.75, 0.75, 0.5, 0.75, 0.75, "", 2, ""],
+  [
+    "AI‑Powered NIS2 Intelligence & Compliance Assistant",
+    "WIP",
+    0.5,
+    0.5,
+    0.25,
+    0.25,
+    0.5,
+    "NIS2 X IA - AI Showcase- Pitch.pptx",
+    "AI makers - AI‑Powered NIS2 Intelligence & Compliance Assistant",
+    "En cours",
+    "2 en mode support (ANSSI + SYENSQO)",
+  ],
+  [
+    "Cyber-by-Design Project Assistant",
+    "Présentable en contexte client",
+    0.75,
+    1,
+    0.75,
+    0.75,
+    0.75,
+    "SAM - Demo.pptx",
+    "WK - CYB - Strategy and operational excellence - 04. AI Agent for Architecture Review",
+    "Oui",
+    2,
+  ],
   [
     "The Deliverable Purifier – Automated Anonymization & KM Re-injection",
     "Présentable en contexte client",
@@ -61,10 +144,12 @@ const DASHBOARD_ROWS: unknown[][] = [
     1,
     0.5,
     "N/A\nMais communication auprès du client possible pour montrer notre engagement sur la protection de la confidentitalité des clients",
-    "",
-    "",
+    "Fiche AI makers (lien SharePoint)",
+    "AI makers - The Deliverable Purifier – Automated Anonymization & KM Re-injection",
+    "Oui",
     "",
   ],
+  ["Kovex", "Déployable en contexte client", 1, 0.75, 0.75, 0.25, 0.75, "", "", "Oui", 2],
 ]
 
 const dashboardSheet: ParsedSheet = {
@@ -85,7 +170,7 @@ export const SEED_REPORT: ReportData = {
   meta: { title: "Agents IA4CYB", client: "", author: "", period: "" },
   rows: dashboardBuild.rows,
   createdAt: "2026-09-01T00:00:00.000Z",
-  updatedAt: "2026-09-01T00:00:00.000Z",
+  updatedAt: "2026-09-30T00:00:00.000Z",
 }
 
 export const SEED_ACTIONS: ActionItem[] = [
@@ -127,7 +212,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "Anna VALIER",
     objectiveId: "certifications_claude",
     status: "in_progress",
-    dueDate: "2026-09-30",
+    dueDate: "2026-10-15",
   },
   {
     id: "seed-action-6",
@@ -135,7 +220,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "Anna VALIER",
     objectiveId: "agents_disponibles",
     status: "in_progress",
-    dueDate: "2026-09-30",
+    dueDate: "2026-10-15",
   },
   {
     id: "seed-action-7",
@@ -143,7 +228,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "Anna VALIER",
     objectiveId: "agents_industrialises",
     status: "in_progress",
-    dueDate: "2026-09-30",
+    dueDate: "2026-10-15",
   },
   {
     id: "seed-action-8",
@@ -151,13 +236,13 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "Anna VALIER",
     objectiveId: "missions_avec_agents",
     status: "in_progress",
-    dueDate: "2026-09-30",
+    dueDate: "2026-10-15",
   },
   {
     id: "seed-action-9",
     title: "Dcoumentation de la chaine CI/CD",
     owner: "Mehdi BOUDJELLA",
-    objectiveId: "disponibilite_cicd",
+    objectiveId: "description_cicd",
     status: "in_progress",
     dueDate: "2026-09-30",
   },
@@ -168,5 +253,29 @@ export const SEED_ACTIONS: ActionItem[] = [
     objectiveId: "disponibilite_cicd",
     status: "in_progress",
     dueDate: "2026-09-30",
+  },
+  {
+    id: "seed-action-11",
+    title: "Publication d'agents AI4CYB sur le site AI Showcase",
+    owner: "Tom WILTBERGER",
+    objectiveId: "publication_ai_showcase",
+    status: "in_progress",
+    dueDate: "2026-10-06",
+  },
+  {
+    id: "seed-action-12",
+    title: "Descripction et How to de la chaine CI/CD",
+    owner: "Mel ENZEN",
+    objectiveId: "description_cicd",
+    status: "in_progress",
+    dueDate: "2026-10-06",
+  },
+  {
+    id: "seed-action-13",
+    title: "Centraliser les guidelines pour un secure vibe coding",
+    owner: "Mel ENZEN",
+    objectiveId: "guidelines_cicd",
+    status: "todo",
+    dueDate: "2026-10-31",
   },
 ]

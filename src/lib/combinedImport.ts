@@ -1,9 +1,10 @@
 import * as XLSX from "xlsx"
 import { parseWorkbookFile, readSheet } from "./excelImport"
 import { buildFromSheet, type FixedFormatImportResult } from "./fixedFormatImport"
-import { CATEGORY_LABELS, PILOTAGE_OBJECTIVES } from "./pilotage"
+import { CATEGORY_LABELS, findObjectiveIdByKey, findObjectiveIdByLabel, PILOTAGE_OBJECTIVES } from "./pilotage"
 import { ACTION_STATUS_LABELS, type ActionItem, type ActionStatus } from "./actions"
 import { makeId } from "./id"
+import { DASHBOARD_HEADERS } from "./seedData"
 
 export const PILOTAGE_SHEET_NAME = "Suivi pilotage"
 export const ACTIONS_SHEET_NAME = "Actions"
@@ -23,19 +24,6 @@ const ACT_COL_OBJECTIVE_KEY = "Clé objectif"
 const ACT_COL_OBJECTIVE_LABEL = "Objectif lié"
 const ACT_COL_STATUS = "Statut"
 const ACT_COL_DUE_DATE = "Échéance"
-
-const DASHBOARD_HEADERS = [
-  "Nos agents IA4CYB",
-  "Status",
-  "Portabilité",
-  "Documentation",
-  "Formation",
-  "Communauté",
-  "Ready to market",
-  "Propale type",
-  "Nombre de missions réalisées",
-  "Publication dans le showcase AI",
-]
 
 function parseNumber(raw: unknown): number | null {
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null
@@ -90,9 +78,6 @@ export interface PilotageImportResult {
   unmatched: string[]
 }
 
-const pilotageLabelToId = new Map(PILOTAGE_OBJECTIVES.map((o) => [o.label.trim().toLowerCase(), o.id]))
-const knownPilotageIds = new Set(PILOTAGE_OBJECTIVES.map((o) => o.id))
-
 function readPilotageSheet(workbook: XLSX.WorkBook): PilotageImportResult | null {
   if (!workbook.SheetNames.includes(PILOTAGE_SHEET_NAME)) return null
   const sheet = workbook.Sheets[PILOTAGE_SHEET_NAME]
@@ -105,7 +90,7 @@ function readPilotageSheet(workbook: XLSX.WorkBook): PilotageImportResult | null
   for (const row of rows) {
     const rawKey = String(row[PIL_COL_KEY] ?? "").trim()
     const rawLabel = String(row[PIL_COL_LABEL] ?? "").trim()
-    const id = knownPilotageIds.has(rawKey) ? rawKey : pilotageLabelToId.get(rawLabel.toLowerCase())
+    const id = findObjectiveIdByKey(rawKey) ?? findObjectiveIdByLabel(rawLabel)
 
     if (!id) {
       if (rawKey || rawLabel) unmatched.push(rawLabel || rawKey)
@@ -160,9 +145,6 @@ export interface ActionsImportResult {
   skippedNoTitle: number
 }
 
-const actionObjectiveIdByLabel = new Map(PILOTAGE_OBJECTIVES.map((o) => [o.label.trim().toLowerCase(), o.id]))
-const knownActionObjectiveIds = new Set(PILOTAGE_OBJECTIVES.map((o) => o.id))
-
 const STATUS_SYNONYMS: Record<string, ActionStatus> = {
   ...Object.fromEntries(
     (Object.entries(ACTION_STATUS_LABELS) as [ActionStatus, string][]).map(([status, label]) => [
@@ -181,10 +163,8 @@ const STATUS_SYNONYMS: Record<string, ActionStatus> = {
 
 function resolveActionObjectiveId(rawKey: string, rawLabel: string): { id: string; unmatched: boolean } {
   if (!rawKey && !rawLabel) return { id: "", unmatched: false }
-  if (knownActionObjectiveIds.has(rawKey)) return { id: rawKey, unmatched: false }
-  const byLabel = actionObjectiveIdByLabel.get(rawLabel.trim().toLowerCase())
-  if (byLabel) return { id: byLabel, unmatched: false }
-  return { id: "", unmatched: true }
+  const id = findObjectiveIdByKey(rawKey) ?? findObjectiveIdByLabel(rawLabel)
+  return id ? { id, unmatched: false } : { id: "", unmatched: true }
 }
 
 function resolveActionStatus(raw: string): ActionStatus {
@@ -247,8 +227,9 @@ function buildDashboardRows() {
       [DASHBOARD_HEADERS[5]]: 25,
       [DASHBOARD_HEADERS[6]]: 25,
       [DASHBOARD_HEADERS[7]]: "N/A",
-      [DASHBOARD_HEADERS[8]]: 0,
+      [DASHBOARD_HEADERS[8]]: "",
       [DASHBOARD_HEADERS[9]]: "Non",
+      [DASHBOARD_HEADERS[10]]: 0,
     },
   ]
 }

@@ -22,6 +22,7 @@ const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   competences: "🎓",
   agents: "⚙️",
   plateforme: "🛡",
+  notoriete: "📣",
 }
 
 const STATUS_BADGE_CLASS: Record<VisiblePilotageStatus, string> = {
