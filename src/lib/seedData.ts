@@ -31,7 +31,7 @@ export const DASHBOARD_HEADERS = [
   "Nombre de missions réalisées",
 ]
 
-const DASHBOARD_ROWS: unknown[][] = [
+export const DASHBOARD_ROWS: unknown[][] = [
   [
     "Smart Identity Analyzer",
     "Présentable en contexte client",
@@ -168,7 +168,8 @@ export const SEED_REPORT: ReportData = {
   id: SEED_REPORT_ID,
   template: dashboardBuild.template,
   meta: { title: "Agents IA4CYB", client: "", author: "", period: "" },
-  rows: dashboardBuild.rows,
+  // Ids de ligne stables (plutôt qu'aléatoires à chaque chargement de l'application).
+  rows: dashboardBuild.rows.map((row, i) => ({ ...row, __id: `seed-agent-${i + 1}` })),
   createdAt: "2026-09-01T00:00:00.000Z",
   updatedAt: "2026-09-30T00:00:00.000Z",
 }

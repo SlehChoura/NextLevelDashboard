@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { ImportFeedback } from "../components/common/ImportFeedback"
 import { Link } from "react-router-dom"
 import { FileDrop } from "../components/common/FileDrop"
 import { KpiCard } from "../components/common/KpiCard"
@@ -25,7 +26,7 @@ export function HomePage() {
   const targets = usePilotageStore((s) => s.targets)
   const actions = useActionsStore((s) => s.actions)
 
-  const { importMessage, handleImportFile } = useCombinedImport()
+  const { importMessage, importWarnings, handleImportFile } = useCombinedImport()
   const [importOpen, setImportOpen] = useState(false)
 
   async function onImportFile(file: File) {
@@ -111,7 +112,7 @@ export function HomePage() {
           </div>
         )}
 
-        {importMessage && <p className="mt-3 text-sm text-[var(--color-text)]">{importMessage}</p>}
+        <ImportFeedback message={importMessage} warnings={importWarnings} />
       </div>
 
       <div className="mt-10 flex items-center justify-between gap-3">
