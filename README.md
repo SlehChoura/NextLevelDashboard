@@ -58,6 +58,17 @@ Puis ouvrez `http://localhost:5173`.
 - `npm run build` — build de production (`tsc -b && vite build`)
 - `npm run preview` — prévisualisation du build
 - `npm run lint` — lint (oxlint)
+- `npm test` — tests automatiques (Vitest) : import du fichier combiné, contrôle de cohérence,
+  déduction des types de colonnes, calcul des statuts du pilotage, migration des données
+  enregistrées dans le navigateur. Le workflow `.github/workflows/ci.yml` lance lint, tests et
+  build sur chaque PR ; les workflows de déploiement ne publient que si les tests passent.
+
+### Contrôle de cohérence du fichier importé
+
+À chaque import global, le fichier est contrôlé et les incohérences qui feraient perdre ou mal
+interpréter une donnée sont listées sous le message d'import : colonne sans en-tête ou en-tête
+décalé dans l'onglet agents, clé et libellé d'objectif qui ne désignent pas le même objectif,
+statut ou échéance illisible, doublon, valeur non numérique… L'import est appliqué malgré tout.
 
 ## Déploiement
 

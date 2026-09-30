@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware"
 import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
 import { makeId } from "../lib/id"
 import { SEED_REPORT, SEED_REPORT_ID, SEED_VERSION } from "../lib/seedData"
+import { refreshSeedReports } from "../lib/seedMigration"
 
 interface ReportState {
   reports: ReportData[]
@@ -70,8 +71,7 @@ export const useReportStore = create<ReportState>()(
       // rapports créés par l'utilisateur sont conservés tels quels.
       migrate: (persisted) => {
         const state = persisted as Partial<ReportState>
-        const reports = Array.isArray(state.reports) ? state.reports : []
-        return { ...state, reports: reports.map((r) => (r.id === SEED_REPORT_ID ? SEED_REPORT : r)) }
+        return { ...state, reports: refreshSeedReports(state.reports) }
       },
     },
   ),
