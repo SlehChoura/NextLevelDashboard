@@ -124,6 +124,24 @@ function checkPilotageSheet(workbook: XLSX.WorkBook): string[] {
   return warnings
 }
 
+function sameText(a: string | undefined, b: string): boolean {
+  return a !== undefined && normalizeText(a) === normalizeText(b)
+}
+
+function pilotageLabelsInFile(workbook: XLSX.WorkBook): Map<string, string> {
+  const labels = new Map<string, string>()
+  const grid = readGrid(workbook, PILOTAGE_SHEET_NAME)
+  if (!grid) return labels
+  const keyCol = columnIndex(grid, PIL_COL_KEY)
+  const labelCol = columnIndex(grid, PIL_COL_LABEL)
+  for (const { cells } of grid.rows) {
+    const id = findObjectiveIdByKey(cellText(cells, keyCol))
+    const label = cellText(cells, labelCol)
+    if (id && label) labels.set(id, label)
+  }
+  return labels
+}
+
 function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
   const grid = readGrid(workbook, ACTIONS_SHEET_NAME)
   if (!grid) return []
@@ -138,6 +156,9 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
     dueDate: columnIndex(grid, ACT_COL_DUE_DATE),
   }
   const seenTitles = new Map<string, number>()
+  // Libellés tels qu'écrits dans l'onglet pilotage du même fichier : une action qui reprend ce
+  // libellé (même avec une coquille) désigne bien le même objectif que sa clé.
+  const fileLabels = pilotageLabelsInFile(workbook)
 
   for (const { line, cells } of grid.rows) {
     const title = cellText(cells, col.title)
@@ -163,7 +184,7 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
       warnings.push(`[${sheet}] Ligne ${line} : objectif lié « ${key || label} » inconnu, action non rattachée.`)
     } else if (key && !byKey) {
       warnings.push(`[${sheet}] Ligne ${line} : clé objectif « ${key} » inconnue (objectif reconnu par son libellé).`)
-    } else if (byKey && label && byLabel !== byKey) {
+    } else if (byKey && label && byLabel !== byKey && !sameText(fileLabels.get(byKey), label)) {
       warnings.push(
         `[${sheet}] Ligne ${line} : « ${ACT_COL_OBJECTIVE_KEY} » (${key} = « ${objectiveLabel(byKey)} ») et « ${ACT_COL_OBJECTIVE_LABEL} » (« ${label} ») ne désignent pas le même objectif — la clé est retenue.`,
       )
