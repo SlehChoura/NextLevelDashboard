@@ -52,6 +52,7 @@ describe("checkCombinedWorkbook", () => {
         [ACTIONS_SHEET_NAME]: [
           ACT_HEADERS,
           ["", "A", "Moi", "description_cicd", "Disponibilité de la chaîne CI/CD", "Fait", "2026-10-01"],
+          ["", "B", "Moi", "description_cicd", "Description et How to de la chaîne CI/CD", "Fait", "2026-10-01"],
           ["", "a ", "", "inconnu", "", "Peut-être", "bientôt"],
           ["", "", "Moi", "", "", "", ""],
         ],
@@ -59,32 +60,30 @@ describe("checkCombinedWorkbook", () => {
     )
     expect(warnings).toEqual([
       expect.stringMatching(/Ligne 2 : « Clé objectif » .* ne désignent pas le même objectif/),
-      expect.stringMatching(/Ligne 3 : action « a » en double/),
-      expect.stringMatching(/Ligne 3 : action « a » sans porteur/),
-      expect.stringMatching(/Ligne 3 : objectif lié « inconnu » inconnu/),
-      expect.stringMatching(/Ligne 3 : statut « Peut-être » non reconnu/),
-      expect.stringMatching(/Ligne 3 : échéance « bientôt » illisible/),
-      expect.stringMatching(/Ligne 4 : action sans titre/),
+      expect.stringMatching(/Ligne 4 : action « a » en double/),
+      expect.stringMatching(/Ligne 4 : action « a » sans porteur/),
+      expect.stringMatching(/Ligne 4 : objectif lié « inconnu » inconnu/),
+      expect.stringMatching(/Ligne 4 : statut « Peut-être » non reconnu/),
+      expect.stringMatching(/Ligne 4 : échéance « bientôt » illisible/),
+      expect.stringMatching(/Ligne 5 : action sans titre/),
     ])
   })
 
   it("détecte des en-têtes décalés dans l'onglet agents", () => {
-    // Cas réel : la colonne I porte l'en-tête « Nombre de missions » mais contient des liens,
-    // et les nombres de missions sont en colonne K, sans en-tête.
-    const headers = DASHBOARD_HEADERS.filter((h) => h !== "Lien AI Showcase" && h !== "Nombre de missions réalisées")
-    headers.splice(8, 0, "Nombre de missions réalisées")
+    // Cas réel (1re version du fichier) : une colonne de liens a été insérée en I sans décaler les
+    // en-têtes — « Nombre de missions » se retrouve au-dessus des liens, et les nombres de
+    // missions en colonne K, sans en-tête.
     const warnings = checkCombinedWorkbook(
       workbookFrom({
         [DASHBOARD_SHEET_NAME]: [
-          headers,
-          ["Kovex", "WIP", 1, 0.75, "N/A", 0.25, "bientôt", "", "AI makers - Kovex", "Oui", 2],
+          DASHBOARD_HEADERS,
+          ["Kovex", "WIP", 1, 0.75, "N/A", 0.25, "bientôt", "Lien Deck", "AI makers - Kovex", "Oui", 2],
           ["Kovex", "WIP"],
           ["", "orphelin"],
         ],
       }),
     )
     expect(warnings).toEqual([
-      expect.stringMatching(/Colonne attendue « Lien AI Showcase » absente/),
       expect.stringMatching(/G2 \(Kovex\) : « Ready to market » devrait être un pourcentage/),
       expect.stringMatching(/I2 \(Kovex\) : « Nombre de missions réalisées » devrait être un nombre/),
       expect.stringMatching(/K2 \(Kovex\) : valeur « 2 » dans une colonne sans en-tête/),
@@ -93,10 +92,27 @@ describe("checkCombinedWorkbook", () => {
     ])
   })
 
+  it("signale une colonne attendue absente", () => {
+    const headers = DASHBOARD_HEADERS.filter((h) => h !== "Propale type")
+    const warnings = checkCombinedWorkbook(workbookFrom({ [DASHBOARD_SHEET_NAME]: [headers, ["Kovex", "WIP"]] }))
+    expect(warnings).toEqual([expect.stringMatching(/Colonne attendue « Propale type » absente/)])
+  })
+
+  it("accepte un libellé d'objectif repris de l'onglet pilotage du même fichier, même avec une coquille", () => {
+    const pilotage = validPilotageRows.map((r) => (r[0] === "description_cicd" ? [r[0], "", "Descripction CI/CD", 60, 100, "%"] : r))
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({
+        [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
+        [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", "A", "Moi", "description_cicd", "Descripction CI/CD", "Fait", ""]],
+      }),
+    )
+    expect(warnings).toEqual([expect.stringMatching(/\[Suivi pilotage\] Ligne 10 : le libellé « Descripction CI\/CD »/)])
+  })
+
   it("signale une colonne agents non prévue par le modèle", () => {
     const warnings = checkCombinedWorkbook(
       workbookFrom({ [DASHBOARD_SHEET_NAME]: [[...DASHBOARD_HEADERS, "Commentaire"], ["Kovex", "WIP"]] }),
     )
-    expect(warnings).toEqual([expect.stringMatching(/Colonne L « Commentaire » non prévue/)])
+    expect(warnings).toEqual([expect.stringMatching(/Colonne K « Commentaire » non prévue/)])
   })
 })

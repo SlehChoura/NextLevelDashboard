@@ -52,6 +52,16 @@ describe("migration des données persistées", () => {
     expect(refreshed.filter((a) => a.id === SEED_ACTIONS[0].id)).toEqual([])
   })
 
+  it("supprime les doublons laissés par d'anciens imports (actions importées plusieurs fois)", () => {
+    // État observé sur la version publiée : 13 actions initiales + les mêmes 13 importées
+    // (clé vide → nouvel identifiant), éventuellement plusieurs fois.
+    const imported = (suffix: string) => SEED_ACTIONS.map((a, i) => ({ ...a, id: `imp-${suffix}-${i}` }))
+    const refreshed = refreshSeedActions([...SEED_ACTIONS, ...imported("a"), ...imported("b"), userAction])
+    expect(refreshed).toHaveLength(SEED_ACTIONS.length + 1)
+    expect(new Set(refreshed.map((a) => a.title)).size).toBe(refreshed.length)
+    expect(refreshed.map((a) => a.id)).toEqual([...imported("a").map((a) => a.id), "u1"])
+  })
+
   it("tolère un état persisté corrompu", () => {
     expect(refreshSeedActions(undefined)).toEqual(SEED_ACTIONS)
     expect(refreshSeedActions([null, { title: "sans id" }])).toEqual(SEED_ACTIONS)

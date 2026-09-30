@@ -16,14 +16,21 @@ function normalizeTitle(title: string): string {
 
 /**
  * Remplace les actions initiales d'une version précédente par celles de la version courante, en
- * conservant les actions créées ou importées par l'utilisateur. Une action initiale dont le titre
- * existe déjà parmi ces dernières (ex: déjà importée depuis le même fichier) n'est pas dupliquée.
+ * conservant les actions créées ou importées par l'utilisateur. Les doublons (même titre) sont
+ * supprimés : une action initiale déjà présente parmi celles de l'utilisateur (ex: importée depuis
+ * le même fichier) n'est pas rajoutée, et une action importée plusieurs fois n'est gardée qu'une fois.
  */
 export function refreshSeedActions(actions: unknown): ActionItem[] {
   const list = Array.isArray(actions) ? (actions as ActionItem[]) : []
-  const userActions = list.filter((a) => typeof a?.id === "string" && !a.id.startsWith(SEED_ACTION_PREFIX))
-  const userTitles = new Set(userActions.map((a) => normalizeTitle(String(a.title ?? ""))))
-  const seeds = SEED_ACTIONS.filter((a) => !userTitles.has(normalizeTitle(a.title)))
+  const seen = new Set<string>()
+  const userActions = list.filter((a) => {
+    if (typeof a?.id !== "string" || a.id.startsWith(SEED_ACTION_PREFIX)) return false
+    const title = normalizeTitle(String(a.title ?? ""))
+    if (seen.has(title)) return false
+    seen.add(title)
+    return true
+  })
+  const seeds = SEED_ACTIONS.filter((a) => !seen.has(normalizeTitle(a.title)))
   return [...seeds, ...userActions]
 }
 

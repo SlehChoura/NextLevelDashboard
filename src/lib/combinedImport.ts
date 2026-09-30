@@ -135,9 +135,12 @@ function buildActionsRows(actions: ActionItem[]) {
 }
 
 export interface ActionsImportResult {
+  /** Liste complète des actions après import (remplace la liste existante). */
   actions: ActionItem[]
   created: number
   updated: number
+  /** Actions existantes absentes du fichier, retirées de la liste. */
+  removed: number
   /** Lignes importées mais dont l'objectif lié n'a pas été reconnu (laissé vide). */
   unmatchedObjectives: string[]
   /** Lignes ignorées faute de titre renseigné. */
@@ -154,10 +157,21 @@ function resolveActionStatus(raw: string): ActionStatus {
   return STATUS_SYNONYMS[normalizeText(raw)] ?? "todo"
 }
 
-function readActionsSheet(workbook: XLSX.WorkBook, existingIds: Set<string>): ActionsImportResult | null {
+/**
+ * Lit l'onglet Actions. Le fichier fait foi : la liste obtenue remplace intégralement les actions
+ * existantes (une action absente du fichier est retirée). Une ligne est rattachée à une action
+ * existante par sa clé, ou à défaut par son titre, pour conserver son identifiant : réimporter
+ * plusieurs fois le même fichier ne crée donc jamais de doublon.
+ */
+function readActionsSheet(workbook: XLSX.WorkBook, existingActions: ActionItem[]): ActionsImportResult | null {
   if (!workbook.SheetNames.includes(ACTIONS_SHEET_NAME)) return null
   const sheet = workbook.Sheets[ACTIONS_SHEET_NAME]
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
+
+  const byId = new Map(existingActions.map((a) => [a.id, a]))
+  const matched = new Set<string>()
+  const findByTitle = (title: string) =>
+    existingActions.find((a) => !matched.has(a.id) && normalizeText(a.title) === normalizeText(title))
 
   const actions: ActionItem[] = []
   const unmatchedObjectives: string[] = []
@@ -172,9 +186,14 @@ function readActionsSheet(workbook: XLSX.WorkBook, existingIds: Set<string>): Ac
       continue
     }
     const rawId = String(row[ACT_COL_KEY] ?? "").trim()
-    const id = rawId && existingIds.has(rawId) ? rawId : makeId()
-    if (rawId && existingIds.has(rawId)) updated += 1
-    else created += 1
+    const existing = (rawId && !matched.has(rawId) ? byId.get(rawId) : undefined) ?? findByTitle(title)
+    const id = existing ? existing.id : makeId()
+    if (existing) {
+      matched.add(existing.id)
+      updated += 1
+    } else {
+      created += 1
+    }
 
     const { id: objectiveId, unmatched } = resolveActionObjectiveId(
       String(row[ACT_COL_OBJECTIVE_KEY] ?? "").trim(),
@@ -192,7 +211,10 @@ function readActionsSheet(workbook: XLSX.WorkBook, existingIds: Set<string>): Ac
     })
   }
 
-  return { actions, created, updated, unmatchedObjectives, skippedNoTitle }
+  // Un onglet Actions vide (ex: en-têtes seuls) ne doit pas effacer toutes les actions existantes.
+  if (actions.length === 0) return null
+  const removed = existingActions.filter((a) => !matched.has(a.id)).length
+  return { actions, created, updated, removed, unmatchedObjectives, skippedNoTitle }
 }
 
 // ---------------------------------------------------------------------------
@@ -209,10 +231,9 @@ function buildDashboardRows() {
       [DASHBOARD_HEADERS[4]]: 25,
       [DASHBOARD_HEADERS[5]]: 25,
       [DASHBOARD_HEADERS[6]]: 25,
-      [DASHBOARD_HEADERS[7]]: "N/A",
-      [DASHBOARD_HEADERS[8]]: "",
+      [DASHBOARD_HEADERS[7]]: "Oui",
+      [DASHBOARD_HEADERS[8]]: 0,
       [DASHBOARD_HEADERS[9]]: "Non",
-      [DASHBOARD_HEADERS[10]]: 0,
     },
   ]
 }
@@ -272,14 +293,14 @@ export interface CombinedImportResult {
  * "Actions" et "Agents IA4CYB"). Chaque onglet absent du fichier importé est simplement ignoré —
  * un fichier ne contenant qu'un seul des trois onglets fonctionne aussi.
  */
-export async function parseCombinedFile(file: File, existingActionIds: Set<string>): Promise<CombinedImportResult> {
-  return parseCombinedWorkbook(await parseWorkbookFile(file), existingActionIds)
+export async function parseCombinedFile(file: File, existingActions: ActionItem[]): Promise<CombinedImportResult> {
+  return parseCombinedWorkbook(await parseWorkbookFile(file), existingActions)
 }
 
-export function parseCombinedWorkbook(workbook: XLSX.WorkBook, existingActionIds: Set<string>): CombinedImportResult {
+export function parseCombinedWorkbook(workbook: XLSX.WorkBook, existingActions: ActionItem[]): CombinedImportResult {
   return {
     pilotage: readPilotageSheet(workbook),
-    actions: readActionsSheet(workbook, existingActionIds),
+    actions: readActionsSheet(workbook, existingActions),
     dashboard: readDashboardSheet(workbook),
     warnings: checkCombinedWorkbook(workbook),
   }

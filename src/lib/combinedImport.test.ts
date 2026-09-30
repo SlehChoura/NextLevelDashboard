@@ -14,7 +14,7 @@ const PIL_HEADERS = ["Clé", "Catégorie", "Indicateur", "Valeur actuelle", "Cib
 const ACT_HEADERS = ["Clé", "Titre", "Porteur", "Clé objectif", "Objectif lié", "Statut", "Échéance"]
 
 describe("import du fichier de référence", () => {
-  const result = parseCombinedWorkbook(referenceWorkbook(), new Set())
+  const result = parseCombinedWorkbook(referenceWorkbook(), [])
 
   it("ne signale aucune incohérence", () => {
     expect(result.warnings).toEqual([])
@@ -35,10 +35,47 @@ describe("import du fichier de référence", () => {
   })
 
   it("reconnaît les actions existantes par leur clé", () => {
-    const again = parseCombinedWorkbook(referenceWorkbook(), new Set(SEED_ACTIONS.map((a) => a.id)))
+    const again = parseCombinedWorkbook(referenceWorkbook(), SEED_ACTIONS)
     expect(again.actions?.updated).toBe(SEED_ACTIONS.length)
     expect(again.actions?.created).toBe(0)
     expect(again.actions?.actions.map((a) => a.id)).toEqual(SEED_ACTIONS.map((a) => a.id))
+  })
+
+  it("ne duplique pas les actions quand le fichier n'a pas de clé (cas réel)", () => {
+    // Le fichier de suivi fourni laisse la colonne « Clé » vide : les lignes doivent être
+    // rattachées aux actions existantes par leur titre, pas ajoutées à côté.
+    const rows = SEED_ACTIONS.map((a) => ["", a.title, a.owner, a.objectiveId, "", "En cours", a.dueDate])
+    const workbook = workbookFrom({ [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ...rows] })
+    const first = parseCombinedWorkbook(workbook, SEED_ACTIONS).actions!
+    expect(first.actions).toHaveLength(SEED_ACTIONS.length)
+    expect(first.actions.map((a) => a.id)).toEqual(SEED_ACTIONS.map((a) => a.id))
+    expect([first.created, first.updated, first.removed]).toEqual([0, SEED_ACTIONS.length, 0])
+
+    // Réimporter le même fichier une seconde fois ne change rien au nombre d'actions.
+    const second = parseCombinedWorkbook(workbook, first.actions).actions!
+    expect(second.actions.map((a) => a.id)).toEqual(first.actions.map((a) => a.id))
+  })
+
+  it("retire les actions absentes du fichier, qui fait foi", () => {
+    const workbook = workbookFrom({
+      [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", SEED_ACTIONS[0].title, "Moi", "", "", "Fait", ""], ["", "Nouvelle", "Moi", "", "", "", ""]],
+    })
+    const result = parseCombinedWorkbook(workbook, SEED_ACTIONS).actions!
+    expect(result.actions.map((a) => a.title)).toEqual([SEED_ACTIONS[0].title, "Nouvelle"])
+    expect(result.actions[0].id).toBe(SEED_ACTIONS[0].id)
+    expect([result.created, result.updated, result.removed]).toEqual([1, 1, SEED_ACTIONS.length - 1])
+  })
+
+  it("rattache deux lignes de même titre à deux actions distinctes", () => {
+    const workbook = workbookFrom({ [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", "Même", "", "", "", "", ""], ["", "Même", "", "", "", "", ""]] })
+    const existing = [{ ...SEED_ACTIONS[0], id: "x1", title: "Même" }]
+    const ids = parseCombinedWorkbook(workbook, existing).actions!.actions.map((a) => a.id)
+    expect(ids[0]).toBe("x1")
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it("n'efface pas les actions quand l'onglet Actions est vide", () => {
+    expect(parseCombinedWorkbook(workbookFrom({ [ACTIONS_SHEET_NAME]: [ACT_HEADERS] }), SEED_ACTIONS).actions).toBeNull()
   })
 
   it("restitue le dashboard des agents à l'identique", () => {
@@ -59,7 +96,7 @@ describe("onglet Suivi pilotage", () => {
           ["cle_inconnue", "", "Objectif inconnu", 1, 2, ""],
         ],
       }),
-      new Set(),
+      [],
     )
     expect(result.pilotage?.valueUpdates).toEqual({ publication_ai_showcase: 7, agents_disponibles: 11.5 })
     expect(result.pilotage?.targetUpdates).toEqual({ publication_ai_showcase: 12 })
@@ -78,7 +115,7 @@ describe("onglet Actions", () => {
         ["", "", "Moi", "", "", "Fait", ""],
       ],
     }),
-    new Set(),
+    [],
   )
   const actions = result.actions!
 
@@ -99,7 +136,7 @@ describe("onglet Actions", () => {
 
 describe("onglets absents", () => {
   it("ignore simplement les onglets manquants", () => {
-    const result = parseCombinedWorkbook(workbookFrom({ Autre: [["a"], [1]] }), new Set())
+    const result = parseCombinedWorkbook(workbookFrom({ Autre: [["a"], [1]] }), [])
     expect(result.pilotage).toBeNull()
     expect(result.actions).toBeNull()
     expect(result.dashboard).toBeNull()
@@ -107,7 +144,7 @@ describe("onglets absents", () => {
   })
 
   it("ignore un onglet agents sans aucune ligne", () => {
-    const result = parseCombinedWorkbook(workbookFrom({ [DASHBOARD_SHEET_NAME]: [["Nos agents IA4CYB", "Status"]] }), new Set())
+    const result = parseCombinedWorkbook(workbookFrom({ [DASHBOARD_SHEET_NAME]: [["Nos agents IA4CYB", "Status"]] }), [])
     expect(result.dashboard).toBeNull()
   })
 })
@@ -116,7 +153,7 @@ describe("cellules vides", () => {
   it("ne remettent pas une valeur ou une cible à 0", () => {
     const result = parseCombinedWorkbook(
       workbookFrom({ [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ["agents_disponibles", "", "", "", " ", ""]] }),
-      new Set(),
+      [],
     )
     expect(result.pilotage?.valueUpdates).toEqual({})
     expect(result.pilotage?.targetUpdates).toEqual({})

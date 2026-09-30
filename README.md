@@ -63,6 +63,13 @@ Puis ouvrez `http://localhost:5173`.
   enregistrées dans le navigateur. Le workflow `.github/workflows/ci.yml` lance lint, tests et
   build sur chaque PR ; les workflows de déploiement ne publient que si les tests passent.
 
+### Import des actions : le fichier fait foi
+
+L'onglet « Actions » remplace intégralement la liste des actions : chaque ligne est rattachée à une
+action existante par sa « Clé », ou à défaut par son titre, et une action absente du fichier est
+retirée. Réimporter le même fichier (même avec la colonne « Clé » vide) ne crée donc jamais de
+doublon. Un onglet « Actions » sans aucune ligne est ignoré plutôt que de tout effacer.
+
 ### Contrôle de cohérence du fichier importé
 
 À chaque import global, le fichier est contrôlé et les incohérences qui feraient perdre ou mal
