@@ -17,15 +17,16 @@ export function DashboardHeader({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <Logo size={40} />
+    <div className="print-break-avoid overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div className="h-1.5" style={{ backgroundColor: "var(--color-accent)" }} />
+      <div className="flex items-start justify-between gap-4 p-5">
+        <div className="flex items-start gap-3.5">
+          <Logo size={48} />
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-accent)]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
               {template.name}
             </p>
-            <h1 className="text-lg font-semibold text-[var(--color-text)]">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">
               {report.meta.title || template.name}
             </h1>
             <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">
@@ -45,7 +46,7 @@ export function DashboardHeader({
           </button>
           <button
             onClick={onExport}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
             style={{ backgroundColor: "var(--color-accent)" }}
           >
             Exporter en PDF
@@ -54,7 +55,7 @@ export function DashboardHeader({
       </div>
 
       {editing && (
-        <div className="no-print mt-4 border-t border-[var(--color-border)] pt-4">
+        <div className="no-print border-t border-[var(--color-border)] px-5 pb-5 pt-4">
           <ReportMetaForm meta={report.meta} onChange={(patch) => updateMeta(report.id, patch)} />
         </div>
       )}
