@@ -2,15 +2,16 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { ActionItem } from "../lib/actions"
 import { makeId } from "../lib/id"
-import { SEED_ACTIONS } from "../lib/seedData"
+import { SEED_ACTIONS, SEED_VERSION } from "../lib/seedData"
+import { refreshSeedActions } from "../lib/seedMigration"
 
 interface ActionsState {
   actions: ActionItem[]
   addAction: (input: Omit<ActionItem, "id">) => void
   updateAction: (id: string, patch: Partial<Omit<ActionItem, "id">>) => void
   deleteAction: (id: string) => void
-  /** Fusionne un import en masse : les actions dont l'id existe déjà sont mises à jour, les autres sont ajoutées. */
-  mergeActions: (incoming: ActionItem[]) => void
+  /** Remplace toute la liste (import du fichier de suivi, qui fait foi). */
+  replaceActions: (actions: ActionItem[]) => void
 }
 
 export const useActionsStore = create<ActionsState>()(
@@ -23,13 +24,15 @@ export const useActionsStore = create<ActionsState>()(
           actions: state.actions.map((a) => (a.id === id ? { ...a, ...patch } : a)),
         })),
       deleteAction: (id) => set((state) => ({ actions: state.actions.filter((a) => a.id !== id) })),
-      mergeActions: (incoming) =>
-        set((state) => {
-          const byId = new Map(state.actions.map((a) => [a.id, a]))
-          for (const action of incoming) byId.set(action.id, action)
-          return { actions: Array.from(byId.values()) }
-        }),
+      replaceActions: (actions) => set({ actions }),
     }),
-    { name: "nld-actions" },
+    {
+      name: "nld-actions",
+      version: SEED_VERSION,
+      migrate: (persisted) => {
+        const state = persisted as Partial<ActionsState>
+        return { ...state, actions: refreshSeedActions(state.actions) }
+      },
+    },
   ),
 )

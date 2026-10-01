@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { ImportFeedback } from "../components/common/ImportFeedback"
 import { FileDrop } from "../components/common/FileDrop"
 import { usePilotageStore } from "../store/pilotageStore"
 import { useActionsStore } from "../store/actionsStore"
@@ -22,6 +23,7 @@ const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   competences: "🎓",
   agents: "⚙️",
   plateforme: "🛡",
+  notoriete: "📣",
 }
 
 const STATUS_BADGE_CLASS: Record<VisiblePilotageStatus, string> = {
@@ -177,7 +179,7 @@ export function PilotagePage() {
 
   const actions = useActionsStore((s) => s.actions)
 
-  const { importMessage, handleImportFile: applyImportFile } = useCombinedImport()
+  const { importMessage, importWarnings, handleImportFile: applyImportFile } = useCombinedImport()
 
   const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<VisiblePilotageStatus | "all">("all")
@@ -275,7 +277,7 @@ export function PilotagePage() {
           </div>
         )}
 
-        {importMessage && <p className="mt-3 text-sm text-[var(--color-text)]">{importMessage}</p>}
+        <ImportFeedback message={importMessage} warnings={importWarnings} />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">

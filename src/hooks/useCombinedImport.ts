@@ -15,7 +15,7 @@ export function useCombinedImport() {
   const setDashboardReportId = usePilotageStore((s) => s.setDashboardReportId)
 
   const actions = useActionsStore((s) => s.actions)
-  const mergeActions = useActionsStore((s) => s.mergeActions)
+  const replaceActions = useActionsStore((s) => s.replaceActions)
 
   const reports = useReportStore((s) => s.reports)
   const createReport = useReportStore((s) => s.createReport)
@@ -23,12 +23,13 @@ export function useCombinedImport() {
   const setActiveReport = useReportStore((s) => s.setActiveReport)
 
   const [importMessage, setImportMessage] = useState<string | null>(null)
+  const [importWarnings, setImportWarnings] = useState<string[]>([])
 
   async function handleImportFile(file: File): Promise<boolean> {
     setImportMessage(null)
+    setImportWarnings([])
     try {
-      const existingActionIds = new Set(actions.map((a) => a.id))
-      const result = await parseCombinedFile(file, existingActionIds)
+      const result = await parseCombinedFile(file, actions)
       const parts: string[] = []
 
       if (result.pilotage) {
@@ -44,10 +45,11 @@ export function useCombinedImport() {
       }
 
       if (result.actions) {
-        const { actions: imported, created, updated, unmatchedObjectives, skippedNoTitle } = result.actions
-        if (imported.length > 0) mergeActions(imported)
+        const { actions: imported, created, updated, removed, unmatchedObjectives, skippedNoTitle } = result.actions
+        replaceActions(imported)
         parts.push(
-          `Actions : ${created} créée(s), ${updated} mise(s) à jour` +
+          `Actions : ${imported.length} au total — ${created} créée(s), ${updated} mise(s) à jour` +
+            (removed > 0 ? `, ${removed} retirée(s) car absente(s) du fichier` : "") +
             (skippedNoTitle > 0 ? `, ${skippedNoTitle} ligne(s) sans titre ignorée(s)` : "") +
             (unmatchedObjectives.length > 0 ? `, ${unmatchedObjectives.length} objectif(s) non reconnu(s)` : "") +
             ".",
@@ -67,6 +69,7 @@ export function useCombinedImport() {
         parts.push(`Dashboard : ${rows.length} agent(s) importé(s), rapport « Agents IA4CYB » ${stillExists ? "mis à jour" : "généré"}.`)
       }
 
+      setImportWarnings(result.warnings)
       setImportMessage(
         parts.length > 0
           ? parts.join(" ")
@@ -79,5 +82,5 @@ export function useCombinedImport() {
     }
   }
 
-  return { importMessage, handleImportFile }
+  return { importMessage, importWarnings, handleImportFile }
 }

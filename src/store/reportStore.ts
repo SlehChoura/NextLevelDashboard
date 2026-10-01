@@ -2,7 +2,8 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
 import { makeId } from "../lib/id"
-import { SEED_REPORT, SEED_REPORT_ID } from "../lib/seedData"
+import { SEED_REPORT, SEED_REPORT_ID, SEED_VERSION } from "../lib/seedData"
+import { refreshSeedReports } from "../lib/seedMigration"
 
 interface ReportState {
   reports: ReportData[]
@@ -63,6 +64,15 @@ export const useReportStore = create<ReportState>()(
         })),
       setActiveReport: (reportId) => set({ activeReportId: reportId }),
     }),
-    { name: "nld-reports" },
+    {
+      name: "nld-reports",
+      version: SEED_VERSION,
+      // Le rapport initial (s'il n'a pas été supprimé) est remplacé par sa version à jour ; les
+      // rapports créés par l'utilisateur sont conservés tels quels.
+      migrate: (persisted) => {
+        const state = persisted as Partial<ReportState>
+        return { ...state, reports: refreshSeedReports(state.reports) }
+      },
+    },
   ),
 )

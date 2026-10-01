@@ -42,15 +42,38 @@ interface ColumnInference {
 }
 
 /** Un compteur (ex: "nombre de missions") n'est pas un pourcentage, même si ses valeurs sont numériques. */
-const COUNT_HEADER = /nombre|compte|count/i
+const COUNT_HEADER = /^\s*(nombre|nb\.?)\s|\bcount\b/i
+
+/** Une colonne Oui/Non (ex: "Propale type") : une cellule vide signifie "Non". */
+const YES_NO_HEADER = /propale/i
+
+const YES_NO_OPTIONS: CriterionOption[] = [
+  { value: "oui", label: "Oui", color: "success" },
+  { value: "non", label: "Non", color: "neutral" },
+]
+
+/**
+ * Colonnes dont le type est fixé par leur en-tête plutôt que déduit des valeurs : la déduction
+ * échoue dès que la colonne est peu remplie (ex: une seule propale type renseignée, ou des
+ * compteurs laissés vides), alors que le dashboard attend toujours un Oui/Non et un nombre.
+ */
+function knownColumnKind(header: string): "yesNo" | "count" | null {
+  if (YES_NO_HEADER.test(header)) return "yesNo"
+  if (COUNT_HEADER.test(header)) return "count"
+  return null
+}
 
 function inferColumn(values: string[], header: string): ColumnInference {
+  const kind = knownColumnKind(header)
+  if (kind === "yesNo") return { type: "select", role: "dimension", options: YES_NO_OPTIONS }
+  if (kind === "count") return { type: "number", role: "metric" }
+
   const nonEmpty = values.filter((v) => v !== "")
   if (nonEmpty.length === 0) return { type: "text", role: "info" }
 
   const numericish = nonEmpty.filter((v) => LEADING_NUMBER.test(v))
   if (numericish.length / nonEmpty.length >= 0.6) {
-    return COUNT_HEADER.test(header) ? { type: "number", role: "metric" } : { type: "percent", role: "metric" }
+    return { type: "percent", role: "metric" }
   }
 
   const distinct = Array.from(new Set(nonEmpty))
@@ -201,7 +224,53 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
     return dataRow
   })
 
-  return { template, rows, ambiguousCells }
+  return { template, rows: normalizeKnownColumns(template, rows).rows, ambiguousCells }
+}
+
+/** "oui" si la cellule indique une propale existante (Oui, X, un lien…), "non" si vide, Non ou N/A. */
+export function toYesNo(raw: unknown): "oui" | "non" {
+  const v = String(raw ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+  if (isNotApplicable(v) || ["non", "no", "n", "0", "false", "faux", "-", "—"].includes(v)) return "non"
+  return "oui"
+}
+
+/** Un compteur : vide ou N/A vaut 0, un nombre en tête de texte est retenu, sinon la valeur brute est gardée. */
+function toCount(raw: DataRow[string]): DataRow[string] {
+  if (typeof raw === "number") return raw
+  const text = String(raw ?? "").trim()
+  if (isNotApplicable(text)) return 0
+  return extractLeadingNumber(text) ?? text
+}
+
+/**
+ * Applique aux colonnes à type fixe (Oui/Non, compteurs) leur type et des valeurs homogènes :
+ * "oui"/"non" pour une propale type, un nombre (0 si vide) pour un nombre de missions. Utilisé à
+ * l'import et pour remettre d'aplomb un rapport déjà enregistré par une version précédente.
+ */
+export function normalizeKnownColumns(template: ReportTemplate, rows: DataRow[]): { template: ReportTemplate; rows: DataRow[] } {
+  const kinds = new Map<string, "yesNo" | "count">()
+  const criteria = template.criteria.map((c) => {
+    const kind = c.role === "label" ? null : knownColumnKind(c.label)
+    if (!kind) return c
+    kinds.set(c.key, kind)
+    return kind === "yesNo"
+      ? { ...c, type: "select" as const, role: "dimension" as const, options: YES_NO_OPTIONS }
+      : { ...c, type: "number" as const, role: "metric" as const, options: undefined }
+  })
+  if (kinds.size === 0) return { template, rows }
+
+  const nextRows = rows.map((row) => {
+    const next = { ...row }
+    for (const [key, kind] of kinds) {
+      next[key] = kind === "yesNo" ? toYesNo(row[key]) : toCount(row[key])
+    }
+    return next
+  })
+  return { template: { ...template, criteria }, rows: nextRows }
 }
 
 /**
@@ -219,9 +288,9 @@ function isNotApplicable(value: string): boolean {
   return v === "" || v === "na"
 }
 
-/** Une "propale type" existe pour l'agent (cellule renseignée et différente de "N/A"). */
+/** Une "propale type" existe pour l'agent (voir {@link toYesNo}). */
 export function hasPropaleType(value: string): boolean {
-  return !isNotApplicable(value)
+  return toYesNo(value) === "oui"
 }
 
 /** Réapplique les valeurs normalisées par l'IA (ou choisies manuellement) sur les lignes concernées. */

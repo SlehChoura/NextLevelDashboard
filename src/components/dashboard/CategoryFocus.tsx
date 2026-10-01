@@ -16,9 +16,9 @@ export function CategoryFocus({
   onClose: () => void
 }) {
   return (
-    <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 p-4">
+    <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/[0.04] p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-accent)]">
+        <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
           Focus — {title} ({rows.length})
         </div>
         <button

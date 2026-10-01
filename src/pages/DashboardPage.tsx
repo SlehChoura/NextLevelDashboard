@@ -13,7 +13,8 @@ import { DistributionPieChart } from "../components/charts/DistributionPieChart"
 import { DataTable } from "../components/dashboard/DataTable"
 import { AiReviewEditor } from "../components/ai/AiReviewEditor"
 import { FileDrop } from "../components/common/FileDrop"
-import { averageOfNumeric } from "../lib/criteria"
+import { averageOfNumeric, findCriterionByKeyword } from "../lib/criteria"
+import { hasPropaleType } from "../lib/fixedFormatImport"
 import { reviewEditorHandlers, type ImportDraft } from "../lib/aiTemplateEdit"
 
 type Mode = "view" | "edit" | "update"
@@ -48,6 +49,7 @@ export function DashboardPage() {
   const statusCriterion = template.criteria.find((c) => c.key === template.statusKey)
   const metricCriteria = template.criteria.filter((c) => c.role === "metric")
   const labelCriterion = template.criteria.find((c) => c.role === "label")
+  const propaleCriterion = findCriterionByKeyword(template, "propale")
 
   function exitToView() {
     setMode("view")
@@ -164,7 +166,7 @@ export function DashboardPage() {
       )}
 
       {mode === "view" && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
           <ClientReadyAgents template={template} rows={report.rows} />
@@ -173,7 +175,21 @@ export function DashboardPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard label="Agents IA4CYB suivis" value={String(report.rows.length)} />
+            {propaleCriterion && (
+              <KpiCard
+                label={`Agents avec ${propaleCriterion.label.toLowerCase()}`}
+                value={`${report.rows.filter((row) => hasPropaleType(String(row[propaleCriterion.key] ?? ""))).length} / ${report.rows.length}`}
+              />
+            )}
             {metricCriteria.map((c) => {
+              // Un compteur (ex: nombre de missions) se lit en total, un pourcentage en moyenne.
+              if (c.type === "number") {
+                const total = report.rows.reduce((sum, row) => {
+                  const n = Number(row[c.key])
+                  return Number.isFinite(n) ? sum + n : sum
+                }, 0)
+                return <KpiCard key={c.key} label={`${c.label} (total)`} value={String(total)} />
+              }
               const avg = averageOfNumeric(report.rows, c.key)
               return (
                 <KpiCard
@@ -241,7 +257,7 @@ export function DashboardPage() {
               )}
 
               <div className="flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
+                <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
                   Détail par agent
                 </div>
                 <button
