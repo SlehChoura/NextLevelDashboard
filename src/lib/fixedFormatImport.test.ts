@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { applyNormalizations, buildFromSheet, hasPropaleType, isClientReadyStatus } from "./fixedFormatImport"
+import { applyNormalizations, buildFromSheet, hasPropaleType, isClientReadyStatus, normalizeKnownColumns } from "./fixedFormatImport"
 import type { ParsedSheet } from "./excelImport"
 
 function sheet(headers: string[], rows: unknown[][]): ParsedSheet {
@@ -57,7 +57,7 @@ describe("buildFromSheet", () => {
     expect(result.ambiguousCells.map((c) => [c.rowLabel, c.criterionLabel, c.rawValue])).toEqual([
       ["Agent C", "Portabilité", "pas encore"],
     ])
-    expect(byLabel["Agent C"].nombre_de_missions_realisees).toBe("")
+    expect(byLabel["Agent C"].nombre_de_missions_realisees).toBe(0)
   })
 
   it("stocke la valeur technique des options de statut", () => {
@@ -67,10 +67,56 @@ describe("buildFromSheet", () => {
   })
 })
 
+describe("colonnes Propale type et Nombre de missions (fichier de suivi réel)", () => {
+  // Cas réel : une seule propale type renseignée, des compteurs laissés vides.
+  const headers = ["Nos agents IA4CYB", "Status", "Propale type", "Nombre de missions réalisées"]
+  const rows = [
+    ["Smart Identity Analyzer", "WIP", "", ""],
+    ["Cyber-by-Design Project Assistant", "WIP", "Oui", 2],
+    ["The Web Recon Accelerator", "WIP", "non", "15"],
+  ]
+  const result = buildFromSheet(sheet(headers, rows))
+  const propale = result.template.criteria.find((c) => c.label === "Propale type")!
+  const missions = result.template.criteria.find((c) => c.label === "Nombre de missions réalisées")!
+
+  it("traite Propale type comme un Oui/Non, vide = Non", () => {
+    expect(propale.type).toBe("select")
+    expect(propale.options?.map((o) => o.label)).toEqual(["Oui", "Non"])
+    expect(result.rows.map((r) => r[propale.key])).toEqual(["non", "oui", "non"])
+  })
+
+  it("traite Nombre de missions comme un nombre, vide = 0", () => {
+    expect(missions.type).toBe("number")
+    expect(result.rows.map((r) => r[missions.key])).toEqual([0, 2, 15])
+  })
+
+  it("garde Status comme critère de synthèse", () => {
+    expect(result.template.statusKey).toBe("status")
+  })
+
+  it("remet au bon format un rapport enregistré par une version précédente", () => {
+    const stale = {
+      ...result.template,
+      criteria: result.template.criteria.map((c) =>
+        c.key === propale.key ? { ...c, type: "text" as const, role: "info" as const, options: undefined } : c,
+      ),
+    }
+    const staleRows = [{ __id: "r1", label: "A", status: "wip", [propale.key]: "", [missions.key]: "" }]
+    const fixed = normalizeKnownColumns(stale, staleRows)
+    expect(fixed.template.criteria.find((c) => c.key === propale.key)?.type).toBe("select")
+    expect(fixed.rows[0][propale.key]).toBe("non")
+    expect(fixed.rows[0][missions.key]).toBe(0)
+  })
+})
+
 describe("helpers", () => {
-  it("hasPropaleType considère N/A et vide comme absents", () => {
+  it("hasPropaleType considère vide, Non et N/A comme absents", () => {
     expect(hasPropaleType("")).toBe(false)
     expect(hasPropaleType("N/A")).toBe(false)
+    expect(hasPropaleType("Non")).toBe(false)
+    expect(hasPropaleType("non")).toBe(false)
+    expect(hasPropaleType("Oui")).toBe(true)
+    expect(hasPropaleType("oui")).toBe(true)
     expect(hasPropaleType("Lien Deck")).toBe(true)
   })
 
