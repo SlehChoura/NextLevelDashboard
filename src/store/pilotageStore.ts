@@ -47,13 +47,17 @@ export const usePilotageStore = create<PilotageState>()(
     {
       name: "nld-pilotage",
       version: SEED_VERSION,
-      // Nouvelles données de référence : les valeurs et cibles enregistrées par une version
-      // précédente sont remplacées par celles du fichier de suivi à jour.
-      migrate: (persisted) => ({
-        ...(persisted as Partial<PilotageState>),
-        values: { ...defaultValues },
-        targets: { ...defaultTargets },
-      }),
+      // Nouvelles données de référence (version 3) : les valeurs et cibles enregistrées par une
+      // version antérieure sont remplacées par celles du fichier de suivi à jour. Les versions
+      // suivantes ne touchent pas au pilotage : les valeurs importées depuis sont conservées.
+      migrate: (persisted, version) =>
+        version >= 3
+          ? (persisted as PilotageState)
+          : {
+              ...(persisted as Partial<PilotageState>),
+              values: { ...defaultValues },
+              targets: { ...defaultTargets },
+            },
     },
   ),
 )

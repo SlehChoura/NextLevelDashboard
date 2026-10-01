@@ -62,6 +62,49 @@ describe("migration des données persistées", () => {
     expect(refreshed.map((a) => a.id)).toEqual([...imported("a").map((a) => a.id), "u1"])
   })
 
+  it("rend leur objectif aux actions importées avant la création de cet objectif", () => {
+    // État observé : les 3 dernières actions du fichier, importées quand les objectifs AI Showcase,
+    // description CI/CD et guidelines n'existaient pas encore, enregistrées sans objectif lié.
+    const lastThree = SEED_ACTIONS.slice(-3)
+    const imported = SEED_ACTIONS.map((a, i) => ({
+      ...a,
+      id: `imp-${i}`,
+      objectiveId: lastThree.includes(a) ? "" : a.objectiveId,
+    }))
+    const refreshed = refreshSeedActions(imported)
+    expect(refreshed.map((a) => a.id)).toEqual(imported.map((a) => a.id))
+    expect(refreshed.map((a) => a.objectiveId)).toEqual(SEED_ACTIONS.map((a) => a.objectiveId))
+  })
+
+  it("laisse sans objectif une action de l'utilisateur absente du fichier de référence", () => {
+    expect(refreshSeedActions([userAction]).at(-1)).toEqual(userAction)
+  })
+
+  it("remplace les données d'un rapport importé depuis l'ancien fichier à colonnes décalées", () => {
+    const obsolete = {
+      ...SEED_REPORT,
+      id: "import-ancien",
+      meta: { ...SEED_REPORT.meta, title: "Agents IA4CYB (import global)" },
+      template: {
+        ...SEED_REPORT.template,
+        criteria: [...SEED_REPORT.template.criteria, { key: "lien_ai_showcase", label: "Lien AI Showcase", type: "text", role: "info" }],
+      },
+      rows: SEED_REPORT.rows.map((r) => ({ ...r, propale_type: "Lien Deck", nombre_de_missions_realisees: "" })),
+    } as ReportData
+    const [fixed] = refreshSeedReports([obsolete])
+    expect(fixed.id).toBe("import-ancien")
+    expect(fixed.meta.title).toBe("Agents IA4CYB (import global)")
+    expect(fixed.template).toEqual(SEED_REPORT.template)
+    expect(fixed.rows.map(({ __id: _id, ...rest }) => rest)).toEqual(SEED_REPORT.rows.map(({ __id: _id, ...rest }) => rest))
+  })
+
+  it("donne au rapport initial des propales Oui/Non et des nombres de missions", () => {
+    const propale = findCriterionByKeyword(SEED_REPORT.template, "propale")!
+    const missions = findCriterionByKeyword(SEED_REPORT.template, "mission")!
+    expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual(["non", "non", "non", "non", "non", "non", "non", "oui", "non", "non"])
+    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 2, 2, 15, 2, 0, 2, 2, 0, 2])
+  })
+
   it("tolère un état persisté corrompu", () => {
     expect(refreshSeedActions(undefined)).toEqual(SEED_ACTIONS)
     expect(refreshSeedActions([null, { title: "sans id" }])).toEqual(SEED_ACTIONS)
