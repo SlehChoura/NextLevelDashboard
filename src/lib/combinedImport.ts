@@ -6,6 +6,8 @@ import { ACTION_STATUS_LABELS, type ActionItem, type ActionStatus } from "./acti
 import { makeId } from "./id"
 import { DASHBOARD_HEADERS } from "./seedData"
 import { checkCombinedWorkbook } from "./workbookCheck"
+import { getOption } from "./criteria"
+import type { Criterion, DataRow, ReportData } from "../types"
 import {
   ACT_COL_DUE_DATE,
   ACT_COL_KEY,
@@ -221,7 +223,7 @@ function readActionsSheet(workbook: XLSX.WorkBook, existingActions: ActionItem[]
 // Onglet dashboard ("Agents IA4CYB")
 // ---------------------------------------------------------------------------
 
-function buildDashboardRows() {
+function buildExampleDashboardRows() {
   return [
     {
       [DASHBOARD_HEADERS[0]]: "(exemple à remplacer ou supprimer) Mon agent IA",
@@ -238,6 +240,30 @@ function buildDashboardRows() {
   ]
 }
 
+/** Valeur d'une cellule telle qu'écrite dans le fichier, relisible à l'identique par l'import. */
+function exportCell(criterion: Criterion, raw: DataRow[string]): string | number {
+  if (raw === null || raw === undefined || raw === "") return ""
+  if (criterion.type === "percent" && typeof raw === "number") return `${raw}%`
+  if (criterion.options) return getOption(criterion, raw)?.label ?? String(raw)
+  return raw
+}
+
+/** Onglet agents pré-rempli avec le dashboard actuel (colonnes = critères, dans leur ordre). */
+function buildDashboardSheet(report: ReportData | undefined): XLSX.WorkSheet {
+  if (!report || report.rows.length === 0) {
+    const sheet = XLSX.utils.json_to_sheet(buildExampleDashboardRows())
+    sheet["!cols"] = DASHBOARD_HEADERS.map((h) => ({ wch: Math.max(14, Math.min(40, h.length + 4)) }))
+    return sheet
+  }
+  const { criteria } = report.template
+  const sheet = XLSX.utils.aoa_to_sheet([
+    criteria.map((c) => c.label),
+    ...report.rows.map((row) => criteria.map((c) => exportCell(c, row[c.key]))),
+  ])
+  sheet["!cols"] = criteria.map((c, i) => ({ wch: i === 0 ? 48 : Math.max(14, Math.min(40, c.label.length + 4)) }))
+  return sheet
+}
+
 function readDashboardSheet(workbook: XLSX.WorkBook): FixedFormatImportResult | null {
   if (!workbook.SheetNames.includes(DASHBOARD_SHEET_NAME)) return null
   const parsed = readSheet(workbook, DASHBOARD_SHEET_NAME)
@@ -249,11 +275,12 @@ function readDashboardSheet(workbook: XLSX.WorkBook): FixedFormatImportResult | 
 // Modèle combiné (3 onglets) et import combiné
 // ---------------------------------------------------------------------------
 
-/** Construit le classeur du modèle combiné (3 onglets), pré-rempli avec l'état courant. */
+/** Construit le classeur du modèle combiné (3 onglets), pré-rempli avec l'état courant (dashboard compris). */
 export function buildCombinedWorkbook(
   values: Record<string, number>,
   targets: Record<string, number>,
   actions: ActionItem[],
+  report?: ReportData,
 ): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new()
 
@@ -265,9 +292,7 @@ export function buildCombinedWorkbook(
   actionsSheet["!cols"] = [{ wch: 24 }, { wch: 42 }, { wch: 18 }, { wch: 24 }, { wch: 34 }, { wch: 12 }, { wch: 14 }]
   XLSX.utils.book_append_sheet(workbook, actionsSheet, ACTIONS_SHEET_NAME)
 
-  const dashboardSheet = XLSX.utils.json_to_sheet(buildDashboardRows())
-  dashboardSheet["!cols"] = DASHBOARD_HEADERS.map((h) => ({ wch: Math.max(14, Math.min(40, h.length + 4)) }))
-  XLSX.utils.book_append_sheet(workbook, dashboardSheet, DASHBOARD_SHEET_NAME)
+  XLSX.utils.book_append_sheet(workbook, buildDashboardSheet(report), DASHBOARD_SHEET_NAME)
 
   return workbook
 }
@@ -276,8 +301,9 @@ export function downloadCombinedTemplate(
   values: Record<string, number>,
   targets: Record<string, number>,
   actions: ActionItem[],
+  report?: ReportData,
 ): void {
-  XLSX.writeFile(buildCombinedWorkbook(values, targets, actions), "ia4cyb-suivi-complet.xlsx")
+  XLSX.writeFile(buildCombinedWorkbook(values, targets, actions, report), "ia4cyb-suivi-complet.xlsx")
 }
 
 export interface CombinedImportResult {

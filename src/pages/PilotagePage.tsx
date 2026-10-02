@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react"
-import { ImportFeedback } from "../components/common/ImportFeedback"
-import { FileDrop } from "../components/common/FileDrop"
+import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
 import { usePilotageStore } from "../store/pilotageStore"
-import { useActionsStore } from "../store/actionsStore"
-import { useCombinedImport } from "../hooks/useCombinedImport"
 import {
   CATEGORY_LABELS,
   computeStatus,
@@ -17,7 +14,6 @@ import {
   type PilotageOwner,
   type VisiblePilotageStatus,
 } from "../lib/pilotage"
-import { downloadCombinedTemplate } from "../lib/combinedImport"
 
 const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   competences: "🎓",
@@ -177,14 +173,10 @@ export function PilotagePage() {
   const setValue = usePilotageStore((s) => s.setValue)
   const setTarget = usePilotageStore((s) => s.setTarget)
 
-  const actions = useActionsStore((s) => s.actions)
-
-  const { importMessage, importWarnings, handleImportFile: applyImportFile } = useCombinedImport()
 
   const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">("all")
   const [statusFilter, setStatusFilter] = useState<VisiblePilotageStatus | "all">("all")
   const [ownerFilter, setOwnerFilter] = useState<PilotageOwner | "all">("all")
-  const [importOpen, setImportOpen] = useState(false)
 
   const computed = useMemo(
     () =>
@@ -221,63 +213,21 @@ export function PilotagePage() {
 
   const unlockedItems = computed.filter((c) => c.status === "unlocked")
 
-  async function handleImportFile(file: File) {
-    const ok = await applyImportFile(file)
-    if (ok) setImportOpen(false)
-  }
-
   return (
     <div className="mx-auto max-w-6xl px-6 py-14">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Pilotage IA4CYB
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
-      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
-        KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
-        manuellement ou par import d'un fichier de suivi.
-      </p>
-
-      <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--color-text)]">
-              Import global — Pilotage, Actions et Dashboard
-            </h2>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              Un seul fichier Excel à 3 onglets (« Suivi pilotage », « Actions », « Agents IA4CYB »)
-              pour mettre à jour les objectifs, les actions et générer le dashboard des agents en un
-              seul import.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => downloadCombinedTemplate(values, targets, actions)}
-              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[var(--color-text)]"
-            >
-              Télécharger le modèle complet
-            </button>
-            <button
-              onClick={() => setImportOpen((v) => !v)}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white"
-              style={{ backgroundColor: "var(--color-accent)" }}
-            >
-              Importer le fichier complet
-            </button>
-          </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+            Pilotage IA4CYB
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
+          <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
+            Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
+            KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
+            manuellement ou en mettant à jour les données depuis le fichier de suivi.
+          </p>
         </div>
-
-        {importOpen && (
-          <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Téléchargez d'abord le modèle, complétez un ou plusieurs onglets, puis réimportez-le
-              ici. Un onglet absent du fichier est simplement ignoré.
-            </p>
-            <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
-          </div>
-        )}
-
-        <ImportFeedback message={importMessage} warnings={importWarnings} />
+        <RefreshDataPanel />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">

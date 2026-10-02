@@ -3,8 +3,7 @@ import { Logo } from "../common/Logo"
 
 const NAV_ITEMS = [
   { to: "/", label: "Accueil", end: true },
-  { to: "/ia", label: "Nouveau rapport" },
-  { to: "/mes-rapports", label: "Mes rapports" },
+  { to: "/dashboard", label: "Dashboard" },
   { to: "/pilotage", label: "Pilotage" },
   { to: "/actions", label: "Actions" },
   { to: "/kpis", label: "KPI" },

@@ -1,78 +1,47 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
-import { makeId } from "../lib/id"
-import { SEED_REPORT, SEED_REPORT_ID, SEED_VERSION } from "../lib/seedData"
-import { refreshSeedReports } from "../lib/seedMigration"
+import { SEED_REPORT, SEED_VERSION } from "../lib/seedData"
+import { pickDashboardReport } from "../lib/seedMigration"
 
+/**
+ * Le dashboard unique des agents IA4CYB. Il n'y a plus de liste de rapports : l'import global
+ * (onglet « Agents IA4CYB ») met ce dashboard à jour, et « Modifier les données » le corrige.
+ */
 interface ReportState {
-  reports: ReportData[]
-  activeReportId: string | null
-  activeReport: () => ReportData | undefined
-  createReport: (template: ReportTemplate, meta: Partial<ReportMeta>, rows: DataRow[]) => string
-  updateData: (reportId: string, template: ReportTemplate, rows: DataRow[]) => void
-  updateMeta: (reportId: string, meta: Partial<ReportMeta>) => void
-  deleteReport: (reportId: string) => void
-  setActiveReport: (reportId: string | null) => void
-}
-
-const defaultMeta: ReportMeta = {
-  title: "",
-  client: "",
-  author: "",
-  period: "",
+  report: ReportData
+  updateData: (template: ReportTemplate, rows: DataRow[]) => void
+  updateMeta: (meta: Partial<ReportMeta>) => void
 }
 
 export const useReportStore = create<ReportState>()(
   persist(
-    (set, get) => ({
-      reports: [SEED_REPORT],
-      activeReportId: SEED_REPORT_ID,
-      activeReport: () => get().reports.find((r) => r.id === get().activeReportId),
-      createReport: (template, meta, rows) => {
-        const id = makeId()
-        const now = new Date().toISOString()
-        const report: ReportData = {
-          id,
-          template,
-          meta: { ...defaultMeta, ...meta },
-          rows,
-          createdAt: now,
-          updatedAt: now,
-        }
-        set((state) => ({ reports: [...state.reports, report], activeReportId: id }))
-        return id
-      },
-      updateData: (reportId, template, rows) =>
+    (set) => ({
+      report: SEED_REPORT,
+      updateData: (template, rows) =>
+        set((state) => ({ report: { ...state.report, template, rows, updatedAt: new Date().toISOString() } })),
+      updateMeta: (meta) =>
         set((state) => ({
-          reports: state.reports.map((r) =>
-            r.id === reportId ? { ...r, template, rows, updatedAt: new Date().toISOString() } : r,
-          ),
+          report: { ...state.report, meta: { ...state.report.meta, ...meta }, updatedAt: new Date().toISOString() },
         })),
-      updateMeta: (reportId, meta) =>
-        set((state) => ({
-          reports: state.reports.map((r) =>
-            r.id === reportId
-              ? { ...r, meta: { ...r.meta, ...meta }, updatedAt: new Date().toISOString() }
-              : r,
-          ),
-        })),
-      deleteReport: (reportId) =>
-        set((state) => ({
-          reports: state.reports.filter((r) => r.id !== reportId),
-          activeReportId: state.activeReportId === reportId ? null : state.activeReportId,
-        })),
-      setActiveReport: (reportId) => set({ activeReportId: reportId }),
     }),
     {
       name: "nld-reports",
       version: SEED_VERSION,
-      // Le rapport initial (s'il n'a pas été supprimé) est remplacé par sa version à jour ; les
-      // rapports créés par l'utilisateur sont conservés tels quels.
-      migrate: (persisted) => {
-        const state = persisted as Partial<ReportState>
-        return { ...state, reports: refreshSeedReports(state.reports) }
-      },
+      // Versions précédentes : plusieurs rapports ("Mes rapports"). On garde celui que l'import
+      // global alimentait (voir pickDashboardReport), remis à jour si besoin.
+      migrate: (persisted, version) => ({ report: pickDashboardReport(persisted, version, readLegacyDashboardId()) }),
     },
   ),
 )
+
+/** Id du rapport alimenté par l'import global, enregistré par les versions précédentes du pilotage. */
+function readLegacyDashboardId(): string | null {
+  try {
+    const raw = localStorage.getItem("nld-pilotage")
+    const id = raw ? JSON.parse(raw)?.state?.dashboardReportId : null
+    return typeof id === "string" ? id : null
+  } catch {
+    return null
+  }
+}

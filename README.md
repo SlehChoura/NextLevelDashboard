@@ -1,42 +1,29 @@
 # NextLevelDashboard
 
-Application web pour consultants en cybersécurité : transformez un fichier Excel ou CSV de
-suivi de cas d'usage en dashboard de reporting, à la charte graphique officielle Wavestone.
+Application web de pilotage des agents IA4CYB, à la charte graphique officielle Wavestone : page
+d'accueil avec les KPI clés (agents, agents industrialisés, missions réalisées, agents prêts pour
+un client), un dashboard unique des agents, les objectifs du pilotage et les actions associées.
 
-L'application ne prend en charge qu'**un seul format de fichier** : la première colonne liste
-les éléments suivis (ex : des agents/cas d'usage IA), les colonnes suivantes portent leurs
-critères de reporting (statut, portabilité, documentation…), associés à chacun. L'import est
-entièrement local et déterministe (aucune IA, aucune clé API requise) ; une IA optionnelle peut
-ensuite clarifier les quelques valeurs de cellules ambiguës que l'import n'aurait pas su
-interpréter avec certitude.
-
-Les rapports générés et le fichier importé restent dans le navigateur (`localStorage`), rien
-n'est envoyé à un serveur applicatif. Seule exception : si des valeurs ambiguës existent et
-qu'une clé API est configurée, ces quelques valeurs (jamais le fichier entier) sont envoyées à
-l'API d'Anthropic pour être clarifiées.
+Toutes les données proviennent d'**un seul fichier Excel à 3 onglets** (« Suivi pilotage »,
+« Actions », « Agents IA4CYB »). L'encart « Mettre à jour les données » (accueil, dashboard,
+pilotage) réimporte ce fichier et rafraîchit tout en une fois. L'import est entièrement local et
+déterministe : les données restent dans le navigateur (`localStorage`), rien n'est envoyé à un
+serveur.
 
 ## Fonctionnalités
 
-- **Import déterministe** : la première colonne du fichier identifie chaque élément suivi, les
-  colonnes suivantes (dont l'en-tête n'est pas vide) deviennent ses critères de reporting. Une
-  ligne est reconnue comme donnée réelle si sa première colonne est renseignée — ce qui exclut
-  naturellement les blocs de légende ou de notes qui suivent souvent un tableau Excel, sans avoir
-  à les deviner. Le type de chaque critère (pourcentage, statut à choix, texte libre) est déduit
-  automatiquement des valeurs de sa colonne.
-- **Nettoyage IA optionnel** : les valeurs qui ne correspondent pas clairement au type attendu de
-  leur critère (ex : `"~99%"`, une faute de frappe, une note en texte libre à la place d'un
-  pourcentage) sont proposées à une IA (Claude) pour normalisation, si une clé API personnelle
-  est configurée — sinon elles restent éditables manuellement. La clé API et le modèle choisi
-  sont stockés uniquement dans le `localStorage` du navigateur ; seules les valeurs ambiguës
-  identifiées (pas le fichier) sont envoyées à l'API Anthropic, directement depuis le navigateur.
-- **Relecture et correction, avant et après génération** : un écran de relecture affiche les
-  critères détectés (libellé, type, rôle — modifiables ou supprimables) et les données ligne par
-  ligne (éditables, lignes ajoutables/supprimables) avant de confirmer la génération du dashboard.
-  Le bouton « Modifier les données » du dashboard rouvre le même écran sur un rapport déjà
-  généré, à tout moment.
-- **Mise à jour depuis un nouveau fichier** : le bouton « Mettre à jour avec un fichier » du
-  dashboard réimporte un fichier plus récent (même suivi, export à jour) et remplace les critères
-  et données du rapport après relecture — sans créer un nouveau rapport ni perdre son titre/client.
+- **Mise à jour par import** : le fichier de suivi fait foi. Il met à jour les valeurs et cibles
+  du pilotage, remplace la liste des actions et met à jour le dashboard des agents. « Télécharger
+  le fichier actuel » fournit le même fichier pré-rempli avec les données en place (agents
+  compris), à compléter puis réimporter.
+- **Onglet agents** : la première colonne identifie chaque agent, les colonnes suivantes (dont
+  l'en-tête n'est pas vide) deviennent ses critères. Une ligne est retenue si sa première colonne
+  est renseignée, ce qui exclut les blocs de légende. Le type de chaque critère (pourcentage,
+  statut à choix, texte libre) est déduit de ses valeurs, sauf « Propale type » (toujours Oui/Non,
+  vide = Non) et les compteurs « Nombre de… » (toujours un nombre, vide = 0).
+- **Un seul dashboard** : pas de liste de rapports. « Modifier les données » ouvre un écran de
+  correction (critères et lignes éditables) ; le titre et les informations du dashboard se
+  modifient depuis son en-tête.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
@@ -110,32 +97,27 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 - Tailwind CSS v4 (charte graphique pilotée par variables CSS, définies dans `src/index.css`)
 - `xlsx` (SheetJS, build CDN patché — la version npm publique porte des CVE non corrigées) pour
   la lecture des fichiers Excel
-- `@anthropic-ai/sdk` (appelé directement depuis le navigateur) + `zod` pour le nettoyage IA
-  optionnel des valeurs ambiguës (sortie structurée validée)
 - `recharts` pour les graphiques
-- `zustand` (avec persistance `localStorage`) pour l'état des rapports et des paramètres IA
+- `zustand` (avec persistance `localStorage`) pour l'état du dashboard, du pilotage et des actions
 - `react-router-dom` pour la navigation
 
 ## Structure
 
 ```
 src/
-  types.ts            Modèle de données (critères, dashboard, rapports)
-  store/                État global (rapports, pilotage, actions, paramètres IA), persisté en
+  types.ts            Modèle de données (critères, dashboard)
+  store/                État global (dashboard, pilotage, actions), persisté en
                           localStorage
   hooks/
-    useFileImport.ts     Import + nettoyage IA optionnel, partagé entre nouveau rapport et
-                          mise à jour d'un rapport existant
+    useCombinedImport.ts Application de l'import du fichier de suivi aux stores
   lib/
     excelImport.ts       Lecture brute d'un classeur Excel/CSV
     fixedFormatImport.ts Mapping déterministe colonne → critère, inférence de type, détection
                           des valeurs ambiguës, détection des statuts "prêts client"
-    aiAnalysis.ts         Nettoyage IA optionnel des valeurs ambiguës (sortie structurée)
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
-  components/           Composants réutilisables (dashboard, graphiques, relecture IA)
-  pages/                Pages routées (accueil, nouveau rapport, dashboard, mes rapports,
-                          pilotage, actions, KPI)
+  components/           Composants réutilisables (dashboard, graphiques, écran de correction)
+  pages/                Pages routées (accueil, dashboard, pilotage, actions, KPI)
 ```
 
 ## Notes de conception
