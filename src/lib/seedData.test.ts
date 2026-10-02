@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { findCriterionByKeyword } from "./criteria"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
 import { SEED_ACTIONS, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
-import { refreshSeedActions, refreshSeedReports, SEED_ACTION_PREFIX } from "./seedMigration"
+import { pickDashboardReport, refreshSeedActions, refreshSeedReports, SEED_ACTION_PREFIX } from "./seedMigration"
 import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 
@@ -117,5 +117,30 @@ describe("migration des données persistées", () => {
     expect(refreshSeedReports([stale, other])).toEqual([SEED_REPORT, other])
     expect(refreshSeedReports([other])).toEqual([other])
     expect(SEED_REPORT.id).toBe(SEED_REPORT_ID)
+  })
+})
+
+describe("passage à un dashboard unique (version 5)", () => {
+  const imported = { ...SEED_REPORT, id: "import-1", meta: { ...SEED_REPORT.meta, title: "Import" }, rows: SEED_REPORT.rows.slice(0, 2), updatedAt: "2026-09-29T00:00:00.000Z" } as ReportData
+  const other = { ...SEED_REPORT, id: "autre", rows: [], updatedAt: "2026-10-01T00:00:00.000Z" } as ReportData
+
+  it("garde le rapport alimenté par l'import global, avec ses données", () => {
+    const state = { reports: [SEED_REPORT, imported, other], activeReportId: "autre" }
+    expect(pickDashboardReport(state, 4, "import-1")).toBe(imported)
+  })
+
+  it("à défaut, garde le rapport affiché, puis le rapport initial, puis le plus récent", () => {
+    expect(pickDashboardReport({ reports: [imported, other], activeReportId: "autre" }, 4, null)).toBe(other)
+    expect(pickDashboardReport({ reports: [imported, SEED_REPORT], activeReportId: null }, 4, "supprimé")).toBe(SEED_REPORT)
+    expect(pickDashboardReport({ reports: [imported, other] }, 4, null)).toBe(other)
+  })
+
+  it("repart du dashboard initial si rien d'exploitable n'est enregistré", () => {
+    expect(pickDashboardReport(undefined, 4, null)).toBe(SEED_REPORT)
+    expect(pickDashboardReport({ reports: "n'importe quoi" }, 4, null)).toBe(SEED_REPORT)
+  })
+
+  it("laisse tel quel un état déjà au format dashboard unique", () => {
+    expect(pickDashboardReport({ report: imported }, 5, null)).toBe(imported)
   })
 })

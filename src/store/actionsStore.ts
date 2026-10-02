@@ -29,9 +29,11 @@ export const useActionsStore = create<ActionsState>()(
     {
       name: "nld-actions",
       version: SEED_VERSION,
-      migrate: (persisted) => {
+      // Les versions antérieures à la 4 reçoivent les actions de référence à jour ; ensuite, la
+      // liste appartient à l'utilisateur (import, statuts modifiés) et n'est plus touchée.
+      migrate: (persisted, version) => {
         const state = persisted as Partial<ActionsState>
-        return { ...state, actions: refreshSeedActions(state.actions) }
+        return version >= 4 ? state : { ...state, actions: refreshSeedActions(state.actions) }
       },
     },
   ),

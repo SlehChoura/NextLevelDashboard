@@ -80,3 +80,26 @@ function isObsoleteAgentsLayout(report: ReportData): boolean {
     report.rows.every((row) => seedAgentLabels.has(normalizeTitle(String(row.label ?? ""))))
   )
 }
+
+/**
+ * Version 5 : un seul dashboard au lieu d'une liste de rapports. Retient, parmi les rapports
+ * enregistrés, celui que l'import global alimentait (`legacyDashboardId`), à défaut le rapport
+ * affiché, le rapport initial, puis le plus récent. Les rapports d'une version antérieure à la 4
+ * reçoivent d'abord les corrections de {@link refreshSeedReports} ; ceux de la version 4 sont
+ * gardés tels quels (ils contiennent les données importées par l'utilisateur).
+ */
+export function pickDashboardReport(persisted: unknown, version: number, legacyDashboardId: string | null): ReportData {
+  const state = (persisted ?? {}) as { report?: ReportData; reports?: unknown; activeReportId?: unknown }
+  if (isReport(state.report)) return state.report
+
+  const stored = Array.isArray(state.reports) ? state.reports.filter(isReport) : []
+  const reports = version < 4 ? refreshSeedReports(stored) : stored
+  const byId = (id: unknown) => reports.find((r) => r.id === id)
+  const latest = reports.slice().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0]
+  return byId(legacyDashboardId) ?? byId(state.activeReportId) ?? byId(SEED_REPORT_ID) ?? latest ?? SEED_REPORT
+}
+
+function isReport(value: unknown): value is ReportData {
+  const r = value as ReportData | undefined
+  return typeof r?.id === "string" && Array.isArray(r.template?.criteria) && Array.isArray(r.rows)
+}
