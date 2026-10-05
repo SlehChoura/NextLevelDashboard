@@ -2,6 +2,8 @@ import type { ParsedSheet } from "./excelImport"
 import { buildFromSheet } from "./fixedFormatImport"
 import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
+import { makeSnapshot, type Snapshot } from "./history"
+import { PILOTAGE_OBJECTIVES } from "./pilotage"
 
 /**
  * Données initiales du POC IA4CYB (pilotage, actions, dashboard des agents), reprises du fichier
@@ -198,4 +200,33 @@ export const SEED_ACTIONS: ActionItem[] = [
     status: "todo",
     dueDate: "2026-10-31",
   },
+]
+
+const referenceValues = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent]))
+const referenceTargets = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target]))
+
+/**
+ * Historique initial : le fichier de suivi du 30/09/2026 puis celui du {@link SEED_PILOTAGE_DATE},
+ * pour que « Depuis la dernière mise à jour » montre d'emblée les évolutions (et les cibles révisées).
+ */
+export const SEED_HISTORY: Snapshot[] = [
+  makeSnapshot(
+    "2026-09-30",
+    {
+      ...referenceValues,
+      certifications_claude: 10,
+      agents_industrialises: 8,
+      missions_avec_agents: 24,
+      description_cicd: 60,
+      publication_ai_showcase: 6,
+    },
+    {
+      ...referenceTargets,
+      consultants_vibe_coding: 500,
+      certifications_claude: 30,
+      agents_industrialises: 9,
+    },
+    SEED_REPORT,
+  ),
+  makeSnapshot(SEED_PILOTAGE_DATE, referenceValues, referenceTargets, SEED_REPORT),
 ]

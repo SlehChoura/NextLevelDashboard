@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import { useReportStore } from "../store/reportStore"
 import { DashboardHeader } from "../components/dashboard/DashboardHeader"
 import { RagSummary } from "../components/dashboard/RagSummary"
@@ -25,6 +26,13 @@ export function DashboardPage() {
   const [focus, setFocus] = useState<{ criterionKey: string; criterionLabel: string; value: string; label: string } | null>(null)
   const [showTable, setShowTable] = useState(true)
   const [refreshOpen, setRefreshOpen] = useState(false)
+  const [searchParams] = useSearchParams()
+  const section = searchParams.get("section")
+
+  // Arrivée depuis une tuile de l'accueil (?section=missions|prets) : la section visée est amenée à l'écran.
+  useEffect(() => {
+    if (section) document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [section])
 
   const template = report.template
   const statusCriterion = template.criteria.find((c) => c.key === template.statusKey)
@@ -41,7 +49,10 @@ export function DashboardPage() {
   return (
     <div className={`mx-auto max-w-5xl px-6 py-8 ${mode === "view" ? "print-page" : ""}`}>
       {mode === "view" && (
-        <div className="no-print mb-4 flex items-center justify-end gap-3">
+        <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-3">
+          <Link to="/synthese" className="text-sm text-[var(--color-text-muted)] hover:underline">
+            Synthèse comité (PDF)
+          </Link>
           <button onClick={() => setRefreshOpen((v) => !v)} className="text-sm text-[var(--color-text-muted)] hover:underline">
             {refreshOpen ? "Fermer la mise à jour" : "Mettre à jour les données"}
           </button>
@@ -78,9 +89,13 @@ export function DashboardPage() {
         <div className="space-y-5">
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
-          <ClientReadyAgents template={template} rows={report.rows} />
+          <div id="section-prets" className="scroll-mt-20">
+            <ClientReadyAgents template={template} rows={report.rows} />
+          </div>
 
-          <MissionsPodium template={template} rows={report.rows} />
+          <div id="section-missions" className="scroll-mt-20">
+            <MissionsPodium template={template} rows={report.rows} />
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard label="Agents IA4CYB suivis" value={String(report.rows.length)} />

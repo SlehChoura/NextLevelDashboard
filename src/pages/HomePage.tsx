@@ -2,52 +2,22 @@ import { Link } from "react-router-dom"
 import { Badge } from "../components/common/Badge"
 import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
 import { RagSummary } from "../components/dashboard/RagSummary"
+import { ClearBrowserDataButton } from "../components/common/ClearBrowserDataButton"
 import { useReportStore } from "../store/reportStore"
 import { usePilotageStore } from "../store/pilotageStore"
 import { useActionsStore } from "../store/actionsStore"
-import { isClientReadyStatus } from "../lib/fixedFormatImport"
-import { findCriterionByKeyword } from "../lib/criteria"
-import { ACTION_STATUS_LABELS, type ActionStatus } from "../lib/actions"
+import { HeroKpi } from "../components/common/HeroKpi"
+import { ChangesSinceUpdate } from "../components/common/ChangesSinceUpdate"
+import { useHistoryStore } from "../store/historyStore"
+import { dashboardMetrics } from "../lib/dashboardMetrics"
+import { latestDiff, shortDate } from "../lib/history"
+import { ACTION_STATUS_LABELS, isLate, openActionsByDueDate, todayIso, type ActionStatus } from "../lib/actions"
 import { computeStatus, PILOTAGE_OBJECTIVES, progressPercent, visibleStatus } from "../lib/pilotage"
 
 const ACTION_STATUS_TEXT_CLASS: Record<ActionStatus, string> = {
   todo: "text-[var(--color-text-muted)]",
   in_progress: "text-[var(--color-info)]",
   done: "text-[var(--color-success)]",
-}
-
-/** Tuile KPI mise en avant en tête de page, avec une barre de progression vers la cible si fournie. */
-function HeroKpi({
-  label,
-  value,
-  sub,
-  progress,
-}: {
-  label: string
-  value: string
-  sub: string
-  progress?: { current: number; target: number }
-}) {
-  const percent = progress && progress.target > 0 ? Math.min(100, (progress.current / progress.target) * 100) : null
-  return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] xl:min-h-[2rem]">{label}</p>
-      <p className="mt-2 text-5xl font-semibold tracking-tight text-[var(--color-text)]">{value}</p>
-      <p className="mt-1 text-xs text-[var(--color-text-muted)]">{sub}</p>
-      {percent !== null && (
-        <div
-          className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]"
-          role="progressbar"
-          aria-valuenow={Math.round(percent)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${label} : ${Math.round(percent)} % de la cible`}
-        >
-          <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${percent}%` }} />
-        </div>
-      )}
-    </div>
-  )
 }
 
 const OPEN_ACTIONS_SHOWN = 6
@@ -57,6 +27,8 @@ export function HomePage() {
   const values = usePilotageStore((s) => s.values)
   const targets = usePilotageStore((s) => s.targets)
   const actions = useActionsStore((s) => s.actions)
+  const snapshots = useHistoryStore((s) => s.snapshots)
+  const diff = latestDiff(snapshots)
 
   const computed = PILOTAGE_OBJECTIVES.map((objective) => {
     const current = values[objective.id] ?? objective.defaultCurrent
@@ -79,22 +51,20 @@ export function HomePage() {
 
   const template = report.template
   const statusCriterion = template.criteria.find((c) => c.key === template.statusKey)
-  const readyCount = statusCriterion
-    ? report.rows.filter((row) => isClientReadyStatus(String(row[statusCriterion.key] ?? ""))).length
-    : 0
-  const missionsCriterion = findCriterionByKeyword(template, "mission")
-  const totalMissions = missionsCriterion
-    ? report.rows.reduce((sum, row) => {
-        const n = Number(row[missionsCriterion.key])
-        return Number.isFinite(n) ? sum + n : sum
-      }, 0)
-    : 0
+  const metrics = dashboardMetrics(report)
+  const missionsWithAgents = computed.find((c) => c.objective.id === "missions_avec_agents")
 
-  const today = new Date().toISOString().slice(0, 10)
-  const openActions = actions
-    .filter((a) => a.status !== "done")
-    .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
-  const lateCount = openActions.filter((a) => a.dueDate && a.dueDate < today).length
+  // Évolution depuis la mise à jour précédente, affichée sur chaque tuile.
+  const since = diff ? shortDate(diff.from) : ""
+  const dashboardDelta = (label: string) => {
+    const c = diff?.dashboard.find((d) => d.label === label)
+    return c ? { value: c.to - c.from, since } : undefined
+  }
+  const industrialisedChange = diff?.progress.find((c) => c.objective.id === "agents_industrialises")
+
+  const today = todayIso()
+  const openActions = openActionsByDueDate(actions)
+  const lateCount = openActions.filter((a) => isLate(a, today)).length
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
@@ -111,8 +81,10 @@ export function HomePage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <HeroKpi
               label="Agents IA4CYB"
-              value={String(report.rows.length)}
+              value={String(metrics.agents)}
               sub="agents suivis dans le dashboard"
+              delta={dashboardDelta("Agents IA4CYB suivis")}
+              to="/dashboard"
             />
             {industrialised && (
               <HeroKpi
@@ -120,17 +92,34 @@ export function HomePage() {
                 value={String(industrialised.current)}
                 sub={`cible : ${industrialised.target} agents`}
                 progress={{ current: industrialised.current, target: industrialised.target }}
+                delta={industrialisedChange ? { value: industrialisedChange.to - industrialisedChange.from, since } : undefined}
+                to="/pilotage?categorie=agents"
               />
             )}
-            <HeroKpi label="Missions réalisées" value={String(totalMissions)} sub="avec les agents, tous agents confondus" />
+            <HeroKpi
+              label="Missions réalisées"
+              value={String(metrics.missions)}
+              sub={
+                "somme des missions par agent" +
+                (missionsWithAgents ? ` · à distinguer des ${missionsWithAgents.current}/${missionsWithAgents.target} missions utilisant des agents (pilotage)` : "")
+              }
+              delta={dashboardDelta("Missions réalisées (somme par agent)")}
+              to="/dashboard?section=missions"
+            />
             <HeroKpi
               label="Prêts pour un client"
-              value={String(readyCount)}
-              sub={`présentables ou déployables, sur ${report.rows.length} agents`}
+              value={String(metrics.ready)}
+              sub={`présentables ou déployables, sur ${metrics.agents} agents`}
+              delta={dashboardDelta("Agents prêts pour un client")}
+              to="/dashboard?section=prets"
             />
           </div>
           {statusCriterion && <RagSummary criterion={statusCriterion} rows={report.rows} />}
-          <div className="text-right">
+          <ChangesSinceUpdate diff={diff} />
+          <div className="flex flex-wrap justify-end gap-4">
+            <Link to="/synthese" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
+              Synthèse pour le comité (PDF) →
+            </Link>
             <Link to="/dashboard" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
               Voir le dashboard complet des agents →
             </Link>
@@ -193,7 +182,16 @@ export function HomePage() {
         <h2 className="text-lg font-semibold text-[var(--color-text)]">
           Actions à suivre{" "}
           <span className="text-sm font-normal text-[var(--color-text-muted)]">
-            ({openActions.length} ouvertes{lateCount > 0 ? `, dont ${lateCount} en retard` : ""})
+            ({openActions.length} ouvertes
+            {lateCount > 0 && (
+              <>
+                , dont{" "}
+                <Link to="/actions?filtre=retard" className="font-medium text-[var(--color-danger)] hover:underline">
+                  {lateCount} en retard
+                </Link>
+              </>
+            )}
+            )
           </span>
         </h2>
         <Link to="/actions" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
@@ -218,7 +216,7 @@ export function HomePage() {
             </thead>
             <tbody>
               {openActions.slice(0, OPEN_ACTIONS_SHOWN).map((action) => {
-                const late = action.dueDate !== "" && action.dueDate < today
+                const late = isLate(action, today)
                 return (
                   <tr key={action.id} className="even:bg-[var(--color-bg)]">
                     <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
@@ -249,7 +247,10 @@ export function HomePage() {
       <div className="mt-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
         les données importées restent dans votre navigateur (localStorage), rien n'est envoyé à un
-        serveur applicatif. Pensez à vider le stockage local sur un poste partagé.
+        serveur applicatif. Sur un poste partagé, effacez-les après usage.
+        <div className="mt-3">
+          <ClearBrowserDataButton />
+        </div>
       </div>
     </div>
   )

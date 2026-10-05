@@ -4,6 +4,7 @@ import { Logo } from "../common/Logo"
 const NAV_ITEMS = [
   { to: "/", label: "Accueil", end: true },
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/synthese", label: "Synthèse" },
   { to: "/pilotage", label: "Pilotage" },
   { to: "/actions", label: "Actions" },
   { to: "/kpis", label: "KPI" },
