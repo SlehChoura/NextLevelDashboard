@@ -6,6 +6,7 @@ import { usePilotageStore } from "../../store/pilotageStore"
 import { useActionsStore } from "../../store/actionsStore"
 import { useReportStore } from "../../store/reportStore"
 import { downloadCombinedTemplate } from "../../lib/combinedImport"
+import { SEED_PILOTAGE_DATE } from "../../lib/seedData"
 
 /**
  * Encart compact de mise à jour des données : un seul fichier Excel (onglets « Suivi pilotage »,
@@ -25,7 +26,10 @@ export function RefreshDataPanel({ className = "" }: { className?: string }) {
     if (await handleImportFile(file)) setOpen(false)
   }
 
-  const lastUpdate = new Date(lastImportAt ?? report.updatedAt)
+  // Sans import dans ce navigateur, les données affichées sont celles du dernier fichier de suivi
+  // intégré à l'application (ou d'une correction manuelle du dashboard, si plus récente).
+  const fallback = [report.updatedAt, `${SEED_PILOTAGE_DATE}T00:00:00.000Z`].sort().at(-1)!
+  const lastUpdate = new Date(lastImportAt ?? fallback)
 
   return (
     <div className={`no-print rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 ${className}`}>

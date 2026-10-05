@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { findCriterionByKeyword } from "./criteria"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
 import { SEED_ACTIONS, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
-import { pickDashboardReport, refreshSeedActions, refreshSeedReports, SEED_ACTION_PREFIX } from "./seedMigration"
+import { pickDashboardReport, refreshPilotage, refreshSeedActions, refreshSeedReports, SEED_ACTION_PREFIX } from "./seedMigration"
 import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 
@@ -142,5 +142,41 @@ describe("passage à un dashboard unique (version 5)", () => {
 
   it("laisse tel quel un état déjà au format dashboard unique", () => {
     expect(pickDashboardReport({ report: imported }, 5, null)).toBe(imported)
+  })
+})
+
+describe("mise à jour des valeurs de référence du pilotage (version 6)", () => {
+  const defaults = {
+    values: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent])),
+    targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
+  }
+  const old = { values: { agents_industrialises: 8 }, targets: { agents_industrialises: 9 } }
+
+  it("donne les nouvelles valeurs à un navigateur qui n'a rien importé", () => {
+    const next = refreshPilotage({ ...old, lastImportAt: null }, 5, defaults)
+    expect(next.values.agents_industrialises).toBe(9)
+    expect(next.targets.agents_industrialises).toBe(10)
+  })
+
+  it("remplace les valeurs d'un import antérieur au nouveau fichier de suivi", () => {
+    const next = refreshPilotage({ ...old, lastImportAt: "2026-10-01T09:00:00.000Z" }, 5, defaults)
+    expect(next.values).toEqual(defaults.values)
+  })
+
+  it("garde les valeurs d'un import plus récent que le fichier de suivi", () => {
+    const recent = { ...old, lastImportAt: "2026-10-06T09:00:00.000Z" }
+    expect(refreshPilotage(recent, 5, defaults)).toBe(recent)
+  })
+
+  it("reprend les valeurs du dernier fichier de suivi", () => {
+    const byId = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, [o.defaultCurrent, o.target]]))
+    expect(byId).toMatchObject({
+      consultants_vibe_coding: [250, 250],
+      certifications_claude: [6, 10],
+      agents_industrialises: [9, 10],
+      missions_avec_agents: [27, 50],
+      description_cicd: [100, 100],
+      publication_ai_showcase: [9, 10],
+    })
   })
 })
