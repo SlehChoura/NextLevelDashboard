@@ -4,6 +4,7 @@ import { AppShell } from "./components/layout/AppShell"
 
 const HomePage = lazy(() => import("./pages/HomePage").then((m) => ({ default: m.HomePage })))
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })))
+const SynthesePage = lazy(() => import("./pages/SynthesePage").then((m) => ({ default: m.SynthesePage })))
 const KpisPage = lazy(() => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })))
 const PilotagePage = lazy(() => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })))
 const ActionsPage = lazy(() => import("./pages/ActionsPage").then((m) => ({ default: m.ActionsPage })))
@@ -17,6 +18,7 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route index element={<HomePage />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="synthese" element={<SynthesePage />} />
             {/* Anciennes pages « Nouveau rapport » et « Mes rapports » : un seul dashboard désormais. */}
             <Route path="ia" element={<Navigate to="/dashboard" replace />} />
             <Route path="mes-rapports" element={<Navigate to="/dashboard" replace />} />

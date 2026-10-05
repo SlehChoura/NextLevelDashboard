@@ -33,6 +33,10 @@ body {
   color: var(--color-text);
 }
 
+@page {
+  margin: 12mm;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -48,5 +52,12 @@ body {
   }
   .print-break-avoid {
     break-inside: avoid;
+  }
+  .print-break-before {
+    break-before: page;
+  }
+  /* Synthèse comité : tient sur une page A4, l'annexe suit sur les pages suivantes. */
+  .print-zoom {
+    zoom: 0.75;
   }
 }

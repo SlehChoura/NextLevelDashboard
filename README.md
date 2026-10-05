@@ -24,11 +24,32 @@ serveur.
 - **Un seul dashboard** : pas de liste de rapports. « Modifier les données » ouvre un écran de
   correction (critères et lignes éditables) ; le titre et les informations du dashboard se
   modifient depuis son en-tête.
+- **Historique des mises à jour** : chaque import enregistre une photo des chiffres. L'accueil et
+  la synthèse affichent « Depuis la dernière mise à jour » : progrès des objectifs et des agents,
+  et **cibles révisées** signalées à part. Sur la page Pilotage, une carte indique quand un
+  objectif n'est atteint que grâce à une cible abaissée.
+- **Synthèse comité** (`#/synthese`) : une page A4 imprimable (chiffres clés, évolutions,
+  objectifs, actions à arbitrer, agents prêts pour un client), avec le détail par agent en annexe
+  sur la page suivante.
+- **Navigation** : les tuiles KPI de l'accueil mènent à leur détail ; la page Actions filtre les
+  actions en retard et les regroupe par porteur.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
 - **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
   graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
+
+## Sécurité et confidentialité
+
+- **Données intégrées au site** : les données de référence (`src/lib/seedData.ts`,
+  `src/lib/pilotage.ts`) sont compilées dans le site publié. Tant que le dépôt et GitHub Pages
+  sont publics, elles (noms des porteurs compris) sont lisibles par tous.
+- **Politique de sécurité du contenu** : injectée dans le site publié (`vite.config.ts`). Seuls
+  les fichiers du site et la police Poppins (Google Fonts) sont autorisés ; aucun appel réseau
+  vers un autre service n'est possible.
+- **Import** : fichiers de plus de 5 Mo refusés sans être lus.
+- **Poste partagé** : « Effacer les données de ce navigateur » (accueil) supprime imports,
+  actions, historique et corrections enregistrés localement.
 
 ## Démarrage
 
