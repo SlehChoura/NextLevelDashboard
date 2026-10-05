@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { PILOTAGE_OBJECTIVES } from "../lib/pilotage"
 import { SEED_VERSION } from "../lib/seedData"
+import { refreshPilotage } from "../lib/seedMigration"
 
 type PilotageValues = Record<string, number>
 
@@ -47,17 +48,10 @@ export const usePilotageStore = create<PilotageState>()(
     {
       name: "nld-pilotage",
       version: SEED_VERSION,
-      // Nouvelles données de référence (version 3) : les valeurs et cibles enregistrées par une
-      // version antérieure sont remplacées par celles du fichier de suivi à jour. Les versions
-      // suivantes ne touchent pas au pilotage : les valeurs importées depuis sont conservées.
+      // Nouvelles données de référence : remplacent les valeurs enregistrées, sauf si un fichier
+      // a été importé depuis la date de ces données (voir refreshPilotage).
       migrate: (persisted, version) =>
-        version >= 3
-          ? (persisted as PilotageState)
-          : {
-              ...(persisted as Partial<PilotageState>),
-              values: { ...defaultValues },
-              targets: { ...defaultTargets },
-            },
+        refreshPilotage(persisted as PilotageState, version, { values: defaultValues, targets: defaultTargets }),
     },
   ),
 )

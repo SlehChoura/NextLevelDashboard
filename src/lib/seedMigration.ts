@@ -2,7 +2,7 @@ import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 import { normalizeKnownColumns } from "./fixedFormatImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
-import { SEED_ACTIONS, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
+import { SEED_ACTIONS, SEED_PILOTAGE_DATE, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
 
 /**
  * Migrations des données persistées (localStorage) lorsque {@link SEED_VERSION} change : les données
@@ -102,4 +102,26 @@ export function pickDashboardReport(persisted: unknown, version: number, legacyD
 function isReport(value: unknown): value is ReportData {
   const r = value as ReportData | undefined
   return typeof r?.id === "string" && Array.isArray(r.template?.criteria) && Array.isArray(r.rows)
+}
+
+interface PersistedPilotage {
+  values?: Record<string, number>
+  targets?: Record<string, number>
+  lastImportAt?: string | null
+}
+
+/**
+ * Valeurs et cibles du pilotage à la mise à jour des données de référence. Elles sont remplacées
+ * par celles du dernier fichier de suivi ({@link SEED_PILOTAGE_DATE}), sauf si l'utilisateur a
+ * importé un fichier depuis : ses valeurs, plus récentes, sont alors conservées.
+ */
+export function refreshPilotage<T extends PersistedPilotage>(
+  persisted: T,
+  version: number,
+  defaults: { values: Record<string, number>; targets: Record<string, number> },
+): T {
+  const importedSince =
+    version >= 3 && typeof persisted?.lastImportAt === "string" && persisted.lastImportAt.slice(0, 10) >= SEED_PILOTAGE_DATE
+  if (importedSince) return persisted
+  return { ...persisted, values: { ...defaults.values }, targets: { ...defaults.targets } }
 }

@@ -14,7 +14,13 @@ import type { ReportData } from "../types"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 5
+export const SEED_VERSION = 6
+
+/**
+ * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
+ * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
+ */
+export const SEED_PILOTAGE_DATE = "2026-10-05"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
