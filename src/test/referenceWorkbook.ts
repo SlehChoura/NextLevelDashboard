@@ -34,3 +34,13 @@ export function workbookFrom(sheets: Partial<Record<string, unknown[][]>>): XLSX
 }
 
 export { ACTIONS_SHEET_NAME, DASHBOARD_SHEET_NAME, PILOTAGE_SHEET_NAME }
+
+/**
+ * Écart réel du fichier de suivi du 14/10, repris dans les données de référence : le pilotage compte
+ * 9 agents publiés sur l'AI Showcase, l'onglet agents n'en marque que 8 « Oui ». À retirer quand le
+ * fichier sera corrigé.
+ */
+export const KNOWN_REFERENCE_WARNINGS = [
+  "[Cohérence entre onglets] « Publication d'agents AI4CYB sur le site AI Showcase » vaut 9 dans l'onglet Suivi pilotage, " +
+    "mais l'onglet Agents IA4CYB compte 8 agents avec « Oui » en « Publication dans le showcase AI » — à vérifier.",
+]

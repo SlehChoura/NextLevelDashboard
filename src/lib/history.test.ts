@@ -7,12 +7,13 @@ import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
   it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 10, missions: 27, ready: 7, propale: 1 })
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 27, ready: 7, propale: 3 })
   })
 })
 
 describe("historique des mises à jour", () => {
-  const diff = latestDiff(SEED_HISTORY)!
+  const diff = compareSnapshots(SEED_HISTORY[0], SEED_HISTORY[1])
+  const latest = latestDiff(SEED_HISTORY)!
   const byId = (changes: { objective: { id: string }; from: number; to: number }[]) =>
     Object.fromEntries(changes.map((c) => [c.objective.id, [c.from, c.to]]))
 
@@ -36,10 +37,28 @@ describe("historique des mises à jour", () => {
     })
   })
 
+  it("compare le fichier du 05/10 à celui du 14/10, nouveaux objectifs à part", () => {
+    expect([latest.from, latest.to]).toEqual(["2026-10-05", "2026-10-14"])
+    expect(byId(latest.progress)).toEqual({
+      agents_disponibles: [10, 12],
+      agents_industrialises: [9, 8],
+      missions_avec_agents: [27, 41],
+    })
+    expect(latest.targetRevisions).toEqual([])
+    expect(latest.added.map((a) => [a.objective.id, a.value, a.target])).toEqual([
+      ["licences_claude", 0, 23],
+      ["demo_ai_showcase", 3, 10],
+    ])
+    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
+      ["Agents IA4CYB suivis", 10, 12],
+      ["Agents avec propale type", 1, 3],
+    ])
+  })
+
   it("compare aussi les chiffres du dashboard", () => {
     const fewer = { ...SEED_REPORT, rows: SEED_REPORT.rows.slice(0, 9) }
-    const d = compareSnapshots(SEED_HISTORY[1], makeSnapshot("2026-10-12", SEED_HISTORY[1].values, SEED_HISTORY[1].targets, fewer))
-    expect(d.dashboard.find((c) => c.label === "Agents IA4CYB suivis")).toMatchObject({ from: 10, to: 9 })
+    const d = compareSnapshots(SEED_HISTORY[2], makeSnapshot("2026-10-20", SEED_HISTORY[2].values, SEED_HISTORY[2].targets, fewer))
+    expect(d.dashboard.find((c) => c.label === "Agents IA4CYB suivis")).toMatchObject({ from: 12, to: 9 })
   })
 
   it("garde une seule photo par jour et en limite le nombre", () => {
@@ -54,7 +73,7 @@ describe("historique des mises à jour", () => {
   })
 
   it("ne compare rien tant qu'il n'y a qu'une photo", () => {
-    expect(latestDiff([SEED_HISTORY[1]])).toBeNull()
+    expect(latestDiff([SEED_HISTORY[2]])).toBeNull()
     expect(shortDate("2026-10-05")).toBe("05/10")
   })
 })

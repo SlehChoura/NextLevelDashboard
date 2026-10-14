@@ -5,6 +5,7 @@ import {
   ACTIONS_SHEET_NAME,
   DASHBOARD_SHEET_NAME,
   PILOTAGE_SHEET_NAME,
+  KNOWN_REFERENCE_WARNINGS,
   referenceWorkbook,
   workbookFrom,
 } from "../test/referenceWorkbook"
@@ -17,8 +18,24 @@ const ACT_HEADERS = ["Clé", "Titre", "Porteur", "Clé objectif", "Objectif lié
 const validPilotageRows = PILOTAGE_OBJECTIVES.map((o) => [o.id, "", o.label, o.defaultCurrent, o.target, o.unit])
 
 describe("checkCombinedWorkbook", () => {
-  it("ne signale rien sur le fichier de référence", () => {
-    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual([])
+  it("ne signale sur le fichier de référence que son écart connu entre onglets", () => {
+    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual(KNOWN_REFERENCE_WARNINGS)
+  })
+
+  it("compare les chiffres saisis à la fois dans le pilotage et dans l'onglet agents", () => {
+    const pilotage = validPilotageRows.map((r) =>
+      r[0] === "agents_disponibles" ? [r[0], "", r[2], 3, r[4], r[5]] : r[0] === "publication_ai_showcase" ? [r[0], "", r[2], 1, r[4], r[5]] : r,
+    )
+    const agentRow = (name: string, showcase: string) => [name, "WIP", 0.5, 0.5, 0.5, 0.5, 0.5, "", 1, showcase]
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({
+        [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
+        [DASHBOARD_SHEET_NAME]: [DASHBOARD_HEADERS, agentRow("A", "Oui"), agentRow("B", "En cours")],
+      }),
+    )
+    expect(warnings).toEqual([
+      expect.stringMatching(/« Agents disponibles » vaut 3 .* compte 2 agents — à vérifier/),
+    ])
   })
 
   it("signale les anomalies de l'onglet pilotage", () => {
@@ -33,11 +50,13 @@ describe("checkCombinedWorkbook", () => {
         ],
       }),
     )
+    // Lignes ajoutées après les objectifs valides (en-tête en ligne 1, premier objectif retiré).
+    const first = PILOTAGE_OBJECTIVES.length + 1
     expect(warnings).toEqual([
-      expect.stringMatching(/Ligne 12 : le libellé « Agents industrialisés » ne correspond pas à la clé « agents_disponibles »/),
-      expect.stringMatching(/Ligne 12 : objectif « Agents disponibles » en double/),
-      expect.stringMatching(/Ligne 13 : objectif « Objectif inconnu » inconnu/),
-      expect.stringMatching(/Ligne 14 : « Valeur actuelle » n'est pas un nombre/),
+      expect.stringMatching(new RegExp(`Ligne ${first} : le libellé « Agents industrialisés » ne correspond pas à la clé « agents_disponibles »`)),
+      expect.stringMatching(new RegExp(`Ligne ${first} : objectif « Agents disponibles » en double`)),
+      expect.stringMatching(new RegExp(`Ligne ${first + 1} : objectif « Objectif inconnu » inconnu`)),
+      expect.stringMatching(new RegExp(`Ligne ${first + 2} : « Valeur actuelle » n'est pas un nombre`)),
     ])
   })
 
@@ -106,7 +125,8 @@ describe("checkCombinedWorkbook", () => {
         [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", "A", "Moi", "description_cicd", "Descripction CI/CD", "Fait", ""]],
       }),
     )
-    expect(warnings).toEqual([expect.stringMatching(/\[Suivi pilotage\] Ligne 10 : le libellé « Descripction CI\/CD »/)])
+    const line = PILOTAGE_OBJECTIVES.findIndex((o) => o.id === "description_cicd") + 2
+    expect(warnings).toEqual([expect.stringMatching(new RegExp(`\\[Suivi pilotage\\] Ligne ${line} : le libellé « Descripction CI/CD »`))])
   })
 
   it("signale une colonne agents non prévue par le modèle", () => {

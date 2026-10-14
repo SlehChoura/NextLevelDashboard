@@ -52,6 +52,8 @@ export interface SnapshotDiff {
   targetRevisions: ObjectiveChange[]
   /** Chiffres du dashboard des agents qui ont bougé. */
   dashboard: ValueChange[]
+  /** Objectifs apparus depuis la photo précédente, avec leur valeur et leur cible. */
+  added: { objective: PilotageObjective; value: number; target: number }[]
 }
 
 const DASHBOARD_LABELS: Record<keyof DashboardMetrics, { label: string; unit: string }> = {
@@ -64,7 +66,12 @@ const DASHBOARD_LABELS: Record<keyof DashboardMetrics, { label: string; unit: st
 export function compareSnapshots(previous: Snapshot, current: Snapshot): SnapshotDiff {
   const progress: ObjectiveChange[] = []
   const targetRevisions: ObjectiveChange[] = []
+  const added: SnapshotDiff["added"] = []
   for (const objective of PILOTAGE_OBJECTIVES) {
+    if (previous.values[objective.id] === undefined && current.values[objective.id] !== undefined) {
+      added.push({ objective, value: current.values[objective.id], target: current.targets[objective.id] ?? objective.target })
+      continue
+    }
     const base = { objective, label: objective.label, unit: objective.unit }
     const v0 = previous.values[objective.id]
     const v1 = current.values[objective.id]
@@ -76,7 +83,7 @@ export function compareSnapshots(previous: Snapshot, current: Snapshot): Snapsho
   const dashboard = (Object.keys(DASHBOARD_LABELS) as (keyof DashboardMetrics)[])
     .filter((key) => previous.dashboard[key] !== current.dashboard[key])
     .map((key) => ({ ...DASHBOARD_LABELS[key], from: previous.dashboard[key], to: current.dashboard[key] }))
-  return { from: previous.date, to: current.date, progress, targetRevisions, dashboard }
+  return { from: previous.date, to: current.date, progress, targetRevisions, dashboard, added }
 }
 
 /** Écart entre les deux dernières photos, ou null s'il n'y en a pas encore deux. */
