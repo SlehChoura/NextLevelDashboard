@@ -9,3 +9,14 @@ export function clearBrowserData(storage: Storage = localStorage): number {
   keys.forEach((k) => storage.removeItem(k))
   return keys.length
 }
+
+/** Date du dernier import enregistrée par le pilotage, lue directement (migrations des autres stores). */
+export function readStoredLastImportAt(storage: Storage = localStorage): string | null {
+  try {
+    const raw = storage.getItem(`${STORAGE_PREFIX}pilotage`)
+    const value = raw ? JSON.parse(raw)?.state?.lastImportAt : null
+    return typeof value === "string" ? value : null
+  } catch {
+    return null
+  }
+}

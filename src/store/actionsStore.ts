@@ -3,7 +3,8 @@ import { persist } from "zustand/middleware"
 import type { ActionItem } from "../lib/actions"
 import { makeId } from "../lib/id"
 import { SEED_ACTIONS, SEED_VERSION } from "../lib/seedData"
-import { refreshSeedActions } from "../lib/seedMigration"
+import { refreshActions } from "../lib/seedMigration"
+import { readStoredLastImportAt } from "../lib/browserData"
 
 interface ActionsState {
   actions: ActionItem[]
@@ -29,11 +30,10 @@ export const useActionsStore = create<ActionsState>()(
     {
       name: "nld-actions",
       version: SEED_VERSION,
-      // Les versions antérieures à la 4 reçoivent les actions de référence à jour ; ensuite, la
-      // liste appartient à l'utilisateur (import, statuts modifiés) et n'est plus touchée.
+      // Nouvelles données de référence : reprises sauf si un fichier a été importé depuis leur date.
       migrate: (persisted, version) => {
         const state = persisted as Partial<ActionsState>
-        return version >= 4 ? state : { ...state, actions: refreshSeedActions(state.actions) }
+        return { ...state, actions: refreshActions(state.actions, version, readStoredLastImportAt()) }
       },
     },
   ),

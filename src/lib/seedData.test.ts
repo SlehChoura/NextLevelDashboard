@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest"
 import { findCriterionByKeyword } from "./criteria"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
-import { SEED_ACTIONS, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
-import { pickDashboardReport, refreshPilotage, refreshSeedActions, refreshSeedReports, SEED_ACTION_PREFIX } from "./seedMigration"
+import { SEED_ACTIONS, SEED_HISTORY, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
+import {
+  mergeSeedHistory,
+  pickDashboardReport,
+  refreshActions,
+  refreshDashboard,
+  refreshPilotage,
+  refreshSeedActions,
+  refreshSeedReports,
+  SEED_ACTION_PREFIX,
+} from "./seedMigration"
 import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 
@@ -101,8 +110,10 @@ describe("migration des données persistées", () => {
   it("donne au rapport initial des propales Oui/Non et des nombres de missions", () => {
     const propale = findCriterionByKeyword(SEED_REPORT.template, "propale")!
     const missions = findCriterionByKeyword(SEED_REPORT.template, "mission")!
-    expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual(["non", "non", "non", "non", "non", "non", "non", "oui", "non", "non"])
-    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 2, 2, 15, 2, 0, 2, 2, 0, 2])
+    expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual([
+      "non", "oui", "non", "oui", "en_cours", "non", "non", "oui", "non", "non", "non", "non",
+    ])
+    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 2, 2, 15, 2, 0, 2, 2, 0, 2, 0, 0])
   })
 
   it("tolère un état persisté corrompu", () => {
@@ -145,38 +156,66 @@ describe("passage à un dashboard unique (version 5)", () => {
   })
 })
 
-describe("mise à jour des valeurs de référence du pilotage (version 6)", () => {
+describe("mise à jour des données de référence (fichier du 14/10)", () => {
   const defaults = {
     values: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent])),
     targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
   }
-  const old = { values: { agents_industrialises: 8 }, targets: { agents_industrialises: 9 } }
+  const old = { values: { agents_industrialises: 9 }, targets: { agents_industrialises: 10 } }
+  const recentImport = "2026-10-15T09:00:00.000Z"
+  const olderImport = "2026-10-06T09:00:00.000Z"
+  const userAction: ActionItem = { id: "u1", title: "Mon action", owner: "moi", objectiveId: "", status: "todo", dueDate: "" }
 
-  it("donne les nouvelles valeurs à un navigateur qui n'a rien importé", () => {
-    const next = refreshPilotage({ ...old, lastImportAt: null }, 5, defaults)
-    expect(next.values.agents_industrialises).toBe(9)
-    expect(next.targets.agents_industrialises).toBe(10)
-  })
-
-  it("remplace les valeurs d'un import antérieur au nouveau fichier de suivi", () => {
-    const next = refreshPilotage({ ...old, lastImportAt: "2026-10-01T09:00:00.000Z" }, 5, defaults)
-    expect(next.values).toEqual(defaults.values)
+  it("donne les nouvelles valeurs du pilotage à un navigateur qui n'a rien importé depuis", () => {
+    expect(refreshPilotage({ ...old, lastImportAt: null }, 6, defaults).values.agents_industrialises).toBe(8)
+    expect(refreshPilotage({ ...old, lastImportAt: olderImport }, 6, defaults).values).toEqual(defaults.values)
   })
 
   it("garde les valeurs d'un import plus récent que le fichier de suivi", () => {
-    const recent = { ...old, lastImportAt: "2026-10-06T09:00:00.000Z" }
-    expect(refreshPilotage(recent, 5, defaults)).toBe(recent)
+    const recent = { ...old, lastImportAt: recentImport }
+    expect(refreshPilotage(recent, 6, defaults)).toBe(recent)
   })
 
-  it("reprend les valeurs du dernier fichier de suivi", () => {
+  it("reprend les valeurs du dernier fichier de suivi, nouveaux objectifs compris", () => {
     const byId = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, [o.defaultCurrent, o.target]]))
     expect(byId).toMatchObject({
-      consultants_vibe_coding: [250, 250],
-      certifications_claude: [6, 10],
-      agents_industrialises: [9, 10],
-      missions_avec_agents: [27, 50],
-      description_cicd: [100, 100],
-      publication_ai_showcase: [9, 10],
+      agents_disponibles: [12, 20],
+      agents_industrialises: [8, 10],
+      missions_avec_agents: [41, 50],
+      licences_claude: [0, 23],
+      demo_ai_showcase: [3, 10],
     })
+  })
+
+  it("remplace les actions de référence sans import récent, en gardant celles créées à la main", () => {
+    const stale = SEED_ACTIONS.slice(0, 13).map((a, i) => ({ ...a, id: `imp-${i}`, status: "in_progress" as const }))
+    const mine = { ...userAction, id: "u2", title: "Action ajoutée à la main" }
+    const next = refreshActions([...stale, mine], 6, olderImport)
+    expect(next).toEqual([...SEED_ACTIONS, mine])
+    expect(next.find((a) => a.title.includes("PARALLAX"))?.objectiveId).toBe("description_cicd")
+  })
+
+  it("ne touche pas aux actions après un import plus récent", () => {
+    const mine = [{ ...userAction, id: "u3" }]
+    expect(refreshActions(mine, 6, recentImport)).toBe(mine)
+  })
+
+  it("donne au dashboard les agents de référence, en gardant son titre", () => {
+    const old10 = { ...SEED_REPORT, rows: SEED_REPORT.rows.slice(0, 10), meta: { ...SEED_REPORT.meta, title: "Mon titre" } }
+    const next = refreshDashboard(old10, null)
+    expect(next.rows).toHaveLength(12)
+    expect(next.meta.title).toBe("Mon titre")
+    expect(refreshDashboard(old10, recentImport)).toBe(old10)
+  })
+
+  it("complète l'historique enregistré avec les photos de référence manquantes", () => {
+    const imported = { ...SEED_HISTORY[1], date: "2026-10-08" }
+    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], imported]).map((s) => s.date)).toEqual([
+      "2026-09-30",
+      "2026-10-05",
+      "2026-10-08",
+      "2026-10-14",
+    ])
+    expect(mergeSeedHistory(undefined).map((s) => s.date)).toEqual(SEED_HISTORY.map((s) => s.date))
   })
 })

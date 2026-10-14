@@ -99,7 +99,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 20,
-    defaultCurrent: 10,
+    defaultCurrent: 12,
   },
   {
     id: "agents_industrialises",
@@ -110,7 +110,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 10,
-    defaultCurrent: 9,
+    defaultCurrent: 8,
   },
   {
     id: "missions_avec_agents",
@@ -121,7 +121,18 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "missions",
     direction: "up",
     target: 50,
-    defaultCurrent: 27,
+    defaultCurrent: 41,
+  },
+  {
+    id: "licences_claude",
+    category: "agents",
+    owner: "plateforme",
+    label: "Nombre de licences Claude Code attribuées à la communauté AI4CYB Makers",
+    description: "Équiper la communauté AI4CYB Makers en licences Claude Code pour développer les agents.",
+    unit: "licences",
+    direction: "up",
+    target: 23,
+    defaultCurrent: 0,
   },
   {
     id: "disponibilite_cicd",
@@ -166,6 +177,17 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     direction: "up",
     target: 10,
     defaultCurrent: 9,
+  },
+  {
+    id: "demo_ai_showcase",
+    category: "notoriete",
+    owner: "communication",
+    label: "Existence d'un démo mode pour nos agents AI4CYB",
+    description: "Permettre de montrer chaque agent AI4CYB en démonstration, sans données client.",
+    unit: "agents",
+    direction: "up",
+    target: 10,
+    defaultCurrent: 3,
   },
 ]
 

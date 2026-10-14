@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { applyNormalizations, buildFromSheet, hasPropaleType, isClientReadyStatus, normalizeKnownColumns } from "./fixedFormatImport"
+import { applyNormalizations, buildFromSheet, hasPropaleType, isClientReadyStatus, normalizeKnownColumns, toYesNo } from "./fixedFormatImport"
 import type { ParsedSheet } from "./excelImport"
 
 function sheet(headers: string[], rows: unknown[][]): ParsedSheet {
@@ -79,9 +79,9 @@ describe("colonnes Propale type et Nombre de missions (fichier de suivi réel)",
   const propale = result.template.criteria.find((c) => c.label === "Propale type")!
   const missions = result.template.criteria.find((c) => c.label === "Nombre de missions réalisées")!
 
-  it("traite Propale type comme un Oui/Non, vide = Non", () => {
+  it("traite Propale type comme un Oui/En cours/Non, vide = Non", () => {
     expect(propale.type).toBe("select")
-    expect(propale.options?.map((o) => o.label)).toEqual(["Oui", "Non"])
+    expect(propale.options?.map((o) => o.label)).toEqual(["Oui", "En cours", "Non"])
     expect(result.rows.map((r) => r[propale.key])).toEqual(["non", "oui", "non"])
   })
 
@@ -118,6 +118,14 @@ describe("helpers", () => {
     expect(hasPropaleType("Oui")).toBe(true)
     expect(hasPropaleType("oui")).toBe(true)
     expect(hasPropaleType("Lien Deck")).toBe(true)
+  })
+
+  it("lit « En cours » comme une propale en préparation, pas encore disponible", () => {
+    // Cas réel (fichier du 14/10) : CyberBench a « En cours » dans la colonne Propale type.
+    expect(toYesNo("En cours")).toBe("en_cours")
+    expect(toYesNo("en_cours")).toBe("en_cours")
+    expect(toYesNo("WIP")).toBe("en_cours")
+    expect(hasPropaleType("En cours")).toBe(false)
   })
 
   it("applyNormalizations réapplique les valeurs sur les bonnes cellules", () => {

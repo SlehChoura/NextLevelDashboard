@@ -2,7 +2,8 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { DataRow, ReportData, ReportMeta, ReportTemplate } from "../types"
 import { SEED_REPORT, SEED_VERSION } from "../lib/seedData"
-import { pickDashboardReport } from "../lib/seedMigration"
+import { pickDashboardReport, refreshDashboard } from "../lib/seedMigration"
+import { readStoredLastImportAt } from "../lib/browserData"
 
 /**
  * Le dashboard unique des agents IA4CYB. Il n'y a plus de liste de rapports : l'import global
@@ -29,8 +30,11 @@ export const useReportStore = create<ReportState>()(
       name: "nld-reports",
       version: SEED_VERSION,
       // Versions précédentes : plusieurs rapports ("Mes rapports"). On garde celui que l'import
-      // global alimentait (voir pickDashboardReport), remis à jour si besoin.
-      migrate: (persisted, version) => ({ report: pickDashboardReport(persisted, version, readLegacyDashboardId()) }),
+      // global alimentait (voir pickDashboardReport), puis on lui donne les agents des nouvelles
+      // données de référence, sauf si un fichier a été importé depuis leur date.
+      migrate: (persisted, version) => ({
+        report: refreshDashboard(pickDashboardReport(persisted, version, readLegacyDashboardId()), readStoredLastImportAt()),
+      }),
     },
   ),
 )

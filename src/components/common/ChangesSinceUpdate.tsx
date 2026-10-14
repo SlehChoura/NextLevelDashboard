@@ -37,7 +37,8 @@ function Row({ change, children }: { change: ValueChange; children: React.ReactN
  */
 export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
   if (!diff) return null
-  const empty = diff.progress.length === 0 && diff.dashboard.length === 0 && diff.targetRevisions.length === 0
+  const empty =
+    diff.progress.length === 0 && diff.dashboard.length === 0 && diff.targetRevisions.length === 0 && diff.added.length === 0
 
   return (
     <section className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm print:p-3">
@@ -61,6 +62,23 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
               </Row>
             ))}
           </ul>
+        )}
+
+        {diff.added.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-[var(--color-accent)]">✚ Nouveau(x) objectif(s)</p>
+            <ul className="mt-1">
+              {diff.added.map((a) => (
+                <li key={a.objective.id} className="flex items-baseline justify-between gap-3 py-1 text-sm">
+                  <span className="text-[var(--color-text)]">{a.objective.label}</span>
+                  <span className="shrink-0 whitespace-nowrap text-[var(--color-text-muted)]">
+                    <strong className="text-[var(--color-text)]">{formatNumber(a.value)}</strong> / {formatNumber(a.target)}{" "}
+                    {a.objective.unit}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {diff.targetRevisions.length > 0 && (

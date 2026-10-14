@@ -20,7 +20,7 @@ serveur.
   l'en-tête n'est pas vide) deviennent ses critères. Une ligne est retenue si sa première colonne
   est renseignée, ce qui exclut les blocs de légende. Le type de chaque critère (pourcentage,
   statut à choix, texte libre) est déduit de ses valeurs, sauf « Propale type » (toujours Oui/Non,
-  vide = Non) et les compteurs « Nombre de… » (toujours un nombre, vide = 0).
+  vide = Non, « En cours » si la propale est en préparation) et les compteurs « Nombre de… » (toujours un nombre, vide = 0).
 - **Un seul dashboard** : pas de liste de rapports. « Modifier les données » ouvre un écran de
   correction (critères et lignes éditables) ; le titre et les informations du dashboard se
   modifient depuis son en-tête.
@@ -83,7 +83,10 @@ doublon. Un onglet « Actions » sans aucune ligne est ignoré plutôt que de to
 À chaque import global, le fichier est contrôlé et les incohérences qui feraient perdre ou mal
 interpréter une donnée sont listées sous le message d'import : colonne sans en-tête ou en-tête
 décalé dans l'onglet agents, clé et libellé d'objectif qui ne désignent pas le même objectif,
-statut ou échéance illisible, doublon, valeur non numérique… L'import est appliqué malgré tout.
+statut ou échéance illisible, doublon, valeur non numérique… Les chiffres saisis dans deux onglets
+sont aussi comparés (« Agents disponibles » et nombre d'agents listés, « Publication AI Showcase » et
+nombre de « Oui » dans l'onglet agents) et tout écart est signalé « à vérifier ». L'import est
+appliqué malgré tout.
 
 ## Déploiement
 
