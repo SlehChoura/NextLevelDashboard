@@ -1,16 +1,39 @@
-import { lazy, Suspense } from "react"
+import { lazy, Suspense, useEffect } from "react"
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom"
 import { AppShell } from "./components/layout/AppShell"
 
-const HomePage = lazy(() => import("./pages/HomePage").then((m) => ({ default: m.HomePage })))
-const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })))
-const SynthesePage = lazy(() => import("./pages/SynthesePage").then((m) => ({ default: m.SynthesePage })))
-const KpisPage = lazy(() => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })))
-const PilotagePage = lazy(() => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })))
-const ActionsPage = lazy(() => import("./pages/ActionsPage").then((m) => ({ default: m.ActionsPage })))
-const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })))
+const loaders = {
+  home: () => import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
+  dashboard: () => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+  synthese: () => import("./pages/SynthesePage").then((m) => ({ default: m.SynthesePage })),
+  kpis: () => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })),
+  pilotage: () => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })),
+  actions: () => import("./pages/ActionsPage").then((m) => ({ default: m.ActionsPage })),
+  notFound: () => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
+}
+
+const HomePage = lazy(loaders.home)
+const DashboardPage = lazy(loaders.dashboard)
+const SynthesePage = lazy(loaders.synthese)
+const KpisPage = lazy(loaders.kpis)
+const PilotagePage = lazy(loaders.pilotage)
+const ActionsPage = lazy(loaders.actions)
+const NotFoundPage = lazy(loaders.notFound)
+
+/**
+ * Toutes les pages sont chargées en arrière-plan dès l'ouverture du site : un onglet resté ouvert
+ * pendant une mise en ligne les a déjà en mémoire, et ne réclame plus de fichiers qui n'existent plus.
+ */
+function usePrefetchPages() {
+  useEffect(() => {
+    const prefetch = () => Object.values(loaders).forEach((load) => load().catch(() => undefined))
+    const id = window.setTimeout(prefetch, 1500)
+    return () => window.clearTimeout(id)
+  }, [])
+}
 
 export default function App() {
+  usePrefetchPages()
   return (
     <HashRouter>
       <Suspense fallback={<div className="px-6 py-8 text-sm text-[var(--color-text-muted)]">Chargement…</div>}>

@@ -1,4 +1,6 @@
-import { NavLink, Outlet } from "react-router-dom"
+import { Suspense } from "react"
+import { NavLink, Outlet, useLocation } from "react-router-dom"
+import { PageErrorBoundary } from "./PageErrorBoundary"
 import { Logo } from "../common/Logo"
 
 const NAV_ITEMS = [
@@ -11,6 +13,7 @@ const NAV_ITEMS = [
 ]
 
 export function AppShell() {
+  const { pathname } = useLocation()
   return (
     <div className="min-h-screen">
       <header className="no-print sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
@@ -42,7 +45,12 @@ export function AppShell() {
         </div>
       </header>
       <main>
-        <Outlet />
+        {/* Une page en erreur n'emporte ni le menu ni les autres pages (nouvelle page = nouvel essai). */}
+        <PageErrorBoundary key={pathname}>
+          <Suspense fallback={<div className="px-6 py-8 text-sm text-[var(--color-text-muted)]">Chargement…</div>}>
+            <Outlet />
+          </Suspense>
+        </PageErrorBoundary>
       </main>
     </div>
   )
