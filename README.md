@@ -115,6 +115,17 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
 - **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
   configurez la commande `npm run build` et le dossier de publication `public`.
 
+### Mise en ligne d'une nouvelle version
+
+Chaque page est chargée depuis un fichier dont le nom change à chaque build. Pour qu'un onglet
+ouvert avant une mise en ligne ne tombe pas sur une page blanche :
+
+- toutes les pages sont préchargées dès l'ouverture du site ;
+- un fichier introuvable déclenche un rechargement unique de la dernière version, en contournant
+  le cache de la page d'accueil (`src/lib/staleVersion.ts`) ;
+- une page en erreur affiche un message (recharger, ou effacer les données du navigateur) sans
+  faire disparaître le menu ni les autres pages (`PageErrorBoundary`).
+
 ## Stack technique
 
 - React + TypeScript + Vite
