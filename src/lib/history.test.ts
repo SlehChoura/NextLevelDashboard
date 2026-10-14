@@ -7,7 +7,7 @@ import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
   it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 27, ready: 7, propale: 3 })
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 41, ready: 7, propale: 3 })
   })
 })
 
@@ -51,6 +51,7 @@ describe("historique des mises à jour", () => {
     ])
     expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
       ["Agents IA4CYB suivis", 10, 12],
+      ["Missions réalisées (somme par agent)", 27, 41],
       ["Agents avec propale type", 1, 3],
     ])
   })

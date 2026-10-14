@@ -16,13 +16,19 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 7
+export const SEED_VERSION = 8
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
  * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
  */
 export const SEED_PILOTAGE_DATE = "2026-10-14"
+
+/**
+ * Instant d'intégration du dernier fichier de suivi. Deux versions du fichier ont été intégrées le
+ * même jour : un import fait plus tôt dans la journée est plus ancien que ces données.
+ */
+export const SEED_REFERENCE_AT = "2026-10-14T15:55:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
@@ -40,8 +46,8 @@ export const DASHBOARD_HEADERS = [
 
 export const DASHBOARD_ROWS: unknown[][] = [
   ["Smart Identity Analyzer", "Présentable en contexte client", 0.75, 0.9, 0.5, 0.5, 0.55, "", "", "Oui"],
-  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.25, 0.5, 0.5, "Oui", 2, "Oui"],
-  ["Booster EBIOS RM - Analyse de risques", "Présentable en contexte client", 0.5, 0.75, 0.75, 0.5, 0.5, "", 2, "Oui"],
+  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.25, 0.5, 0.5, "Oui", 10, "Oui"],
+  ["Booster EBIOS RM - Analyse de risques", "Présentable en contexte client", 0.5, 0.75, 0.75, 0.5, 0.5, "", 3, "Oui"],
   [
     "The Web Recon Accelerator - Local-LLM Powered Pentest Assistant",
     "Présentable en contexte client",
@@ -51,12 +57,12 @@ export const DASHBOARD_ROWS: unknown[][] = [
     1,
     1,
     "Oui",
-    15,
+    20,
     "Oui",
   ],
   ["The CyberBench Intelligence Orchestrator ", "WIP", 0.5, 0.33, 0, 1, 0.25, "En cours", 2, "Oui"],
   ["The CTI Exposure Scout – Autonomous Attack Surface Intelligence", "WIP", 0.5, 0.5, 0, 0, 0.25, "", "", "En cours"],
-  ["AI‑Powered NIS2 Intelligence & Compliance Assistant", "WIP", 0.5, 0.5, 0.25, 0.25, 0.5, "", 2, "En cours"],
+  ["AI‑Powered NIS2 Intelligence & Compliance Assistant", "WIP", 0.5, 0.5, 0.25, 0.25, 0.5, "", 2, "Oui"],
   ["Cyber-by-Design Project Assistant", "Présentable en contexte client", 0.75, 1, 0.75, 0.75, 0.75, "Oui", 2, "Oui"],
   [
     "The Deliverable Purifier – Automated Anonymization & KM Re-injection",
@@ -94,7 +100,7 @@ export const SEED_REPORT: ReportData = {
   // Ids de ligne stables (plutôt qu'aléatoires à chaque chargement de l'application).
   rows: dashboardBuild.rows.map((row, i) => ({ ...row, __id: `seed-agent-${i + 1}` })),
   createdAt: "2026-09-01T00:00:00.000Z",
-  updatedAt: "2026-10-14T00:00:00.000Z",
+  updatedAt: SEED_REFERENCE_AT,
 }
 
 export const SEED_ACTIONS: ActionItem[] = [

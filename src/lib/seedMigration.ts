@@ -2,7 +2,7 @@ import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 import { normalizeKnownColumns } from "./fixedFormatImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
-import { SEED_ACTIONS, SEED_HISTORY, SEED_PILOTAGE_DATE, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
+import { SEED_ACTIONS, SEED_HISTORY, SEED_REFERENCE_AT, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
 import { MAX_SNAPSHOTS, type Snapshot } from "./history"
 
 /**
@@ -113,7 +113,7 @@ interface PersistedPilotage {
 
 /**
  * Valeurs et cibles du pilotage à la mise à jour des données de référence. Elles sont remplacées
- * par celles du dernier fichier de suivi ({@link SEED_PILOTAGE_DATE}), sauf si l'utilisateur a
+ * par celles du dernier fichier de suivi ({@link SEED_REFERENCE_AT}), sauf si l'utilisateur a
  * importé un fichier depuis : ses valeurs, plus récentes, sont alors conservées.
  */
 export function refreshPilotage<T extends PersistedPilotage>(
@@ -130,7 +130,7 @@ export function refreshPilotage<T extends PersistedPilotage>(
  * plus récentes, l'emportent sur celles intégrées à l'application.
  */
 export function importedSinceReference(lastImportAt: unknown): boolean {
-  return typeof lastImportAt === "string" && lastImportAt.slice(0, 10) >= SEED_PILOTAGE_DATE
+  return typeof lastImportAt === "string" && lastImportAt >= SEED_REFERENCE_AT
 }
 
 /**
@@ -162,11 +162,17 @@ export function refreshDashboard(report: ReportData, lastImportAt: unknown): Rep
   return importedSinceReference(lastImportAt) ? report : { ...SEED_REPORT, meta: report.meta }
 }
 
-/** Ajoute à l'historique enregistré les photos de référence qui lui manquent, dans l'ordre des dates. */
-export function mergeSeedHistory(snapshots: unknown): Snapshot[] {
+/**
+ * Ajoute à l'historique enregistré les photos de référence qui lui manquent, dans l'ordre des dates.
+ * Sans import depuis les données de référence, une photo enregistrée à la date d'une photo de
+ * référence est remplacée par celle-ci (fichier corrigé et réintégré le même jour).
+ */
+export function mergeSeedHistory(snapshots: unknown, lastImportAt: unknown = null): Snapshot[] {
   const stored = Array.isArray(snapshots) ? (snapshots as Snapshot[]).filter((s) => typeof s?.date === "string") : []
-  const dates = new Set(stored.map((s) => s.date))
-  return [...stored, ...SEED_HISTORY.filter((s) => !dates.has(s.date))]
+  const seedDates = new Set(SEED_HISTORY.map((s) => s.date))
+  const kept = importedSinceReference(lastImportAt) ? stored : stored.filter((s) => !seedDates.has(s.date))
+  const dates = new Set(kept.map((s) => s.date))
+  return [...kept, ...SEED_HISTORY.filter((s) => !dates.has(s.date))]
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-MAX_SNAPSHOTS)
 }
