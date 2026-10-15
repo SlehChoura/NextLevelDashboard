@@ -1,7 +1,8 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { PILOTAGE_OBJECTIVES } from "../lib/pilotage"
-import { SEED_REPORT_ID, SEED_VERSION } from "../lib/seedData"
+import { SEED_VERSION } from "../lib/seedData"
+import { refreshPilotage } from "../lib/seedMigration"
 
 type PilotageValues = Record<string, number>
 
@@ -15,9 +16,9 @@ interface PilotageState {
   setTarget: (objectiveId: string, target: number) => void
   setTargets: (targets: PilotageValues) => void
   resetValues: () => void
-  /** Id du rapport dashboard généré par le dernier import combiné (réutilisé pour le mettre à jour plutôt que le dupliquer). */
-  dashboardReportId: string | null
-  setDashboardReportId: (id: string | null) => void
+  /** Date (ISO) du dernier import global réussi, affichée comme « dernière mise à jour des données ». */
+  lastImportAt: string | null
+  setLastImportAt: (date: string) => void
 }
 
 const defaultValues: PilotageValues = Object.fromEntries(
@@ -41,23 +42,16 @@ export const usePilotageStore = create<PilotageState>()(
         set((state) => ({ targets: { ...state.targets, [objectiveId]: target } })),
       setTargets: (targets) => set((state) => ({ targets: { ...state.targets, ...targets } })),
       resetValues: () => set({ values: { ...defaultValues }, targets: { ...defaultTargets } }),
-      dashboardReportId: SEED_REPORT_ID,
-      setDashboardReportId: (id) => set({ dashboardReportId: id }),
+      lastImportAt: null,
+      setLastImportAt: (date) => set({ lastImportAt: date }),
     }),
     {
       name: "nld-pilotage",
       version: SEED_VERSION,
-      // Nouvelles données de référence (version 3) : les valeurs et cibles enregistrées par une
-      // version antérieure sont remplacées par celles du fichier de suivi à jour. Les versions
-      // suivantes ne touchent pas au pilotage : les valeurs importées depuis sont conservées.
+      // Nouvelles données de référence : remplacent les valeurs enregistrées, sauf si un fichier
+      // a été importé depuis la date de ces données (voir refreshPilotage).
       migrate: (persisted, version) =>
-        version >= 3
-          ? (persisted as PilotageState)
-          : {
-              ...(persisted as Partial<PilotageState>),
-              values: { ...defaultValues },
-              targets: { ...defaultTargets },
-            },
+        refreshPilotage(persisted as PilotageState, version, { values: defaultValues, targets: defaultTargets }),
     },
   ),
 )

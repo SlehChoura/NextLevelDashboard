@@ -56,7 +56,7 @@ export function DashboardHeader({
 
       {editing && (
         <div className="no-print border-t border-[var(--color-border)] px-5 pb-5 pt-4">
-          <ReportMetaForm meta={report.meta} onChange={(patch) => updateMeta(report.id, patch)} />
+          <ReportMetaForm meta={report.meta} onChange={updateMeta} />
         </div>
       )}
     </div>

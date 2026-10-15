@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react"
-import { ImportFeedback } from "../components/common/ImportFeedback"
-import { FileDrop } from "../components/common/FileDrop"
+import { useSearchParams } from "react-router-dom"
+import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
 import { usePilotageStore } from "../store/pilotageStore"
-import { useActionsStore } from "../store/actionsStore"
-import { useCombinedImport } from "../hooks/useCombinedImport"
+import { useHistoryStore } from "../store/historyStore"
+import { latestDiff, shortDate } from "../lib/history"
 import {
   CATEGORY_LABELS,
   computeStatus,
@@ -17,7 +17,6 @@ import {
   type PilotageOwner,
   type VisiblePilotageStatus,
 } from "../lib/pilotage"
-import { downloadCombinedTemplate } from "../lib/combinedImport"
 
 const CATEGORY_ICONS: Record<PilotageCategory, string> = {
   competences: "🎓",
@@ -44,11 +43,14 @@ function AchievementCard({
   objective,
   current,
   target,
+  revision,
   onSave,
 }: {
   objective: PilotageObjective
   current: number
   target: number
+  /** Cible modifiée lors de la dernière mise à jour des données (`date` au format "05/10"). */
+  revision?: { from: number; to: number; date: string }
   onSave: (current: number, target: number) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -57,6 +59,13 @@ function AchievementCard({
   const status = visibleStatus(computeStatus(objective, current, target))
   const percent = progressPercent(objective, current, target)
   const barWidth = Math.max(0, Math.min(100, percent))
+  // Une révision n'est plus d'actualité si la cible a été modifiée depuis (saisie manuelle).
+  const activeRevision = revision?.to === target ? revision : undefined
+  // Objectif atteint seulement parce que la cible a été abaissée : à dire, pas à laisser deviner.
+  const unlockedByRevision =
+    activeRevision !== undefined &&
+    status === "unlocked" &&
+    visibleStatus(computeStatus(objective, current, activeRevision.from)) !== "unlocked"
 
   function save() {
     const nCurrent = Number(currentDraft.replace(",", "."))
@@ -106,6 +115,14 @@ function AchievementCard({
         </div>
         <span className="min-w-[42px] text-right text-xs font-bold text-[var(--color-text)]">{percent}%</span>
       </div>
+
+      {activeRevision && (
+        <p className="mt-3 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] px-2.5 py-1.5 text-xs text-[var(--color-text)]">
+          <span className="font-semibold text-[var(--color-warning)]">⚠ Cible révisée le {activeRevision.date}</span> :{" "}
+          {formatNumber(activeRevision.from)} → {formatNumber(activeRevision.to)}
+          {unlockedByRevision && " — objectif atteint grâce à cette révision"}
+        </p>
+      )}
 
       <div className="mt-3 flex justify-between gap-4 text-xs">
         <span className="text-[var(--color-text-muted)]">Responsable</span>
@@ -177,14 +194,19 @@ export function PilotagePage() {
   const setValue = usePilotageStore((s) => s.setValue)
   const setTarget = usePilotageStore((s) => s.setTarget)
 
-  const actions = useActionsStore((s) => s.actions)
 
-  const { importMessage, importWarnings, handleImportFile: applyImportFile } = useCombinedImport()
-
-  const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">("all")
+  const [searchParams] = useSearchParams()
+  const initialCategory = searchParams.get("categorie")
+  const [categoryFilter, setCategoryFilter] = useState<PilotageCategory | "all">(
+    initialCategory && initialCategory in CATEGORY_LABELS ? (initialCategory as PilotageCategory) : "all",
+  )
+  const diff = latestDiff(useHistoryStore((s) => s.snapshots))
+  const revisionOf = (objectiveId: string) => {
+    const r = diff?.targetRevisions.find((c) => c.objective.id === objectiveId)
+    return r && diff ? { from: r.from, to: r.to, date: shortDate(diff.to) } : undefined
+  }
   const [statusFilter, setStatusFilter] = useState<VisiblePilotageStatus | "all">("all")
   const [ownerFilter, setOwnerFilter] = useState<PilotageOwner | "all">("all")
-  const [importOpen, setImportOpen] = useState(false)
 
   const computed = useMemo(
     () =>
@@ -221,63 +243,21 @@ export function PilotagePage() {
 
   const unlockedItems = computed.filter((c) => c.status === "unlocked")
 
-  async function handleImportFile(file: File) {
-    const ok = await applyImportFile(file)
-    if (ok) setImportOpen(false)
-  }
-
   return (
     <div className="mx-auto max-w-6xl px-6 py-14">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Pilotage IA4CYB
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
-      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
-        KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
-        manuellement ou par import d'un fichier de suivi.
-      </p>
-
-      <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--color-text)]">
-              Import global — Pilotage, Actions et Dashboard
-            </h2>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              Un seul fichier Excel à 3 onglets (« Suivi pilotage », « Actions », « Agents IA4CYB »)
-              pour mettre à jour les objectifs, les actions et générer le dashboard des agents en un
-              seul import.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => downloadCombinedTemplate(values, targets, actions)}
-              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium whitespace-nowrap text-[var(--color-text)]"
-            >
-              Télécharger le modèle complet
-            </button>
-            <button
-              onClick={() => setImportOpen((v) => !v)}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white"
-              style={{ backgroundColor: "var(--color-accent)" }}
-            >
-              Importer le fichier complet
-            </button>
-          </div>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+            Pilotage IA4CYB
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
+          <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
+            Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
+            KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
+            manuellement ou en mettant à jour les données depuis le fichier de suivi.
+          </p>
         </div>
-
-        {importOpen && (
-          <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
-            <p className="text-xs text-[var(--color-text-muted)]">
-              Téléchargez d'abord le modèle, complétez un ou plusieurs onglets, puis réimportez-le
-              ici. Un onglet absent du fichier est simplement ignoré.
-            </p>
-            <FileDrop onFile={handleImportFile} accept=".xlsx,.xls,.csv" hint="Formats acceptés : .xlsx, .xls, .csv" />
-          </div>
-        )}
-
-        <ImportFeedback message={importMessage} warnings={importWarnings} />
+        <RefreshDataPanel />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -407,6 +387,7 @@ export function PilotagePage() {
               objective={objective}
               current={current}
               target={target}
+              revision={revisionOf(objective.id)}
               onSave={(newCurrent, newTarget) => {
                 setValue(objective.id, newCurrent)
                 setTarget(objective.id, newTarget)

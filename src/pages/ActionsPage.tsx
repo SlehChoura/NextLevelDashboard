@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { Fragment, useMemo, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
+import { Badge } from "../components/common/Badge"
 import { useActionsStore } from "../store/actionsStore"
-import { ACTION_STATUS_LABELS, type ActionStatus } from "../lib/actions"
+import { ACTION_STATUS_LABELS, isLate, todayIso, type ActionItem, type ActionStatus } from "../lib/actions"
 import { CATEGORY_LABELS, PILOTAGE_OBJECTIVES } from "../lib/pilotage"
 
 const STATUS_TEXT_CLASS: Record<ActionStatus, string> = {
@@ -30,6 +31,11 @@ export function ActionsPage() {
   const [objectiveFilter, setObjectiveFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<ActionStatus | "all">("all")
   const [search, setSearch] = useState("")
+  const [searchParams] = useSearchParams()
+  const [lateOnly, setLateOnly] = useState(searchParams.get("filtre") === "retard")
+  const [groupByOwner, setGroupByOwner] = useState(false)
+  const today = todayIso()
+  const lateCount = actions.filter((a) => isLate(a, today)).length
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -38,9 +44,18 @@ export function ActionsPage() {
       const statusMatches = statusFilter === "all" || a.status === statusFilter
       const searchMatches =
         query === "" || a.title.toLowerCase().includes(query) || a.owner.toLowerCase().includes(query)
-      return objectiveMatches && statusMatches && searchMatches
+      const lateMatches = !lateOnly || isLate(a, today)
+      return objectiveMatches && statusMatches && searchMatches && lateMatches
     })
-  }, [actions, objectiveFilter, statusFilter, search])
+  }, [actions, objectiveFilter, statusFilter, search, lateOnly, today])
+
+  // Regroupement par porteur : un bloc par personne, avec son nombre d'actions et de retards.
+  const groups = useMemo(() => {
+    if (!groupByOwner) return [{ owner: null as string | null, items: filtered }]
+    const byOwner = new Map<string, ActionItem[]>()
+    for (const a of filtered) byOwner.set(a.owner || "Sans porteur", [...(byOwner.get(a.owner || "Sans porteur") ?? []), a])
+    return Array.from(byOwner, ([owner, items]) => ({ owner, items })).sort((a, b) => a.owner.localeCompare(b.owner, "fr"))
+  }, [filtered, groupByOwner])
 
   function submitForm(e: React.FormEvent) {
     e.preventDefault()
@@ -198,6 +213,8 @@ export function ActionsPage() {
             setObjectiveFilter("all")
             setStatusFilter("all")
             setSearch("")
+            setLateOnly(false)
+            setGroupByOwner(false)
           }}
           className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-text)]"
         >
@@ -205,9 +222,19 @@ export function ActionsPage() {
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-        <strong className="text-[var(--color-text)]">{filtered.length}</strong> action(s) affichée(s)
-      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--color-text)]">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={lateOnly} onChange={(e) => setLateOnly(e.target.checked)} />
+          En retard uniquement <span className="text-[var(--color-text-muted)]">({lateCount})</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={groupByOwner} onChange={(e) => setGroupByOwner(e.target.checked)} />
+          Grouper par porteur
+        </label>
+        <span className="text-[var(--color-text-muted)]">
+          <strong className="text-[var(--color-text)]">{filtered.length}</strong> action(s) affichée(s)
+        </span>
+      </div>
 
       {filtered.length === 0 ? (
         <div className="mt-3 rounded-xl border border-dashed border-[var(--color-border)] p-10 text-center text-sm text-[var(--color-text-muted)]">
@@ -229,57 +256,77 @@ export function ActionsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((action) => {
+              {groups.map(({ owner, items }) => (
+                <Fragment key={owner ?? "all"}>
+                  {owner !== null && (
+                    <tr className="bg-[var(--color-accent)]/[0.05]">
+                      <td colSpan={6} className="border-b border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-text)]">
+                        {owner}{" "}
+                        <span className="font-normal text-[var(--color-text-muted)]">
+                          — {items.length} action(s)
+                          {items.some((a) => isLate(a, today)) && `, dont ${items.filter((a) => isLate(a, today)).length} en retard`}
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                  {items.map((action) => {
                 const objective = objectiveById.get(action.objectiveId)
-                return (
-                  <tr key={action.id} className="even:bg-[var(--color-bg)]">
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
-                      {action.title}
-                    </td>
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
-                      {action.owner}
-                    </td>
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text-muted)]">
-                      {objective ? (
-                        <>
-                          <span className="block text-[10px] font-bold uppercase tracking-wide">
-                            {CATEGORY_LABELS[objective.category]}
-                          </span>
-                          {objective.label}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text-muted)]">
-                      {action.dueDate
-                        ? new Date(action.dueDate + "T00:00:00").toLocaleDateString("fr-FR")
-                        : "—"}
-                    </td>
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top">
-                      <select
-                        value={action.status}
-                        onChange={(e) => updateAction(action.id, { status: e.target.value as ActionStatus })}
-                        className={`rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium ${STATUS_TEXT_CLASS[action.status]}`}
-                      >
-                        {(Object.keys(ACTION_STATUS_LABELS) as ActionStatus[]).map((s) => (
-                          <option key={s} value={s}>
-                            {ACTION_STATUS_LABELS[s]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-right">
-                      <button
-                        onClick={() => deleteAction(action.id)}
-                        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
-                      >
-                        Supprimer
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
+                    return (
+                      <tr key={action.id} className="even:bg-[var(--color-bg)]">
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
+                          {action.title}
+                        </td>
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
+                          {action.owner}
+                        </td>
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text-muted)]">
+                          {objective ? (
+                            <>
+                              <span className="block text-[10px] font-bold uppercase tracking-wide">
+                                {CATEGORY_LABELS[objective.category]}
+                              </span>
+                              {objective.label}
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text-muted)]">
+                          {action.dueDate
+                            ? new Date(action.dueDate + "T00:00:00").toLocaleDateString("fr-FR")
+                            : "—"}
+                          {isLate(action, today) && (
+                            <span className="ml-2 inline-block">
+                              <Badge label="En retard" color="danger" />
+                            </span>
+                          )}
+                        </td>
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top">
+                          <select
+                            value={action.status}
+                            onChange={(e) => updateAction(action.id, { status: e.target.value as ActionStatus })}
+                            className={`rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium ${STATUS_TEXT_CLASS[action.status]}`}
+                          >
+                            {(Object.keys(ACTION_STATUS_LABELS) as ActionStatus[]).map((s) => (
+                              <option key={s} value={s}>
+                                {ACTION_STATUS_LABELS[s]}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-right">
+                          <button
+                            onClick={() => deleteAction(action.id)}
+                            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
+                          >
+                            Supprimer
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>
