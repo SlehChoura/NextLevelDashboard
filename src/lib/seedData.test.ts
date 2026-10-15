@@ -113,7 +113,7 @@ describe("migration des données persistées", () => {
     expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual([
       "non", "oui", "non", "oui", "en_cours", "non", "non", "oui", "non", "non", "non", "non",
     ])
-    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 2, 2, 15, 2, 0, 2, 2, 0, 2, 0, 0])
+    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 10, 3, 20, 2, 0, 2, 2, 0, 2, 0, 0])
   })
 
   it("tolère un état persisté corrompu", () => {
@@ -208,9 +208,22 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
     expect(refreshDashboard(old10, recentImport)).toBe(old10)
   })
 
+  it("considère un import fait plus tôt le même jour comme plus ancien que les données de référence", () => {
+    // Deux versions du fichier ont été intégrées le 14/10 : un import du matin est dépassé.
+    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-10-14T09:00:00.000Z").rows).toHaveLength(12)
+    const afternoon = { ...SEED_REPORT, rows: [] }
+    expect(refreshDashboard(afternoon, "2026-10-14T17:00:00.000Z")).toBe(afternoon)
+  })
+
+  it("remplace une photo enregistrée à la date d'une photo de référence, sauf import plus récent", () => {
+    const stale = { ...SEED_HISTORY[2], dashboard: { ...SEED_HISTORY[2].dashboard, missions: 27 } }
+    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], stale], null).at(-1)).toBe(SEED_HISTORY[2])
+    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], stale], recentImport).at(-1)).toBe(stale)
+  })
+
   it("complète l'historique enregistré avec les photos de référence manquantes", () => {
     const imported = { ...SEED_HISTORY[1], date: "2026-10-08" }
-    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], imported]).map((s) => s.date)).toEqual([
+    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], imported], recentImport).map((s) => s.date)).toEqual([
       "2026-09-30",
       "2026-10-05",
       "2026-10-08",
