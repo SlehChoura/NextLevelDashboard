@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { parseCombinedWorkbook } from "./combinedImport"
+import { buildCombinedWorkbook, parseCombinedWorkbook } from "./combinedImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
 import { SEED_ACTIONS, SEED_REPORT } from "./seedData"
 import {
@@ -7,6 +7,7 @@ import {
   DASHBOARD_SHEET_NAME,
   PILOTAGE_SHEET_NAME,
   referenceWorkbook,
+  roundTrip,
   workbookFrom,
 } from "../test/referenceWorkbook"
 
@@ -157,5 +158,18 @@ describe("cellules vides", () => {
     )
     expect(result.pilotage?.valueUpdates).toEqual({})
     expect(result.pilotage?.targetUpdates).toEqual({})
+  })
+})
+
+describe("fichier téléchargé (modèle pré-rempli)", () => {
+  it("contient le dashboard actuel et se réimporte à l'identique", () => {
+    const values = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent]))
+    const targets = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target]))
+    const workbook = roundTrip(buildCombinedWorkbook(values, targets, SEED_ACTIONS, SEED_REPORT))
+    const result = parseCombinedWorkbook(workbook, SEED_ACTIONS)
+    const strip = ({ __id: _id, ...rest }: { __id: string }) => rest
+    expect(result.warnings).toEqual([])
+    expect(result.dashboard?.rows.map(strip)).toEqual(SEED_REPORT.rows.map(strip))
+    expect(result.dashboard?.template.criteria).toEqual(SEED_REPORT.template.criteria)
   })
 })

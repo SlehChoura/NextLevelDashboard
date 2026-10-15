@@ -2,25 +2,26 @@ import { useState } from "react"
 import { usePilotageStore } from "../store/pilotageStore"
 import { useActionsStore } from "../store/actionsStore"
 import { useReportStore } from "../store/reportStore"
+import { useHistoryStore } from "../store/historyStore"
 import { parseCombinedFile } from "../lib/combinedImport"
+import { makeSnapshot } from "../lib/history"
+
+/** Au-delà, le fichier n'est pas un fichier de suivi (quelques dizaines de Ko) : refusé sans être lu. */
+export const MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
 /**
  * Applique un import du fichier combiné (pilotage + actions + dashboard) aux stores concernés.
- * Partagé entre la page d'accueil et la page Pilotage, seuls points d'entrée de cet import.
+ * Seul point d'entrée de mise à jour des données (encart « Mettre à jour les données »).
  */
 export function useCombinedImport() {
   const setValues = usePilotageStore((s) => s.setValues)
   const setTargets = usePilotageStore((s) => s.setTargets)
-  const dashboardReportId = usePilotageStore((s) => s.dashboardReportId)
-  const setDashboardReportId = usePilotageStore((s) => s.setDashboardReportId)
+  const setLastImportAt = usePilotageStore((s) => s.setLastImportAt)
 
   const actions = useActionsStore((s) => s.actions)
   const replaceActions = useActionsStore((s) => s.replaceActions)
 
-  const reports = useReportStore((s) => s.reports)
-  const createReport = useReportStore((s) => s.createReport)
   const updateReportData = useReportStore((s) => s.updateData)
-  const setActiveReport = useReportStore((s) => s.setActiveReport)
 
   const [importMessage, setImportMessage] = useState<string | null>(null)
   const [importWarnings, setImportWarnings] = useState<string[]>([])
@@ -28,6 +29,12 @@ export function useCombinedImport() {
   async function handleImportFile(file: File): Promise<boolean> {
     setImportMessage(null)
     setImportWarnings([])
+    if (file.size > MAX_IMPORT_BYTES) {
+      setImportMessage(
+        `Fichier trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} Mo, maximum 5 Mo). Vérifiez qu'il s'agit bien du fichier de suivi IA4CYB.`,
+      )
+      return false
+    }
     try {
       const result = await parseCombinedFile(file, actions)
       const parts: string[] = []
@@ -58,17 +65,19 @@ export function useCombinedImport() {
 
       if (result.dashboard) {
         const { template, rows } = result.dashboard
-        const stillExists = dashboardReportId && reports.some((r) => r.id === dashboardReportId)
-        if (stillExists && dashboardReportId) {
-          updateReportData(dashboardReportId, template, rows)
-          setActiveReport(dashboardReportId)
-        } else {
-          const newId = createReport(template, { title: "Agents IA4CYB (import global)" }, rows)
-          setDashboardReportId(newId)
-        }
-        parts.push(`Dashboard : ${rows.length} agent(s) importé(s), rapport « Agents IA4CYB » ${stillExists ? "mis à jour" : "généré"}.`)
+        updateReportData(template, rows)
+        parts.push(`Dashboard : ${rows.length} agent(s) mis à jour.`)
       }
 
+      if (parts.length > 0) {
+        const now = new Date().toISOString()
+        setLastImportAt(now)
+        // Photo des chiffres après import, pour « Depuis la dernière mise à jour ».
+        const pilotage = usePilotageStore.getState()
+        useHistoryStore
+          .getState()
+          .addSnapshot(makeSnapshot(now, pilotage.values, pilotage.targets, useReportStore.getState().report))
+      }
       setImportWarnings(result.warnings)
       setImportMessage(
         parts.length > 0

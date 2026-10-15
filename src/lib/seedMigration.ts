@@ -2,7 +2,8 @@ import type { ActionItem } from "./actions"
 import type { ReportData } from "../types"
 import { normalizeKnownColumns } from "./fixedFormatImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
-import { SEED_ACTIONS, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
+import { SEED_ACTIONS, SEED_HISTORY, SEED_REFERENCE_AT, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
+import { MAX_SNAPSHOTS, type Snapshot } from "./history"
 
 /**
  * Migrations des données persistées (localStorage) lorsque {@link SEED_VERSION} change : les données
@@ -79,4 +80,99 @@ function isObsoleteAgentsLayout(report: ReportData): boolean {
     report.rows.length > 0 &&
     report.rows.every((row) => seedAgentLabels.has(normalizeTitle(String(row.label ?? ""))))
   )
+}
+
+/**
+ * Version 5 : un seul dashboard au lieu d'une liste de rapports. Retient, parmi les rapports
+ * enregistrés, celui que l'import global alimentait (`legacyDashboardId`), à défaut le rapport
+ * affiché, le rapport initial, puis le plus récent. Les rapports d'une version antérieure à la 4
+ * reçoivent d'abord les corrections de {@link refreshSeedReports} ; ceux de la version 4 sont
+ * gardés tels quels (ils contiennent les données importées par l'utilisateur).
+ */
+export function pickDashboardReport(persisted: unknown, version: number, legacyDashboardId: string | null): ReportData {
+  const state = (persisted ?? {}) as { report?: ReportData; reports?: unknown; activeReportId?: unknown }
+  if (isReport(state.report)) return state.report
+
+  const stored = Array.isArray(state.reports) ? state.reports.filter(isReport) : []
+  const reports = version < 4 ? refreshSeedReports(stored) : stored
+  const byId = (id: unknown) => reports.find((r) => r.id === id)
+  const latest = reports.slice().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0]
+  return byId(legacyDashboardId) ?? byId(state.activeReportId) ?? byId(SEED_REPORT_ID) ?? latest ?? SEED_REPORT
+}
+
+function isReport(value: unknown): value is ReportData {
+  const r = value as ReportData | undefined
+  return typeof r?.id === "string" && Array.isArray(r.template?.criteria) && Array.isArray(r.rows)
+}
+
+interface PersistedPilotage {
+  values?: Record<string, number>
+  targets?: Record<string, number>
+  lastImportAt?: string | null
+}
+
+/**
+ * Valeurs et cibles du pilotage à la mise à jour des données de référence. Elles sont remplacées
+ * par celles du dernier fichier de suivi ({@link SEED_REFERENCE_AT}), sauf si l'utilisateur a
+ * importé un fichier depuis : ses valeurs, plus récentes, sont alors conservées.
+ */
+export function refreshPilotage<T extends PersistedPilotage>(
+  persisted: T,
+  version: number,
+  defaults: { values: Record<string, number>; targets: Record<string, number> },
+): T {
+  if (version >= 3 && importedSinceReference(persisted?.lastImportAt)) return persisted
+  return { ...persisted, values: { ...defaults.values }, targets: { ...defaults.targets } }
+}
+
+/**
+ * Un fichier a été importé dans ce navigateur depuis la date des données de référence : ses données,
+ * plus récentes, l'emportent sur celles intégrées à l'application.
+ */
+export function importedSinceReference(lastImportAt: unknown): boolean {
+  return typeof lastImportAt === "string" && lastImportAt >= SEED_REFERENCE_AT
+}
+
+/**
+ * Actions à la mise à jour des données de référence. Sans import depuis leur date, les actions du
+ * fichier de suivi de référence remplacent celles enregistrées (statuts, échéances, nouvelles
+ * actions) ; les actions créées à la main, absentes du fichier, sont conservées. Après un import
+ * plus récent, rien ne change.
+ */
+export function refreshActions(actions: unknown, version: number, lastImportAt: unknown): ActionItem[] {
+  if (importedSinceReference(lastImportAt)) {
+    return version >= 4 ? (actions as ActionItem[]) : refreshSeedActions(actions)
+  }
+  const list = Array.isArray(actions) ? (actions as ActionItem[]) : []
+  const referenceTitles = new Set(SEED_ACTIONS.map((a) => normalizeTitle(a.title)))
+  const userOnly = list.filter(
+    (a) =>
+      typeof a?.id === "string" &&
+      !a.id.startsWith(SEED_ACTION_PREFIX) &&
+      !referenceTitles.has(normalizeTitle(String(a.title ?? ""))),
+  )
+  return [...SEED_ACTIONS, ...userOnly]
+}
+
+/**
+ * Dashboard à la mise à jour des données de référence : sans import depuis leur date, il reprend les
+ * agents du fichier de suivi de référence, en gardant le titre et les informations saisis.
+ */
+export function refreshDashboard(report: ReportData, lastImportAt: unknown): ReportData {
+  return importedSinceReference(lastImportAt) ? report : { ...SEED_REPORT, meta: report.meta }
+}
+
+/**
+ * Ajoute à l'historique enregistré les photos de référence qui lui manquent, dans l'ordre des dates.
+ * Sans import depuis les données de référence, une photo enregistrée à la date d'une photo de
+ * référence est remplacée par celle-ci (fichier corrigé et réintégré le même jour).
+ */
+export function mergeSeedHistory(snapshots: unknown, lastImportAt: unknown = null): Snapshot[] {
+  const stored = Array.isArray(snapshots) ? (snapshots as Snapshot[]).filter((s) => typeof s?.date === "string") : []
+  const seedDates = new Set(SEED_HISTORY.map((s) => s.date))
+  const kept = importedSinceReference(lastImportAt) ? stored : stored.filter((s) => !seedDates.has(s.date))
+  const dates = new Set(kept.map((s) => s.date))
+  return [...kept, ...SEED_HISTORY.filter((s) => !dates.has(s.date))]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-MAX_SNAPSHOTS)
 }

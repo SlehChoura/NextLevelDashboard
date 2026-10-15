@@ -25,7 +25,12 @@ import { DASHBOARD_HEADERS } from "./seedData"
  * une donnée à l'import. Un fichier sans anomalie renvoie une liste vide.
  */
 export function checkCombinedWorkbook(workbook: XLSX.WorkBook): string[] {
-  return [...checkPilotageSheet(workbook), ...checkActionsSheet(workbook), ...checkDashboardSheet(workbook)]
+  return [
+    ...checkPilotageSheet(workbook),
+    ...checkActionsSheet(workbook),
+    ...checkDashboardSheet(workbook),
+    ...checkAcrossSheets(workbook),
+  ]
 }
 
 interface Grid {
@@ -266,5 +271,46 @@ function checkDashboardSheet(workbook: XLSX.WorkBook): string[] {
       warnings.push(`[${sheet}] Ligne ${line} : ligne renseignée sans nom d'agent (colonne A), ignorée à l'import.`)
     }
   }
+  return warnings
+}
+
+const SHOWCASE_HEADER = "Publication dans le showcase AI"
+
+/**
+ * Chiffres saisis deux fois, dans le pilotage et dans l'onglet agents : un écart signale qu'un des
+ * deux onglets n'a pas été mis à jour. Signalé « à vérifier », sans rien modifier à l'import.
+ */
+function checkAcrossSheets(workbook: XLSX.WorkBook): string[] {
+  const pilotage = readGrid(workbook, PILOTAGE_SHEET_NAME)
+  const agents = readGrid(workbook, DASHBOARD_SHEET_NAME)
+  if (!pilotage || !agents) return []
+
+  const keyCol = columnIndex(pilotage, PIL_COL_KEY)
+  const labelCol = columnIndex(pilotage, PIL_COL_LABEL)
+  const currentCol = columnIndex(pilotage, PIL_COL_CURRENT)
+  const pilotageValue = (id: string): number | null => {
+    const row = pilotage.rows.find(
+      ({ cells }) => (findObjectiveIdByKey(cellText(cells, keyCol)) ?? findObjectiveIdByLabel(cellText(cells, labelCol))) === id,
+    )
+    const raw = row ? cellText(row.cells, currentCol).replace(",", ".") : ""
+    return raw !== "" && Number.isFinite(Number(raw)) ? Number(raw) : null
+  }
+
+  const agentRows = agents.rows.filter(({ cells }) => cellText(cells, 0) !== "")
+  const showcaseCol = columnIndex(agents, SHOWCASE_HEADER)
+  const published = agentRows.filter(({ cells }) => normalizeText(cellText(cells, showcaseCol)) === "oui").length
+
+  const warnings: string[] = []
+  const compare = (id: string, sheetCount: number, what: string) => {
+    const value = pilotageValue(id)
+    if (value !== null && value !== sheetCount) {
+      warnings.push(
+        `[Cohérence entre onglets] « ${objectiveLabel(id)} » vaut ${value} dans l'onglet ${PILOTAGE_SHEET_NAME}, ` +
+          `mais l'onglet ${DASHBOARD_SHEET_NAME} compte ${sheetCount} ${what} — à vérifier.`,
+      )
+    }
+  }
+  compare("agents_disponibles", agentRows.length, "agents")
+  if (showcaseCol >= 0) compare("publication_ai_showcase", published, `agents avec « Oui » en « ${SHOWCASE_HEADER} »`)
   return warnings
 }

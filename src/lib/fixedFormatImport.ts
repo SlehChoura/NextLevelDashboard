@@ -44,13 +44,17 @@ interface ColumnInference {
 /** Un compteur (ex: "nombre de missions") n'est pas un pourcentage, même si ses valeurs sont numériques. */
 const COUNT_HEADER = /^\s*(nombre|nb\.?)\s|\bcount\b/i
 
-/** Une colonne Oui/Non (ex: "Propale type") : une cellule vide signifie "Non". */
+/** Une colonne Oui/En cours/Non (ex: "Propale type") : une cellule vide signifie "Non". */
 const YES_NO_HEADER = /propale/i
 
 const YES_NO_OPTIONS: CriterionOption[] = [
   { value: "oui", label: "Oui", color: "success" },
+  { value: "en_cours", label: "En cours", color: "info" },
   { value: "non", label: "Non", color: "neutral" },
 ]
+
+/** Valeurs lues comme « en cours » (propale en préparation) : ni disponible, ni absente. */
+const IN_PROGRESS_VALUES = ["en cours", "encours", "in progress", "wip", "en preparation", "a venir"]
 
 /**
  * Colonnes dont le type est fixé par leur en-tête plutôt que déduit des valeurs : la déduction
@@ -227,14 +231,19 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
   return { template, rows: normalizeKnownColumns(template, rows).rows, ambiguousCells }
 }
 
-/** "oui" si la cellule indique une propale existante (Oui, X, un lien…), "non" si vide, Non ou N/A. */
-export function toYesNo(raw: unknown): "oui" | "non" {
+/**
+ * "oui" si la cellule indique une propale existante (Oui, X, un lien…), "en_cours" si elle est en
+ * préparation (En cours, WIP…), "non" si vide, Non ou N/A.
+ */
+export function toYesNo(raw: unknown): "oui" | "en_cours" | "non" {
   const v = String(raw ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/_/g, " ")
     .trim()
     .toLowerCase()
   if (isNotApplicable(v) || ["non", "no", "n", "0", "false", "faux", "-", "—"].includes(v)) return "non"
+  if (IN_PROGRESS_VALUES.includes(v)) return "en_cours"
   return "oui"
 }
 
