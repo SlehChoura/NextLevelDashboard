@@ -11,6 +11,8 @@ export function HeroKpi({
   progress,
   delta,
   to,
+  onClick,
+  actionLabel = "Voir le détail →",
 }: {
   label: string
   value: string
@@ -19,6 +21,9 @@ export function HeroKpi({
   /** Variation depuis la mise à jour précédente (`since` au format "30/09"). */
   delta?: { value: number; since: string }
   to?: string
+  /** Alternative à `to` : ouvre un détail sur place (ex: liste d'agents). */
+  onClick?: () => void
+  actionLabel?: string
 }) {
   const percent = progress && progress.target > 0 ? Math.min(100, (progress.current / progress.target) * 100) : null
   const body = (
@@ -47,12 +52,20 @@ export function HeroKpi({
           <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${percent}%` }} />
         </div>
       )}
-      {to && <p className="no-print mt-3 text-xs font-medium text-[var(--color-accent)]">Voir le détail →</p>}
+      {(to || onClick) && <p className="no-print mt-3 text-xs font-medium text-[var(--color-accent)]">{actionLabel}</p>}
     </>
   )
   const className = "print-break-avoid block rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm print:p-3"
+  const interactive = `${className} w-full text-left transition hover:border-[var(--color-accent)] hover:shadow-md`
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={interactive}>
+        {body}
+      </button>
+    )
+  }
   return to ? (
-    <Link to={to} className={`${className} transition hover:border-[var(--color-accent)] hover:shadow-md`}>
+    <Link to={to} className={interactive}>
       {body}
     </Link>
   ) : (

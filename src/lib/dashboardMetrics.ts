@@ -1,6 +1,6 @@
 import type { ReportData } from "../types"
 import { findCriterionByKeyword } from "./criteria"
-import { hasPropaleType, isClientReadyStatus } from "./fixedFormatImport"
+import { hasPropaleType, isClientReadyStatus, toYesNo } from "./fixedFormatImport"
 
 /** Chiffres clés du dashboard des agents, partagés par l'accueil, la synthèse et l'historique. */
 export interface DashboardMetrics {
@@ -30,4 +30,18 @@ export function dashboardMetrics(report: ReportData): DashboardMetrics {
     ready: status ? rows.filter((row) => isClientReadyStatus(String(row[status.key] ?? ""))).length : 0,
     propale: propale ? rows.filter((row) => hasPropaleType(String(row[propale.key] ?? ""))).length : 0,
   }
+}
+
+/** Colonne « Agent industrialisé » de l'onglet agents (Oui/Non), si le fichier la contient. */
+export function industrialisedCriterion(report: ReportData) {
+  return findCriterionByKeyword(report.template, "industrialis")
+}
+
+/** Noms des agents marqués « Oui » en « Agent industrialisé », dans l'ordre du fichier. */
+export function industrialisedAgents(report: ReportData): string[] {
+  const criterion = industrialisedCriterion(report)
+  if (!criterion) return []
+  return report.rows
+    .filter((row) => toYesNo(row[criterion.key]) === "oui")
+    .map((row) => String(row.label ?? "").trim())
 }

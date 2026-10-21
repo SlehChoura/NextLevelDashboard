@@ -1,3 +1,6 @@
+import { useState } from "react"
+import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
+
 type KpiCategory = {
   title: string
   kpis: string[]
@@ -27,7 +30,11 @@ const KPI_CATEGORIES: KpiCategory[] = [
   },
 ]
 
+/** KPI dont le détail (liste d'agents) s'ouvre au clic. */
+const INDUSTRIALISED_KPI = "Nombre d'agents industrialisés"
+
 export function KpisPage() {
+  const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
   return (
     <div className="mx-auto max-w-4xl px-6 py-14">
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
@@ -38,6 +45,8 @@ export function KpisPage() {
         Indicateurs clés utilisés pour piloter le développement des compétences, l'adoption des
         agents IA et la plateforme.
       </p>
+
+      <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {KPI_CATEGORIES.map((category) => (
@@ -53,7 +62,17 @@ export function KpisPage() {
                     className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{ backgroundColor: "var(--color-accent)" }}
                   />
-                  <span>{kpi}</span>
+                  {kpi === INDUSTRIALISED_KPI ? (
+                    <button
+                      type="button"
+                      onClick={() => setIndustrialisedOpen(true)}
+                      className="text-left text-[var(--color-accent)] hover:underline"
+                    >
+                      {kpi} — voir la liste
+                    </button>
+                  ) : (
+                    <span>{kpi}</span>
+                  )}
                 </li>
               ))}
             </ul>

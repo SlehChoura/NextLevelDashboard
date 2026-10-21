@@ -18,8 +18,11 @@ import type { ReportData } from "../types"
 describe("données initiales", () => {
   it("rattachent chaque action à un objectif existant, avec une date valide", () => {
     const ids = new Set(PILOTAGE_OBJECTIVES.map((o) => o.id))
+    // Seule exception : l'action budgétaire, rattachée dans le fichier à « Gouvernance », qui n'est
+    // pas un objectif du pilotage.
+    const unlinked = SEED_ACTIONS.filter((a) => !ids.has(a.objectiveId)).map((a) => a.title)
+    expect(unlinked).toEqual(["Définition de nos besoins budgétaires"])
     for (const a of SEED_ACTIONS) {
-      expect(ids.has(a.objectiveId), a.title).toBe(true)
       expect(a.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
       expect(a.id.startsWith(SEED_ACTION_PREFIX)).toBe(true)
     }
@@ -111,7 +114,7 @@ describe("migration des données persistées", () => {
     const propale = findCriterionByKeyword(SEED_REPORT.template, "propale")!
     const missions = findCriterionByKeyword(SEED_REPORT.template, "mission")!
     expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual([
-      "non", "oui", "non", "oui", "en_cours", "non", "non", "oui", "non", "non", "non", "non",
+      "oui", "oui", "oui", "oui", "en_cours", "non", "non", "oui", "non", "non", "non", "non",
     ])
     expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([0, 10, 3, 20, 2, 0, 2, 2, 0, 2, 0, 0])
   })
@@ -162,12 +165,12 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
     targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
   }
   const old = { values: { agents_industrialises: 9 }, targets: { agents_industrialises: 10 } }
-  const recentImport = "2026-10-15T09:00:00.000Z"
+  const recentImport = "2026-10-22T09:00:00.000Z"
   const olderImport = "2026-10-06T09:00:00.000Z"
   const userAction: ActionItem = { id: "u1", title: "Mon action", owner: "moi", objectiveId: "", status: "todo", dueDate: "" }
 
   it("donne les nouvelles valeurs du pilotage à un navigateur qui n'a rien importé depuis", () => {
-    expect(refreshPilotage({ ...old, lastImportAt: null }, 6, defaults).values.agents_industrialises).toBe(8)
+    expect(refreshPilotage({ ...old, lastImportAt: null }, 6, defaults).values).toMatchObject({ missions_avec_agents: 42 })
     expect(refreshPilotage({ ...old, lastImportAt: olderImport }, 6, defaults).values).toEqual(defaults.values)
   })
 
@@ -179,16 +182,17 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
   it("reprend les valeurs du dernier fichier de suivi, nouveaux objectifs compris", () => {
     const byId = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, [o.defaultCurrent, o.target]]))
     expect(byId).toMatchObject({
+      consultants_vibe_coding: [300, 250],
       agents_disponibles: [12, 20],
       agents_industrialises: [8, 10],
-      missions_avec_agents: [41, 50],
-      licences_claude: [0, 23],
+      missions_avec_agents: [42, 50],
+      licences_claude: [0, 25],
       demo_ai_showcase: [3, 10],
     })
   })
 
   it("remplace les actions de référence sans import récent, en gardant celles créées à la main", () => {
-    const stale = SEED_ACTIONS.slice(0, 13).map((a, i) => ({ ...a, id: `imp-${i}`, status: "in_progress" as const }))
+    const stale = SEED_ACTIONS.slice(0, 13).map((a, i) => ({ ...a, id: `imp-${i}`, status: "todo" as const }))
     const mine = { ...userAction, id: "u2", title: "Action ajoutée à la main" }
     const next = refreshActions([...stale, mine], 6, olderImport)
     expect(next).toEqual([...SEED_ACTIONS, mine])
@@ -210,15 +214,16 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
 
   it("considère un import fait plus tôt le même jour comme plus ancien que les données de référence", () => {
     // Deux versions du fichier ont été intégrées le 14/10 : un import du matin est dépassé.
-    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-10-14T09:00:00.000Z").rows).toHaveLength(12)
-    const afternoon = { ...SEED_REPORT, rows: [] }
-    expect(refreshDashboard(afternoon, "2026-10-14T17:00:00.000Z")).toBe(afternoon)
+    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-10-21T09:00:00.000Z").rows).toHaveLength(12)
+    const later = { ...SEED_REPORT, rows: [] }
+    expect(refreshDashboard(later, "2026-10-21T23:00:00.000Z")).toBe(later)
   })
 
   it("remplace une photo enregistrée à la date d'une photo de référence, sauf import plus récent", () => {
-    const stale = { ...SEED_HISTORY[2], dashboard: { ...SEED_HISTORY[2].dashboard, missions: 27 } }
-    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], stale], null).at(-1)).toBe(SEED_HISTORY[2])
-    expect(mergeSeedHistory([SEED_HISTORY[0], SEED_HISTORY[1], stale], recentImport).at(-1)).toBe(stale)
+    const latest = SEED_HISTORY.at(-1)!
+    const stale = { ...latest, dashboard: { ...latest.dashboard, missions: 27 } }
+    expect(mergeSeedHistory([...SEED_HISTORY.slice(0, -1), stale], null).at(-1)).toBe(latest)
+    expect(mergeSeedHistory([...SEED_HISTORY.slice(0, -1), stale], recentImport).at(-1)).toBe(stale)
   })
 
   it("complète l'historique enregistré avec les photos de référence manquantes", () => {
@@ -228,6 +233,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
       "2026-10-05",
       "2026-10-08",
       "2026-10-14",
+      "2026-10-21",
     ])
     expect(mergeSeedHistory(undefined).map((s) => s.date)).toEqual(SEED_HISTORY.map((s) => s.date))
   })
