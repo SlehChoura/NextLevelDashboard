@@ -11,9 +11,10 @@ import { DistributionBarChart } from "../components/charts/DistributionBarChart"
 import { DistributionPieChart } from "../components/charts/DistributionPieChart"
 import { DataTable } from "../components/dashboard/DataTable"
 import { AiReviewEditor } from "../components/ai/AiReviewEditor"
-import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
 import { averageOfNumeric, findCriterionByKeyword } from "../lib/criteria"
 import { hasPropaleType } from "../lib/fixedFormatImport"
+import { industrialisedAgents, industrialisedCriterion } from "../lib/dashboardMetrics"
+import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
 import { reviewEditorHandlers, type ImportDraft } from "../lib/aiTemplateEdit"
 
 type Mode = "view" | "edit"
@@ -23,9 +24,9 @@ export function DashboardPage() {
   const updateData = useReportStore((s) => s.updateData)
   const [mode, setMode] = useState<Mode>("view")
   const [editDraft, setEditDraft] = useState<ImportDraft | null>(null)
+  const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
   const [focus, setFocus] = useState<{ criterionKey: string; criterionLabel: string; value: string; label: string } | null>(null)
   const [showTable, setShowTable] = useState(true)
-  const [refreshOpen, setRefreshOpen] = useState(false)
   const [searchParams] = useSearchParams()
   const section = searchParams.get("section")
 
@@ -39,6 +40,8 @@ export function DashboardPage() {
   const metricCriteria = template.criteria.filter((c) => c.role === "metric")
   const labelCriterion = template.criteria.find((c) => c.role === "label")
   const propaleCriterion = findCriterionByKeyword(template, "propale")
+  const industrialised = industrialisedAgents(report)
+  const hasIndustrialisedColumn = industrialisedCriterion(report) !== undefined
 
   function exitToView() {
     setMode("view")
@@ -47,15 +50,15 @@ export function DashboardPage() {
   }
 
   return (
-    <div className={`mx-auto max-w-5xl px-6 py-8 ${mode === "view" ? "print-page" : ""}`}>
+    <div className={`mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10 ${mode === "view" ? "print-page" : ""}`}>
       {mode === "view" && (
         <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-3">
           <Link to="/synthese" className="text-sm text-[var(--color-text-muted)] hover:underline">
             Synthèse comité (PDF)
           </Link>
-          <button onClick={() => setRefreshOpen((v) => !v)} className="text-sm text-[var(--color-text-muted)] hover:underline">
-            {refreshOpen ? "Fermer la mise à jour" : "Mettre à jour les données"}
-          </button>
+          <Link to="/donnees" className="text-sm text-[var(--color-text-muted)] hover:underline">
+            Mettre à jour les données
+          </Link>
           <button
             onClick={() => {
               setEditDraft({ template: report.template, rows: report.rows })
@@ -67,8 +70,6 @@ export function DashboardPage() {
           </button>
         </div>
       )}
-
-      {mode === "view" && refreshOpen && <RefreshDataPanel className="mb-5 ml-auto max-w-sm" />}
 
       {mode === "edit" && editDraft && (
         <AiReviewEditor
@@ -87,6 +88,7 @@ export function DashboardPage() {
 
       {mode === "view" && (
         <div className="space-y-5">
+          <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
           <div id="section-prets" className="scroll-mt-20">
@@ -104,6 +106,20 @@ export function DashboardPage() {
                 label={`Agents avec ${propaleCriterion.label.toLowerCase()}`}
                 value={`${report.rows.filter((row) => hasPropaleType(String(row[propaleCriterion.key] ?? ""))).length} / ${report.rows.length}`}
               />
+            )}
+            {hasIndustrialisedColumn && (
+              <button
+                type="button"
+                onClick={() => setIndustrialisedOpen(true)}
+                className="text-left transition hover:opacity-80"
+                aria-label="Voir la liste des agents industrialisés"
+              >
+                <KpiCard
+                  label="Agents industrialisés"
+                  value={`${industrialised.length} / ${report.rows.length}`}
+                  sub="voir la liste →"
+                />
+              </button>
             )}
             {metricCriteria.map((c) => {
               // Un compteur (ex: nombre de missions) se lit en total, un pourcentage en moyenne.

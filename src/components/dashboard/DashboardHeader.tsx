@@ -2,7 +2,7 @@ import { useState } from "react"
 import type { ReportData, ReportTemplate } from "../../types"
 import { useReportStore } from "../../store/reportStore"
 import { ReportMetaForm } from "./ReportMetaForm"
-import { Logo } from "../common/Logo"
+import { LineConcept } from "../ui/LineConcept"
 
 export function DashboardHeader({
   report,
@@ -16,41 +16,37 @@ export function DashboardHeader({
   const updateMeta = useReportStore((s) => s.updateMeta)
   const [editing, setEditing] = useState(false)
 
+  const details = [report.meta.client, report.meta.period, report.meta.author].filter(Boolean).join(" · ")
+
   return (
-    <div className="print-break-avoid overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-      <div className="h-1.5" style={{ backgroundColor: "var(--color-accent)" }} />
-      <div className="flex items-start justify-between gap-4 p-5">
-        <div className="flex items-start gap-3.5">
-          <Logo size={48} />
+    <div className="print-break-avoid overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
+      <div className="relative overflow-hidden px-6 py-6 text-white" style={{ background: "var(--gradient-brand)" }}>
+        <LineConcept
+          className="absolute inset-0 h-full w-full opacity-60"
+          style={{ maskImage: "linear-gradient(to right, transparent 0%, transparent 30%, black 70%)" }}
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-              {template.name}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]">
-              {report.meta.title || template.name}
-            </h1>
-            <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">
-              {[report.meta.client, report.meta.period, report.meta.author]
-                .filter(Boolean)
-                .join(" · ") || "Informations du rapport non renseignées"}
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">{template.name}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{report.meta.title || template.name}</h1>
+            <p className="mt-1 text-sm text-white/75">
+              {report.rows.length} agents{details ? ` · ${details}` : ""}
             </p>
           </div>
-        </div>
-
-        <div className="no-print flex shrink-0 gap-2">
-          <button
-            onClick={() => setEditing((e) => !e)}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
-          >
-            {editing ? "Fermer" : "Modifier"}
-          </button>
-          <button
-            onClick={onExport}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
-            style={{ backgroundColor: "var(--color-accent)" }}
-          >
-            Exporter en PDF
-          </button>
+          <div className="no-print flex shrink-0 gap-2">
+            <button
+              onClick={() => setEditing((e) => !e)}
+              className="rounded-full border border-white/40 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+            >
+              {editing ? "Fermer" : "Modifier les informations"}
+            </button>
+            <button
+              onClick={onExport}
+              className="rounded-full bg-[var(--color-energy)] px-4 py-2 text-xs font-semibold text-[var(--color-primary)] transition hover:brightness-95"
+            >
+              Exporter en PDF
+            </button>
+          </div>
         </div>
       </div>
 

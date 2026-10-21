@@ -44,8 +44,8 @@ interface ColumnInference {
 /** Un compteur (ex: "nombre de missions") n'est pas un pourcentage, même si ses valeurs sont numériques. */
 const COUNT_HEADER = /^\s*(nombre|nb\.?)\s|\bcount\b/i
 
-/** Une colonne Oui/En cours/Non (ex: "Propale type") : une cellule vide signifie "Non". */
-const YES_NO_HEADER = /propale/i
+/** Une colonne Oui/En cours/Non (ex: "Propale type", "Agent industrialisé") : une cellule vide signifie "Non". */
+const YES_NO_HEADER = /propale|industrialis/i
 
 const YES_NO_OPTIONS: CriterionOption[] = [
   { value: "oui", label: "Oui", color: "success" },

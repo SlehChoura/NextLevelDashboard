@@ -46,7 +46,7 @@ export class PageErrorBoundary extends Component<{ children: ReactNode }, State>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={() => window.location.reload()}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                className="rounded-full px-4 py-2 text-xs font-semibold text-white"
                 style={{ backgroundColor: "var(--color-accent)" }}
               >
                 Recharger la page

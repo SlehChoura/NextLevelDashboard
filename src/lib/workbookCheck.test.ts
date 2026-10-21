@@ -23,9 +23,13 @@ describe("checkCombinedWorkbook", () => {
 
   it("compare les chiffres saisis à la fois dans le pilotage et dans l'onglet agents", () => {
     const pilotage = validPilotageRows.map((r) =>
-      r[0] === "agents_disponibles" ? [r[0], "", r[2], 3, r[4], r[5]] : r[0] === "publication_ai_showcase" ? [r[0], "", r[2], 1, r[4], r[5]] : r,
+      ["publication_ai_showcase", "agents_industrialises"].includes(String(r[0]))
+        ? [r[0], "", r[2], 1, r[4], r[5]]
+        : r[0] === "agents_disponibles"
+          ? [r[0], "", r[2], 3, r[4], r[5]]
+          : r,
     )
-    const agentRow = (name: string, showcase: string) => [name, "WIP", 0.5, 0.5, 0.5, 0.5, 0.5, "", 1, showcase]
+    const agentRow = (name: string, yes: string) => [name, "WIP", 0.5, 0.5, 0.5, 0.5, 0.5, "", 1, yes, yes]
     const warnings = checkCombinedWorkbook(
       workbookFrom({
         [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
@@ -69,8 +73,8 @@ describe("checkCombinedWorkbook", () => {
       workbookFrom({
         [ACTIONS_SHEET_NAME]: [
           ACT_HEADERS,
-          ["", "A", "Moi", "description_cicd", "Disponibilité de la chaîne CI/CD", "Fait", "2026-10-01"],
-          ["", "B", "Moi", "description_cicd", "Description et How to de la chaîne CI/CD", "Fait", "2026-10-01"],
+          ["7", "A", "Moi", "description_cicd", "Disponibilité de la chaîne CI/CD", "Fait", "2026-10-01"],
+          ["7", "B", "Moi", "description_cicd", "Description et How to de la chaîne CI/CD", "Fait", "2026-10-01"],
           ["", "a ", "", "inconnu", "", "Peut-être", "bientôt"],
           ["", "", "Moi", "", "", "", ""],
         ],
@@ -78,6 +82,7 @@ describe("checkCombinedWorkbook", () => {
     )
     expect(warnings).toEqual([
       expect.stringMatching(/Ligne 2 : « Clé objectif » .* ne désignent pas le même objectif/),
+      expect.stringMatching(/Ligne 3 : clé « 7 » déjà utilisée ligne 2/),
       expect.stringMatching(/Ligne 4 : action « a » en double/),
       expect.stringMatching(/Ligne 4 : action « a » sans porteur/),
       expect.stringMatching(/Ligne 4 : objectif lié « inconnu » inconnu/),
@@ -94,7 +99,8 @@ describe("checkCombinedWorkbook", () => {
     const warnings = checkCombinedWorkbook(
       workbookFrom({
         [DASHBOARD_SHEET_NAME]: [
-          DASHBOARD_HEADERS,
+          // En-têtes de l'époque : 10 colonnes, sans « Agent industrialisé ».
+          DASHBOARD_HEADERS.slice(0, 10),
           ["Kovex", "WIP", 1, 0.75, "N/A", 0.25, "bientôt", "Lien Deck", "AI makers - Kovex", "Oui", 2],
           ["Kovex", "WIP"],
           ["", "orphelin"],
@@ -102,6 +108,7 @@ describe("checkCombinedWorkbook", () => {
       }),
     )
     expect(warnings).toEqual([
+      expect.stringMatching(/Colonne attendue « Agent industrialisé » absente/),
       expect.stringMatching(/G2 \(Kovex\) : « Ready to market » devrait être un pourcentage/),
       expect.stringMatching(/I2 \(Kovex\) : « Nombre de missions réalisées » devrait être un nombre/),
       expect.stringMatching(/K2 \(Kovex\) : valeur « 2 » dans une colonne sans en-tête/),
@@ -132,6 +139,6 @@ describe("checkCombinedWorkbook", () => {
     const warnings = checkCombinedWorkbook(
       workbookFrom({ [DASHBOARD_SHEET_NAME]: [[...DASHBOARD_HEADERS, "Commentaire"], ["Kovex", "WIP"]] }),
     )
-    expect(warnings).toEqual([expect.stringMatching(/Colonne K « Commentaire » non prévue/)])
+    expect(warnings).toEqual([expect.stringMatching(/Colonne L « Commentaire » non prévue/)])
   })
 })

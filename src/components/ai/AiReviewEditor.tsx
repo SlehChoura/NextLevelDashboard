@@ -101,13 +101,13 @@ export function AiReviewEditor({
   return (
     <div className="mt-4 space-y-4">
       {summary && (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4 text-sm">
           <p className="font-medium text-[var(--color-text)]">Import du fichier</p>
           <p className="mt-1 text-[var(--color-text-muted)]">{summary}</p>
         </div>
       )}
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--color-text)]">Vérifiez les critères détectés</h2>
           <button onClick={onAddCriterion} className="text-xs font-medium text-[var(--color-accent)] underline">
@@ -181,7 +181,7 @@ export function AiReviewEditor({
         </label>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--color-text)]">
             Vérifiez les données ({rows.length} ligne{rows.length > 1 ? "s" : ""})
@@ -247,7 +247,7 @@ export function AiReviewEditor({
         <button
           onClick={onConfirm}
           disabled={template.criteria.length === 0 || confirmDisabled}
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="rounded-full px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           style={{ backgroundColor: "var(--color-accent)" }}
         >
           {confirmLabel}
