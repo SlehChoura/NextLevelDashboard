@@ -5,8 +5,10 @@ d'accueil avec les KPI clés (agents, agents industrialisés, missions réalisé
 un client), un dashboard unique des agents, les objectifs du pilotage et les actions associées.
 
 Toutes les données proviennent d'**un seul fichier Excel à 3 onglets** (« Suivi pilotage »,
-« Actions », « Agents IA4CYB »). L'encart « Mettre à jour les données » (accueil, dashboard,
-pilotage) réimporte ce fichier et rafraîchit tout en une fois. L'import est entièrement local et
+« Actions », « Agents IA4CYB »). La page dédiée « Mise à jour des données » (`#/donnees`,
+accessible par le lien discret « Données JJ/MM » de l'en-tête) réimporte ce fichier et rafraîchit
+tout en une fois ; elle propose aussi le fichier actuel à télécharger et l'historique des mises à
+jour. L'import est entièrement local et
 déterministe : les données restent dans le navigateur (`localStorage`), rien n'est envoyé à un
 serveur.
 
@@ -19,7 +21,8 @@ serveur.
 - **Onglet agents** : la première colonne identifie chaque agent, les colonnes suivantes (dont
   l'en-tête n'est pas vide) deviennent ses critères. Une ligne est retenue si sa première colonne
   est renseignée, ce qui exclut les blocs de légende. Le type de chaque critère (pourcentage,
-  statut à choix, texte libre) est déduit de ses valeurs, sauf « Propale type » (toujours Oui/Non,
+  statut à choix, texte libre) est déduit de ses valeurs, sauf « Propale type » et « Agent
+  industrialisé » (toujours Oui/Non,
   vide = Non, « En cours » si la propale est en préparation) et les compteurs « Nombre de… » (toujours un nombre, vide = 0).
 - **Un seul dashboard** : pas de liste de rapports. « Modifier les données » ouvre un écran de
   correction (critères et lignes éditables) ; le titre et les informations du dashboard se
@@ -31,8 +34,10 @@ serveur.
 - **Synthèse comité** (`#/synthese`) : une page A4 imprimable (chiffres clés, évolutions,
   objectifs, actions à arbitrer, agents prêts pour un client), avec le détail par agent en annexe
   sur la page suivante.
-- **Navigation** : les tuiles KPI de l'accueil mènent à leur détail ; la page Actions filtre les
-  actions en retard et les regroupe par porteur.
+- **Navigation** : les tuiles KPI de l'accueil mènent à leur détail ; l'indicateur « Agents
+  industrialisés » (accueil, carte du pilotage, page KPI, dashboard) ouvre la liste des agents
+  marqués « Oui » en « Agent industrialisé » (colonne K de l'onglet agents). La page Actions filtre
+  les actions en retard et les regroupe par porteur.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
@@ -48,7 +53,7 @@ serveur.
   les fichiers du site et la police Poppins (Google Fonts) sont autorisés ; aucun appel réseau
   vers un autre service n'est possible.
 - **Import** : fichiers de plus de 5 Mo refusés sans être lus.
-- **Poste partagé** : « Effacer les données de ce navigateur » (accueil) supprime imports,
+- **Poste partagé** : « Effacer les données de ce navigateur » (page Données) supprime imports,
   actions, historique et corrections enregistrés localement.
 
 ## Démarrage
@@ -85,7 +90,9 @@ interpréter une donnée sont listées sous le message d'import : colonne sans e
 décalé dans l'onglet agents, clé et libellé d'objectif qui ne désignent pas le même objectif,
 statut ou échéance illisible, doublon, valeur non numérique… Les chiffres saisis dans deux onglets
 sont aussi comparés (« Agents disponibles » et nombre d'agents listés, « Publication AI Showcase » et
-nombre de « Oui » dans l'onglet agents) et tout écart est signalé « à vérifier ». L'import est
+nombre de « Oui » dans l'onglet agents, « Agents industrialisés » et colonne « Agent
+industrialisé ») et tout écart est signalé « à vérifier ». Une clé d'action utilisée deux fois
+est aussi signalée. L'import est
 appliqué malgré tout.
 
 ## Déploiement
@@ -152,7 +159,8 @@ src/
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
   components/           Composants réutilisables (dashboard, graphiques, écran de correction)
-  pages/                Pages routées (accueil, dashboard, pilotage, actions, KPI)
+  pages/                Pages routées (accueil, dashboard, synthèse, pilotage, actions, KPI,
+                          mise à jour des données)
 ```
 
 ## Notes de conception

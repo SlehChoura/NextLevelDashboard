@@ -1,0 +1,1 @@
+import{I as e,L as t,c as n,d as r,t as i,z as a}from"./seedMigration-BUIez4kB.js";var o=t()(e(e=>({snapshots:n,addSnapshot:t=>e(e=>({snapshots:r(e.snapshots,t)}))}),{name:`nld-history`,version:9,migrate:e=>({...e,snapshots:i(e?.snapshots,a())})}));export{o as t};

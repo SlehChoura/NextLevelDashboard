@@ -77,7 +77,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "consultants",
     direction: "up",
     target: 250,
-    defaultCurrent: 250,
+    defaultCurrent: 300,
   },
   {
     id: "certifications_claude",
@@ -121,7 +121,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "missions",
     direction: "up",
     target: 50,
-    defaultCurrent: 41,
+    defaultCurrent: 42,
   },
   {
     id: "licences_claude",
@@ -131,7 +131,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Équiper la communauté AI4CYB Makers en licences Claude Code pour développer les agents.",
     unit: "licences",
     direction: "up",
-    target: 23,
+    target: 25,
     defaultCurrent: 0,
   },
   {

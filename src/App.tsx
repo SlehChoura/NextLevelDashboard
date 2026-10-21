@@ -9,6 +9,7 @@ const loaders = {
   kpis: () => import("./pages/KpisPage").then((m) => ({ default: m.KpisPage })),
   pilotage: () => import("./pages/PilotagePage").then((m) => ({ default: m.PilotagePage })),
   actions: () => import("./pages/ActionsPage").then((m) => ({ default: m.ActionsPage })),
+  donnees: () => import("./pages/DonneesPage").then((m) => ({ default: m.DonneesPage })),
   notFound: () => import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 }
 
@@ -18,6 +19,7 @@ const SynthesePage = lazy(loaders.synthese)
 const KpisPage = lazy(loaders.kpis)
 const PilotagePage = lazy(loaders.pilotage)
 const ActionsPage = lazy(loaders.actions)
+const DonneesPage = lazy(loaders.donnees)
 const NotFoundPage = lazy(loaders.notFound)
 
 /**
@@ -48,6 +50,7 @@ export default function App() {
             <Route path="pilotage" element={<PilotagePage />} />
             <Route path="actions" element={<ActionsPage />} />
             <Route path="kpis" element={<KpisPage />} />
+            <Route path="donnees" element={<DonneesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

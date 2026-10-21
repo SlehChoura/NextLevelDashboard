@@ -1,18 +1,34 @@
 import { describe, expect, it } from "vitest"
 import { appendSnapshot, compareSnapshots, latestDiff, makeSnapshot, MAX_SNAPSHOTS, shortDate } from "./history"
-import { dashboardMetrics } from "./dashboardMetrics"
+import { dashboardMetrics, industrialisedAgents } from "./dashboardMetrics"
 import { SEED_HISTORY, SEED_REPORT } from "./seedData"
 import { isLate, openActionsByDueDate, type ActionItem } from "./actions"
 import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
   it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 41, ready: 7, propale: 3 })
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 41, ready: 7, propale: 5 })
+  })
+})
+
+describe("agents industrialisés (colonne K de l'onglet agents)", () => {
+  it("liste les agents marqués « Oui », dans l'ordre du fichier", () => {
+    const agents = industrialisedAgents(SEED_REPORT)
+    expect(agents).toHaveLength(9)
+    expect(agents[0]).toBe("Smart Identity Analyzer")
+    expect(agents).not.toContain("RegWatch")
+    expect(agents).not.toContain("The CTI Exposure Scout – Autonomous Attack Surface Intelligence")
+  })
+
+  it("renvoie une liste vide si le fichier n'a pas la colonne", () => {
+    const template = { ...SEED_REPORT.template, criteria: SEED_REPORT.template.criteria.filter((c) => !/industrialis/i.test(c.label)) }
+    expect(industrialisedAgents({ ...SEED_REPORT, template })).toEqual([])
   })
 })
 
 describe("historique des mises à jour", () => {
   const diff = compareSnapshots(SEED_HISTORY[0], SEED_HISTORY[1])
+  const oct14 = compareSnapshots(SEED_HISTORY[1], SEED_HISTORY[2])
   const latest = latestDiff(SEED_HISTORY)!
   const byId = (changes: { objective: { id: string }; from: number; to: number }[]) =>
     Object.fromEntries(changes.map((c) => [c.objective.id, [c.from, c.to]]))
@@ -38,22 +54,30 @@ describe("historique des mises à jour", () => {
   })
 
   it("compare le fichier du 05/10 à celui du 14/10, nouveaux objectifs à part", () => {
-    expect([latest.from, latest.to]).toEqual(["2026-10-05", "2026-10-14"])
-    expect(byId(latest.progress)).toEqual({
+    expect([oct14.from, oct14.to]).toEqual(["2026-10-05", "2026-10-14"])
+    expect(byId(oct14.progress)).toEqual({
       agents_disponibles: [10, 12],
       agents_industrialises: [9, 8],
       missions_avec_agents: [27, 41],
     })
-    expect(latest.targetRevisions).toEqual([])
-    expect(latest.added.map((a) => [a.objective.id, a.value, a.target])).toEqual([
+    expect(oct14.targetRevisions).toEqual([])
+    expect(oct14.added.map((a) => [a.objective.id, a.value, a.target])).toEqual([
       ["licences_claude", 0, 23],
       ["demo_ai_showcase", 3, 10],
     ])
-    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
+    expect(oct14.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
       ["Agents IA4CYB suivis", 10, 12],
       ["Missions réalisées (somme par agent)", 27, 41],
       ["Agents avec propale type", 1, 3],
     ])
+  })
+
+  it("compare le fichier du 14/10 à celui du 21/10", () => {
+    expect([latest.from, latest.to]).toEqual(["2026-10-14", "2026-10-21"])
+    expect(byId(latest.progress)).toEqual({ consultants_vibe_coding: [250, 300], missions_avec_agents: [41, 42] })
+    expect(byId(latest.targetRevisions)).toEqual({ licences_claude: [23, 25] })
+    expect(latest.added).toEqual([])
+    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents avec propale type", 3, 5]])
   })
 
   it("compare aussi les chiffres du dashboard", () => {

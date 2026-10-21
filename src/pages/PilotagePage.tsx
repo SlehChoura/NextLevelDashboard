@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
+import { Link, useSearchParams } from "react-router-dom"
+import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
+import { useReportStore } from "../store/reportStore"
+import { industrialisedAgents, industrialisedCriterion } from "../lib/dashboardMetrics"
 import { usePilotageStore } from "../store/pilotageStore"
 import { useHistoryStore } from "../store/historyStore"
 import { latestDiff, shortDate } from "../lib/history"
@@ -44,6 +46,7 @@ function AchievementCard({
   current,
   target,
   revision,
+  agentList,
   onSave,
 }: {
   objective: PilotageObjective
@@ -51,6 +54,8 @@ function AchievementCard({
   target: number
   /** Cible modifiée lors de la dernière mise à jour des données (`date` au format "05/10"). */
   revision?: { from: number; to: number; date: string }
+  /** Liste d'agents consultable depuis la carte (ex: agents industrialisés, colonne K de l'onglet agents). */
+  agentList?: { count: number; label: string; onOpen: () => void }
   onSave: (current: number, target: number) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -122,6 +127,16 @@ function AchievementCard({
           {formatNumber(activeRevision.from)} → {formatNumber(activeRevision.to)}
           {unlockedByRevision && " — objectif atteint grâce à cette révision"}
         </p>
+      )}
+
+      {agentList && (
+        <button
+          type="button"
+          onClick={agentList.onOpen}
+          className="mt-3 self-start text-xs font-medium text-[var(--color-accent)] hover:underline"
+        >
+          Voir les {agentList.count} {agentList.label} →
+        </button>
       )}
 
       <div className="mt-3 flex justify-between gap-4 text-xs">
@@ -201,6 +216,10 @@ export function PilotagePage() {
     initialCategory && initialCategory in CATEGORY_LABELS ? (initialCategory as PilotageCategory) : "all",
   )
   const diff = latestDiff(useHistoryStore((s) => s.snapshots))
+  const report = useReportStore((s) => s.report)
+  const industrialisedCount = industrialisedAgents(report).length
+  const hasIndustrialisedColumn = industrialisedCriterion(report) !== undefined
+  const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
   const revisionOf = (objectiveId: string) => {
     const r = diff?.targetRevisions.find((c) => c.objective.id === objectiveId)
     return r && diff ? { from: r.from, to: r.to, date: shortDate(diff.to) } : undefined
@@ -245,20 +264,21 @@ export function PilotagePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-14">
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-            Pilotage IA4CYB
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
-          <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-            Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
-            KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
-            manuellement ou en mettant à jour les données depuis le fichier de suivi.
-          </p>
-        </div>
-        <RefreshDataPanel />
-      </div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+        Pilotage IA4CYB
+      </p>
+      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
+      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
+        Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
+        KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
+        manuellement ou en{" "}
+        <Link to="/donnees" className="text-[var(--color-accent)] hover:underline">
+          mettant à jour les données
+        </Link>{" "}
+        depuis le fichier de suivi.
+      </p>
+
+      <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -388,6 +408,11 @@ export function PilotagePage() {
               current={current}
               target={target}
               revision={revisionOf(objective.id)}
+              agentList={
+                objective.id === "agents_industrialises" && hasIndustrialisedColumn
+                  ? { count: industrialisedCount, label: "agents industrialisés", onOpen: () => setIndustrialisedOpen(true) }
+                  : undefined
+              }
               onSave={(newCurrent, newTarget) => {
                 setValue(objective.id, newCurrent)
                 setTarget(objective.id, newTarget)

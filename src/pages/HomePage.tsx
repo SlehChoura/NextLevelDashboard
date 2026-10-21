@@ -1,8 +1,9 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Badge } from "../components/common/Badge"
-import { RefreshDataPanel } from "../components/common/RefreshDataPanel"
 import { RagSummary } from "../components/dashboard/RagSummary"
-import { ClearBrowserDataButton } from "../components/common/ClearBrowserDataButton"
+import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
+import { formatDataDate, useLastDataUpdate } from "../hooks/useLastDataUpdate"
 import { useReportStore } from "../store/reportStore"
 import { usePilotageStore } from "../store/pilotageStore"
 import { useActionsStore } from "../store/actionsStore"
@@ -29,6 +30,8 @@ export function HomePage() {
   const actions = useActionsStore((s) => s.actions)
   const snapshots = useHistoryStore((s) => s.snapshots)
   const diff = latestDiff(snapshots)
+  const lastUpdate = useLastDataUpdate()
+  const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
 
   const computed = PILOTAGE_OBJECTIVES.map((objective) => {
     const current = values[objective.id] ?? objective.defaultCurrent
@@ -75,8 +78,14 @@ export function HomePage() {
       <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
         Où en sont nos agents aujourd'hui : catalogue, industrialisation et usage en mission.
       </p>
+      <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+        Données au {formatDataDate(lastUpdate)} ·{" "}
+        <Link to="/donnees" className="hover:text-[var(--color-accent)] hover:underline">
+          mettre à jour
+        </Link>
+      </p>
 
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className="mt-8">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <HeroKpi
@@ -93,7 +102,8 @@ export function HomePage() {
                 sub={`cible : ${industrialised.target} agents`}
                 progress={{ current: industrialised.current, target: industrialised.target }}
                 delta={industrialisedChange ? { value: industrialisedChange.to - industrialisedChange.from, since } : undefined}
-                to="/pilotage?categorie=agents"
+                onClick={() => setIndustrialisedOpen(true)}
+                actionLabel="Voir la liste des agents →"
               />
             )}
             <HeroKpi
@@ -125,9 +135,9 @@ export function HomePage() {
             </Link>
           </div>
         </div>
-
-        <RefreshDataPanel className="lg:sticky lg:top-20" />
       </div>
+
+      <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
 
       <div className="mt-10 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Vos succès à atteindre</h2>
@@ -243,15 +253,6 @@ export function HomePage() {
           </table>
         </div>
       )}
-
-      <div className="mt-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
-        <span className="font-medium text-[var(--color-text)]">Confidentialité — </span>
-        les données importées restent dans votre navigateur (localStorage), rien n'est envoyé à un
-        serveur applicatif. Sur un poste partagé, effacez-les après usage.
-        <div className="mt-3">
-          <ClearBrowserDataButton />
-        </div>
-      </div>
     </div>
   )
 }
