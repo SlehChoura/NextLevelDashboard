@@ -35,12 +35,3 @@ export function workbookFrom(sheets: Partial<Record<string, unknown[][]>>): XLSX
 
 export { ACTIONS_SHEET_NAME, DASHBOARD_SHEET_NAME, PILOTAGE_SHEET_NAME }
 
-/**
- * Écart réel du fichier de suivi du 21/10, repris dans les données de référence : le pilotage compte
- * 8 agents industrialisés, la colonne « Agent industrialisé » de l'onglet agents en marque 9 « Oui ».
- * À retirer quand le fichier sera corrigé.
- */
-export const KNOWN_REFERENCE_WARNINGS = [
-  "[Cohérence entre onglets] « Agents industrialisés » vaut 8 dans l'onglet Suivi pilotage, " +
-    "mais l'onglet Agents IA4CYB compte 9 agents avec « Oui » en « Agent industrialisé » — à vérifier.",
-]
