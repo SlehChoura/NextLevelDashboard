@@ -1,3 +1,7 @@
+import { useState } from "react"
+import { PageHeader } from "../components/ui/PageHeader"
+import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
+
 type KpiCategory = {
   title: string
   kpis: string[]
@@ -27,23 +31,30 @@ const KPI_CATEGORIES: KpiCategory[] = [
   },
 ]
 
+/** KPI dont le détail (liste d'agents) s'ouvre au clic. */
+const INDUSTRIALISED_KPI = "Nombre d'agents industrialisés"
+
 export function KpisPage() {
+  const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
   return (
-    <div className="mx-auto max-w-4xl px-6 py-14">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Pilotage IA4CYB
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">KPI suivis</h1>
-      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Indicateurs clés utilisés pour piloter le développement des compétences, l'adoption des
-        agents IA et la plateforme.
-      </p>
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <PageHeader
+        title="KPI suivis"
+        description={
+        <>
+          Indicateurs clés utilisés pour piloter le développement des compétences, l'adoption des agents IA et la
+          plateforme.
+        </>
+        }
+      />
+
+      <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {KPI_CATEGORIES.map((category) => (
           <div
             key={category.title}
-            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
+            className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5"
           >
             <h2 className="text-sm font-semibold text-[var(--color-text)]">{category.title}</h2>
             <ul className="mt-3 space-y-2">
@@ -53,7 +64,17 @@ export function KpisPage() {
                     className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{ backgroundColor: "var(--color-accent)" }}
                   />
-                  <span>{kpi}</span>
+                  {kpi === INDUSTRIALISED_KPI ? (
+                    <button
+                      type="button"
+                      onClick={() => setIndustrialisedOpen(true)}
+                      className="text-left text-[var(--color-accent)] hover:underline"
+                    >
+                      {kpi} — voir la liste
+                    </button>
+                  ) : (
+                    <span>{kpi}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -61,7 +82,7 @@ export function KpisPage() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)]">
+      <div className="mt-8 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5 text-sm text-[var(--color-text-muted)]">
         <span className="font-medium text-[var(--color-text)]">À terme — </span>
         suivre les gains et la prise de commande liés à des missions réalisées avec des agents IA
         4CYB.

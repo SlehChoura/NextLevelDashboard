@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx"
 import {
   ACT_COL_DUE_DATE,
+  ACT_COL_KEY,
   ACT_COL_OBJECTIVE_KEY,
   ACT_COL_OBJECTIVE_LABEL,
   ACT_COL_OWNER,
@@ -153,6 +154,7 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
   const sheet = ACTIONS_SHEET_NAME
   const warnings = requireColumns(grid, sheet, [ACT_COL_TITLE, ACT_COL_STATUS])
   const col = {
+    key: columnIndex(grid, ACT_COL_KEY),
     title: columnIndex(grid, ACT_COL_TITLE),
     owner: columnIndex(grid, ACT_COL_OWNER),
     objectiveKey: columnIndex(grid, ACT_COL_OBJECTIVE_KEY),
@@ -161,6 +163,7 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
     dueDate: columnIndex(grid, ACT_COL_DUE_DATE),
   }
   const seenTitles = new Map<string, number>()
+  const seenKeys = new Map<string, number>()
   // Libellés tels qu'écrits dans l'onglet pilotage du même fichier : une action qui reprend ce
   // libellé (même avec une coquille) désigne bien le même objectif que sa clé.
   const fileLabels = pilotageLabelsInFile(workbook)
@@ -176,6 +179,13 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
       warnings.push(`[${sheet}] Ligne ${line} : action « ${title} » en double (déjà ligne ${seenTitles.get(normalizedTitle)}).`)
     }
     seenTitles.set(normalizedTitle, line)
+
+    // La clé rattache la ligne à une action existante : deux lignes avec la même clé visent la même action.
+    const actionKey = cellText(cells, col.key)
+    if (actionKey && seenKeys.has(actionKey)) {
+      warnings.push(`[${sheet}] Ligne ${line} : clé « ${actionKey} » déjà utilisée ligne ${seenKeys.get(actionKey)} — chaque action doit avoir sa propre clé.`)
+    }
+    if (actionKey) seenKeys.set(actionKey, line)
 
     if (col.owner >= 0 && !cellText(cells, col.owner)) {
       warnings.push(`[${sheet}] Ligne ${line} : action « ${title} » sans porteur.`)
@@ -275,6 +285,7 @@ function checkDashboardSheet(workbook: XLSX.WorkBook): string[] {
 }
 
 const SHOWCASE_HEADER = "Publication dans le showcase AI"
+const INDUSTRIALISED_HEADER = "Agent industrialisé"
 
 /**
  * Chiffres saisis deux fois, dans le pilotage et dans l'onglet agents : un écart signale qu'un des
@@ -298,7 +309,9 @@ function checkAcrossSheets(workbook: XLSX.WorkBook): string[] {
 
   const agentRows = agents.rows.filter(({ cells }) => cellText(cells, 0) !== "")
   const showcaseCol = columnIndex(agents, SHOWCASE_HEADER)
-  const published = agentRows.filter(({ cells }) => normalizeText(cellText(cells, showcaseCol)) === "oui").length
+  const countYes = (col: number) => agentRows.filter(({ cells }) => normalizeText(cellText(cells, col)) === "oui").length
+  const published = countYes(showcaseCol)
+  const industrialisedCol = columnIndex(agents, INDUSTRIALISED_HEADER)
 
   const warnings: string[] = []
   const compare = (id: string, sheetCount: number, what: string) => {
@@ -312,5 +325,8 @@ function checkAcrossSheets(workbook: XLSX.WorkBook): string[] {
   }
   compare("agents_disponibles", agentRows.length, "agents")
   if (showcaseCol >= 0) compare("publication_ai_showcase", published, `agents avec « Oui » en « ${SHOWCASE_HEADER} »`)
+  if (industrialisedCol >= 0) {
+    compare("agents_industrialises", countYes(industrialisedCol), `agents avec « Oui » en « ${INDUSTRIALISED_HEADER} »`)
+  }
   return warnings
 }

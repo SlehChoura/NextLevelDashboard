@@ -1,4 +1,6 @@
+import { AlertTriangle, History, Plus } from "lucide-react"
 import { shortDate, type SnapshotDiff, type ValueChange } from "../../lib/history"
+import { Card, CardTitle } from "../ui/Card"
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })
@@ -22,7 +24,7 @@ function Delta({ change, upIsGood = true }: { change: ValueChange; upIsGood?: bo
 function Row({ change, children }: { change: ValueChange; children: React.ReactNode }) {
   return (
     <li className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
-      <span className="text-[var(--color-text)]">{change.label}</span>
+      <span className="min-w-0 text-[var(--color-text)]">{change.label}</span>
       <span className="flex shrink-0 items-baseline gap-2 whitespace-nowrap text-[var(--color-text-muted)]">
         {formatNumber(change.from)} → <strong className="text-[var(--color-text)]">{formatNumber(change.to)}</strong>
         {children}
@@ -41,10 +43,10 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
     diff.progress.length === 0 && diff.dashboard.length === 0 && diff.targetRevisions.length === 0 && diff.added.length === 0
 
   return (
-    <section className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm print:p-3">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+    <Card className="p-5 print:p-3">
+      <CardTitle icon={<History className="h-4 w-4" />}>
         Depuis la dernière mise à jour ({shortDate(diff.from)} → {shortDate(diff.to)})
-      </h2>
+      </CardTitle>
 
       {empty && <p className="mt-2 text-sm text-[var(--color-text-muted)]">Aucune évolution des chiffres.</p>}
 
@@ -66,11 +68,13 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
 
         {diff.added.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-[var(--color-accent)]">✚ Nouveau(x) objectif(s)</p>
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-accent)]">
+              <Plus className="h-3.5 w-3.5" aria-hidden /> Nouveau(x) objectif(s)
+            </p>
             <ul className="mt-1">
               {diff.added.map((a) => (
                 <li key={a.objective.id} className="flex items-baseline justify-between gap-3 py-1 text-sm">
-                  <span className="text-[var(--color-text)]">{a.objective.label}</span>
+                  <span className="min-w-0 text-[var(--color-text)]">{a.objective.label}</span>
                   <span className="shrink-0 whitespace-nowrap text-[var(--color-text-muted)]">
                     <strong className="text-[var(--color-text)]">{formatNumber(a.value)}</strong> / {formatNumber(a.target)}{" "}
                     {a.objective.unit}
@@ -82,14 +86,14 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
         )}
 
         {diff.targetRevisions.length > 0 && (
-          <div className="mt-4 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] p-3 print:mt-2">
-            <p className="text-xs font-semibold text-[var(--color-warning)]">
-              ⚠ Cible(s) révisée(s) le {shortDate(diff.to)}
+          <div className="mt-4 rounded-xl border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] p-3 print:mt-2">
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-warning)]">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Cible(s) révisée(s) le {shortDate(diff.to)}
             </p>
             <ul className="mt-1">
               {diff.targetRevisions.map((c) => (
                 <li key={c.objective.id} className="flex items-baseline justify-between gap-3 py-1 text-sm">
-                  <span className="text-[var(--color-text)]">{c.label}</span>
+                  <span className="min-w-0 text-[var(--color-text)]">{c.label}</span>
                   <span className="shrink-0 whitespace-nowrap text-[var(--color-text-muted)]">
                     cible {formatNumber(c.from)} → <strong className="text-[var(--color-text)]">{formatNumber(c.to)}</strong>{" "}
                     ({c.to < c.from ? "abaissée" : "relevée"})
@@ -103,6 +107,6 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
           </div>
         )}
       </div>
-    </section>
+    </Card>
   )
 }

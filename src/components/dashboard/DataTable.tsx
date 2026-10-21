@@ -18,7 +18,7 @@ export function DataTable({ template, rows }: { template: ReportTemplate; rows: 
   const totalWeight = template.criteria.reduce((sum, c) => sum + widthWeight(c), 0) || 1
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
       <table className="w-full table-fixed text-left text-sm">
         <colgroup>
           {template.criteria.map((c) => (

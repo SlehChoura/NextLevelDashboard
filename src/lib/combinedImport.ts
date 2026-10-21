@@ -236,6 +236,7 @@ function buildExampleDashboardRows() {
       [DASHBOARD_HEADERS[7]]: "Oui",
       [DASHBOARD_HEADERS[8]]: 0,
       [DASHBOARD_HEADERS[9]]: "Non",
+      [DASHBOARD_HEADERS[10]]: "Non",
     },
   ]
 }
