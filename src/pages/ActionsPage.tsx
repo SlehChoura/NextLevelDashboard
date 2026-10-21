@@ -1,4 +1,7 @@
 import { Fragment, useMemo, useState } from "react"
+import { PageHeader } from "../components/ui/PageHeader"
+import { OwnerAvatar } from "../components/ui/OwnerAvatar"
+import { Plus, X } from "lucide-react"
 import { Link, useSearchParams } from "react-router-dom"
 import { Badge } from "../components/common/Badge"
 import { useActionsStore } from "../store/actionsStore"
@@ -36,6 +39,12 @@ export function ActionsPage() {
   const [groupByOwner, setGroupByOwner] = useState(false)
   const today = todayIso()
   const lateCount = actions.filter((a) => isLate(a, today)).length
+  const counts = {
+    todo: actions.filter((a) => a.status === "todo").length,
+    in_progress: actions.filter((a) => a.status === "in_progress").length,
+    done: actions.filter((a) => a.status === "done").length,
+  }
+  const [formOpen, setFormOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -65,19 +74,54 @@ export function ActionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-14">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Pilotage IA4CYB
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Actions</h1>
-      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Suivez les actions en cours pour faire avancer les objectifs du pilotage et les KPI
-        associés, avec un porteur identifié pour chacune.
-      </p>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <PageHeader
+        title="Actions"
+        description="Suivez les actions qui font avancer les objectifs du pilotage, avec un porteur identifié pour chacune."
+        actions={
+          <button
+            type="button"
+            onClick={() => setFormOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-accent-dark)]"
+          >
+            {formOpen ? <X className="h-3.5 w-3.5" aria-hidden /> : <Plus className="h-3.5 w-3.5" aria-hidden />}
+            {formOpen ? "Fermer" : "Nouvelle action"}
+          </button>
+        }
+      />
 
+      {/* Compteurs par statut, cliquables pour filtrer la liste. */}
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {(
+          [
+            { key: "todo", label: "À faire", count: counts.todo, color: "var(--color-text-muted)", active: statusFilter === "todo" && !lateOnly, onClick: () => { setLateOnly(false); setStatusFilter(statusFilter === "todo" ? "all" : "todo") } },
+            { key: "in_progress", label: "En cours", count: counts.in_progress, color: "var(--color-info)", active: statusFilter === "in_progress" && !lateOnly, onClick: () => { setLateOnly(false); setStatusFilter(statusFilter === "in_progress" ? "all" : "in_progress") } },
+            { key: "done", label: "Terminées", count: counts.done, color: "var(--color-success)", active: statusFilter === "done" && !lateOnly, onClick: () => { setLateOnly(false); setStatusFilter(statusFilter === "done" ? "all" : "done") } },
+            { key: "late", label: "En retard", count: lateCount, color: "var(--color-danger)", active: lateOnly, onClick: () => { setStatusFilter("all"); setLateOnly(!lateOnly) } },
+          ] as const
+        ).map((tile) => (
+          <button
+            key={tile.key}
+            type="button"
+            onClick={tile.onClick}
+            aria-pressed={tile.active}
+            className={`rounded-[var(--radius-card)] border bg-[var(--color-surface)] p-4 text-left shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-raised)] ${
+              tile.active ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/20" : "border-[var(--color-border)]"
+            }`}
+          >
+            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tile.color }} aria-hidden />
+              {tile.label}
+            </span>
+            <span className="mt-1 block text-3xl font-semibold text-[var(--color-primary)]">{tile.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {formOpen && (
       <form
         onSubmit={submitForm}
-        className="mt-8 grid gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:grid-cols-2 lg:grid-cols-5"
+        className="mt-6 grid gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5 sm:grid-cols-2 lg:grid-cols-5"
       >
         <label className="text-xs text-[var(--color-text-muted)] lg:col-span-2">
           Titre de l'action
@@ -142,26 +186,27 @@ export function ActionsPage() {
           </label>
           <button
             type="submit"
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-full px-5 py-2 text-sm font-semibold text-white"
             style={{ backgroundColor: "var(--color-accent)" }}
           >
             Ajouter l'action
           </button>
         </div>
       </form>
+      )}
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Actions en cours</h2>
         <p className="text-xs text-[var(--color-text-muted)]">
-          Import en masse depuis un fichier : voir le modèle complet sur la page{" "}
-          <Link to="/pilotage" className="font-medium text-[var(--color-accent)] hover:underline">
-            Pilotage
+          Mise à jour en masse depuis le fichier de suivi :{" "}
+          <Link to="/donnees" className="font-medium text-[var(--color-accent)] hover:underline">
+            page Données
           </Link>
           .
         </p>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mt-5 flex flex-wrap items-end gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
         <label className="min-w-[200px] flex-1 text-xs">
           <span className="mb-1 block font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
             Recherche
@@ -243,7 +288,7 @@ export function ActionsPage() {
             : "Aucune action ne correspond aux filtres sélectionnés."}
         </div>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="mt-3 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-[var(--color-text-muted)]">
@@ -277,7 +322,10 @@ export function ActionsPage() {
                           {action.title}
                         </td>
                         <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]">
-                          {action.owner}
+                          <span className="flex items-center gap-2">
+                            <OwnerAvatar name={action.owner} />
+                            {action.owner}
+                          </span>
                         </td>
                         <td className="border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text-muted)]">
                           {objective ? (

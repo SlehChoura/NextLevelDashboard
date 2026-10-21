@@ -41,8 +41,10 @@ serveur.
 - **Dashboard généré** : synthèse RAG, indicateurs clés, mise en avant des éléments dont le statut
   est « présentable » ou « déployable » en contexte client, graphiques (barres/anneau) par
   critère, tableau de données, export PDF (impression navigateur).
-- **Charte graphique Wavestone** : couleurs, logo et police (Poppins) conformes à la charte
-  graphique officielle Wavestone, fixes (aucun éditeur de thème dans l'application).
+- **Interface aux couleurs Wavestone** : barre latérale et bandeaux sur le dégradé bleu signature,
+  « line concept » (deux lignes qui se rejoignent), Energy Green en touche d'accent, cartes à rayon
+  18 px et ombres bleutées, pictogrammes au trait (Lucide, à la place des emojis que la charte
+  proscrit), tuiles KPI avec mini-courbe de l'historique. Navigation en tiroir sur mobile.
 
 ## Sécurité et confidentialité
 
@@ -139,7 +141,7 @@ ouvert avant une mise en ligne ne tombe pas sur une page blanche :
 - Tailwind CSS v4 (charte graphique pilotée par variables CSS, définies dans `src/index.css`)
 - `xlsx` (SheetJS, build CDN patché — la version npm publique porte des CVE non corrigées) pour
   la lecture des fichiers Excel
-- `recharts` pour les graphiques
+- `recharts` pour les graphiques, `lucide-react` pour les pictogrammes
 - `zustand` (avec persistance `localStorage`) pour l'état du dashboard, du pilotage et des actions
 - `react-router-dom` pour la navigation
 
@@ -158,7 +160,8 @@ src/
                           des valeurs ambiguës, détection des statuts "prêts client"
     aiTemplateEdit.ts     Édition du schéma/des données (relecture, dashboard déjà généré)
     combinedImport.ts     Import/export du fichier combiné (pilotage, actions, dashboard)
-  components/           Composants réutilisables (dashboard, graphiques, écran de correction)
+  components/           Composants réutilisables (ui/ : carte, en-tête de page, line concept,
+                          mini-courbe, anneau de progression ; dashboard, graphiques, correction)
   pages/                Pages routées (accueil, dashboard, synthèse, pilotage, actions, KPI,
                           mise à jour des données)
 ```

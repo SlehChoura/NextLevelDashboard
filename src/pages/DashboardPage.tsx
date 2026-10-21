@@ -50,7 +50,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className={`mx-auto max-w-5xl px-6 py-8 ${mode === "view" ? "print-page" : ""}`}>
+    <div className={`mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10 ${mode === "view" ? "print-page" : ""}`}>
       {mode === "view" && (
         <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-3">
           <Link to="/synthese" className="text-sm text-[var(--color-text-muted)] hover:underline">

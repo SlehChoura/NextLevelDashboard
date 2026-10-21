@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
+import { Check } from "lucide-react"
 import { useReportStore } from "../../store/reportStore"
 import { usePilotageStore } from "../../store/pilotageStore"
 import { industrialisedAgents, industrialisedCriterion } from "../../lib/dashboardMetrics"
@@ -29,7 +30,7 @@ export function IndustrialisedAgentsDialog({ open, onClose }: { open: boolean; o
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby="industrialised-title"
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-0 text-[var(--color-text)] shadow-xl backdrop:bg-black/40"
+      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-0 text-[var(--color-text)] shadow-xl backdrop:bg-black/40"
     >
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
@@ -58,12 +59,8 @@ export function IndustrialisedAgentsDialog({ open, onClose }: { open: boolean; o
           <ul className="mt-3 divide-y divide-[var(--color-border)] text-sm">
             {agents.map((name) => (
               <li key={name} className="flex items-center gap-2.5 py-2">
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] text-white"
-                  style={{ backgroundColor: "var(--color-accent)" }}
-                  aria-hidden
-                >
-                  ✓
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white" aria-hidden>
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
                 </span>
                 {name}
               </li>
@@ -73,7 +70,7 @@ export function IndustrialisedAgentsDialog({ open, onClose }: { open: boolean; o
 
         {hasColumn && pilotageValue !== agents.length && (
           <p className="mt-3 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] px-3 py-2 text-xs">
-            <span className="font-semibold text-[var(--color-warning)]">⚠ À vérifier :</span> le pilotage indique{" "}
+            <span className="font-semibold text-[var(--color-warning)]">À vérifier :</span> le pilotage indique{" "}
             {pilotageValue} agent(s) industrialisé(s), l'onglet agents en marque {agents.length} « Oui ».
           </p>
         )}

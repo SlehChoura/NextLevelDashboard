@@ -8,7 +8,7 @@ export function KpiCard({
   sub?: string
 }) {
   return (
-    <div className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+    <div className="print-break-avoid rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
       <div className="text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
         {label}
       </div>
