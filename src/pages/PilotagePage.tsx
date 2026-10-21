@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react"
+import { PageHeader } from "../components/ui/PageHeader"
+import { Bot, Check, GraduationCap, Megaphone, ServerCog, Trophy, type LucideIcon } from "lucide-react"
 import { Link, useSearchParams } from "react-router-dom"
 import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
 import { useReportStore } from "../store/reportStore"
@@ -20,11 +22,11 @@ import {
   type VisiblePilotageStatus,
 } from "../lib/pilotage"
 
-const CATEGORY_ICONS: Record<PilotageCategory, string> = {
-  competences: "🎓",
-  agents: "⚙️",
-  plateforme: "🛡",
-  notoriete: "📣",
+const CATEGORY_ICONS: Record<PilotageCategory, LucideIcon> = {
+  competences: GraduationCap,
+  agents: Bot,
+  plateforme: ServerCog,
+  notoriete: Megaphone,
 }
 
 const STATUS_BADGE_CLASS: Record<VisiblePilotageStatus, string> = {
@@ -64,6 +66,7 @@ function AchievementCard({
   const status = visibleStatus(computeStatus(objective, current, target))
   const percent = progressPercent(objective, current, target)
   const barWidth = Math.max(0, Math.min(100, percent))
+  const CategoryIcon = CATEGORY_ICONS[objective.category]
   // Une révision n'est plus d'actualité si la cible a été modifiée depuis (saisie manuelle).
   const activeRevision = revision?.to === target ? revision : undefined
   // Objectif atteint seulement parce que la cible a été abaissée : à dire, pas à laisser deviner.
@@ -80,11 +83,11 @@ function AchievementCard({
   }
 
   return (
-    <article className="flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+    <article className="flex flex-col rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/12 text-lg">
-            {CATEGORY_ICONS[objective.category]}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
+            <CategoryIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -123,7 +126,7 @@ function AchievementCard({
 
       {activeRevision && (
         <p className="mt-3 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] px-2.5 py-1.5 text-xs text-[var(--color-text)]">
-          <span className="font-semibold text-[var(--color-warning)]">⚠ Cible révisée le {activeRevision.date}</span> :{" "}
+          <span className="font-semibold text-[var(--color-warning)]">Cible révisée le {activeRevision.date}</span> :{" "}
           {formatNumber(activeRevision.from)} → {formatNumber(activeRevision.to)}
           {unlockedByRevision && " — objectif atteint grâce à cette révision"}
         </p>
@@ -173,7 +176,7 @@ function AchievementCard({
             <div className="flex gap-2">
               <button
                 onClick={save}
-                className="flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                className="flex-1 rounded-full px-4 py-2 text-xs font-semibold text-white"
                 style={{ backgroundColor: "var(--color-accent)" }}
               >
                 Enregistrer
@@ -263,39 +266,39 @@ export function PilotagePage() {
   const unlockedItems = computed.filter((c) => c.status === "unlocked")
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-14">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Pilotage IA4CYB
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Vos succès à atteindre</h1>
-      <p className="mt-3 max-w-2xl text-[var(--color-text-muted)]">
-        Chaque objectif du pilotage est présenté comme un résultat concret à débloquer, relié aux
-        KPI suivis dans la page « KPI ». Ajustez l'avancement et les cibles au fil de l'eau,
-        manuellement ou en{" "}
-        <Link to="/donnees" className="text-[var(--color-accent)] hover:underline">
-          mettant à jour les données
-        </Link>{" "}
-        depuis le fichier de suivi.
-      </p>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <PageHeader
+        title="Vos succès à atteindre"
+        description={
+        <>
+          Chaque objectif est un résultat concret à débloquer. Ajustez l'avancement et les cibles au fil de l'eau,
+          manuellement ou en{" "}
+          <Link to="/donnees" className="text-[var(--color-accent)] hover:underline">
+            mettant à jour les données
+          </Link>
+          .
+        </>
+        }
+      />
 
       <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
             Succès débloqués
           </p>
           <p className="mt-2 text-3xl font-bold text-[var(--color-success)]">{unlockedCount}</p>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">objectifs atteints</p>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
             À accélérer
           </p>
           <p className="mt-2 text-3xl font-bold text-[var(--color-warning)]">{accelerateCount}</p>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">objectifs restants</p>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-muted)]">
             Avancement global
           </p>
@@ -306,8 +309,8 @@ export function PilotagePage() {
 
       {nextSuccess && (
         <div className="mt-8 flex flex-col gap-4 rounded-xl border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/5 p-5 sm:flex-row sm:items-center">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl text-white" style={{ backgroundColor: "var(--color-accent)" }}>
-            🏆
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: "var(--gradient-brand)" }}>
+            <Trophy className="h-6 w-6" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="flex-1">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-accent)]">
@@ -327,7 +330,7 @@ export function PilotagePage() {
 
       <h2 className="mt-10 text-lg font-semibold text-[var(--color-text)]">Objectifs du pilotage</h2>
 
-      <div className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mt-5 flex flex-wrap items-end gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
         <label className="min-w-[160px] flex-1 text-xs">
           <span className="mb-1 block font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
             Catégorie
@@ -431,7 +434,10 @@ export function PilotagePage() {
                 key={objective.id}
                 className="rounded-xl border border-[var(--color-success)]/25 bg-[var(--color-success)]/8 p-4"
               >
-                <strong className="block text-sm text-[var(--color-text)]">✓ {objective.label}</strong>
+                <strong className="flex items-start gap-1.5 text-sm text-[var(--color-text)]">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-success)]" strokeWidth={2.5} aria-hidden />
+                  {objective.label}
+                </strong>
                 <span className="text-xs text-[var(--color-text-muted)]">
                   {formatNumber(current)} / {formatNumber(target)} {objective.unit}
                 </span>

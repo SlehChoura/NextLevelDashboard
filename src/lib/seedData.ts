@@ -16,7 +16,7 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 9
+export const SEED_VERSION = 10
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
@@ -28,7 +28,7 @@ export const SEED_PILOTAGE_DATE = "2026-10-21"
  * Instant d'intégration du dernier fichier de suivi : un import fait avant (même plus tôt le même
  * jour, quand deux versions du fichier se suivent) est plus ancien que ces données.
  */
-export const SEED_REFERENCE_AT = "2026-10-21T22:20:00.000Z"
+export const SEED_REFERENCE_AT = "2026-10-21T22:45:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
@@ -224,7 +224,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Vérification des critères de l'industrialisation pour les agents et les aider à les atteindre facilement",
     owner: "Anna VALIER",
     objectiveId: "agents_industrialises",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-10-20",
   },
   {
@@ -289,7 +289,7 @@ const targets1005 = without(referenceTargets, ADDED_ON_2026_10_14)
 const dashboardBefore1014 = { agents: 10, missions: 27, ready: 7, propale: 1 }
 
 /** Fichier corrigé du 14/10, avant celui du 21/10. */
-const values1014 = { ...referenceValues, consultants_vibe_coding: 250, missions_avec_agents: 41 }
+const values1014 = { ...referenceValues, consultants_vibe_coding: 250, agents_industrialises: 8, missions_avec_agents: 41 }
 const targets1014 = { ...referenceTargets, licences_claude: 23 }
 const dashboard1014 = { agents: 12, missions: 41, ready: 7, propale: 3 }
 

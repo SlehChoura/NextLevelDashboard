@@ -110,7 +110,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "agents",
     direction: "up",
     target: 10,
-    defaultCurrent: 8,
+    defaultCurrent: 9,
   },
   {
     id: "missions_avec_agents",
@@ -121,7 +121,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     unit: "missions",
     direction: "up",
     target: 50,
-    defaultCurrent: 42,
+    defaultCurrent: 41,
   },
   {
     id: "licences_claude",

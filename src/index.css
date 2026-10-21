@@ -2,24 +2,31 @@
 
 :root {
   /*
-   * Charte graphique officielle Wavestone (Vibrant Blue #451DC7 + Deep Blue #250F6B, Poppins).
-   * Le vert et le corail de marque sont trop clairs/saturés pour du texte ou des badges lisibles
-   * (contraste insuffisant) : les couleurs sémantiques "succès", "info" et "critique" en
-   * reprennent la teinte dans une version plus foncée, accessible.
+   * Charte graphique Wavestone (Brand Guidelines 2024) : Vibrant Blue #451DC7 et blanc en
+   * primaires ; Deep Blue #250F6B, Energy Green #04F06A en secondaires ; dégradé bleu signature.
+   * L'Energy Green est trop clair pour du texte : il ne sert qu'en touche (traits, pastilles sur
+   * fond sombre). Les couleurs sémantiques en reprennent des teintes plus foncées, lisibles.
    */
   --color-primary: #250f6b;
-  --color-primary-dark: #000000;
+  --color-primary-dark: #130835;
   --color-accent: #451dc7;
-  --color-accent-dark: #250f6b;
-  --color-bg: #f6f6f6;
+  --color-accent-dark: #331595;
+  --color-accent-soft: #ede8fc;
+  --color-energy: #04f06a;
+  --color-bg: #f6f5fb;
   --color-surface: #ffffff;
-  --color-border: #e4e2ec;
-  --color-text: #14101f;
-  --color-text-muted: #615c73;
-  --color-success: #0b8a4b;
-  --color-warning: #c98a00;
-  --color-danger: #ff2a49;
-  --color-info: #00477f;
+  --color-border: #dcdae8;
+  --color-text: #0b0a14;
+  --color-text-muted: #565273;
+  --color-success: #027835;
+  --color-warning: #b07400;
+  --color-danger: #e0173a;
+  --color-info: #2f6aa0;
+  --gradient-brand: linear-gradient(120deg, #250f6b 0%, #321a8e 45%, #451dc7 100%);
+  --shadow-card: 0 1px 2px rgba(37, 15, 107, 0.06), 0 2px 8px rgba(37, 15, 107, 0.06);
+  --shadow-raised: 0 8px 24px rgba(37, 15, 107, 0.12);
+  --radius-card: 18px;
+  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
   --font-family: "Poppins", system-ui, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -31,6 +38,22 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(69, 29, 199, 0.35);
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
 }
 
 @page {
@@ -59,5 +82,18 @@ body {
   /* Synthèse comité : tient sur une page A4, l'annexe suit sur les pages suivantes. */
   .print-zoom {
     zoom: 0.75;
+  }
+  /* Annexe de la synthèse : le détail par agent (11 colonnes) tient sur une page A4. */
+  .print-annex table {
+    font-size: 10px;
+  }
+  .print-annex th,
+  .print-annex td {
+    padding: 3px 5px !important;
+  }
+  .print-annex td span {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-size: 9px;
   }
 }

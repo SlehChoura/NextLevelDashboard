@@ -74,7 +74,7 @@ describe("historique des mises à jour", () => {
 
   it("compare le fichier du 14/10 à celui du 21/10", () => {
     expect([latest.from, latest.to]).toEqual(["2026-10-14", "2026-10-21"])
-    expect(byId(latest.progress)).toEqual({ consultants_vibe_coding: [250, 300], missions_avec_agents: [41, 42] })
+    expect(byId(latest.progress)).toEqual({ consultants_vibe_coding: [250, 300], agents_industrialises: [8, 9] })
     expect(byId(latest.targetRevisions)).toEqual({ licences_claude: [23, 25] })
     expect(latest.added).toEqual([])
     expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents avec propale type", 3, 5]])

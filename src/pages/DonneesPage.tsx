@@ -1,4 +1,5 @@
 import { FileDrop } from "../components/common/FileDrop"
+import { PageHeader } from "../components/ui/PageHeader"
 import { ImportFeedback } from "../components/common/ImportFeedback"
 import { ClearBrowserDataButton } from "../components/common/ClearBrowserDataButton"
 import { useCombinedImport } from "../hooks/useCombinedImport"
@@ -9,7 +10,7 @@ import { useReportStore } from "../store/reportStore"
 import { useHistoryStore } from "../store/historyStore"
 import { downloadCombinedTemplate } from "../lib/combinedImport"
 
-const card = "rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
+const card = "rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5"
 
 /**
  * Page dédiée à la mise à jour des données : import du fichier de suivi, téléchargement du fichier
@@ -26,14 +27,17 @@ export function DonneesPage() {
   const { importMessage, importWarnings, handleImportFile } = useCombinedImport()
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">Pilotage IA4CYB</p>
-      <h1 className="mt-2 text-3xl font-semibold text-[var(--color-text)]">Mise à jour des données</h1>
-      <p className="mt-3 text-[var(--color-text-muted)]">
-        Toutes les pages du site sont alimentées par un seul fichier Excel à 3 onglets (« Suivi pilotage »,
-        « Actions », « Agents IA4CYB »). Données actuelles au{" "}
-        <strong className="text-[var(--color-text)]">{formatDataDate(lastUpdate)}</strong>.
-      </p>
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <PageHeader
+        title="Mise à jour des données"
+        description={
+        <>
+          Toutes les pages sont alimentées par un seul fichier Excel à 3 onglets (« Suivi pilotage », « Actions »,
+          « Agents IA4CYB »). Données actuelles au{" "}
+          <strong className="text-[var(--color-text)]">{formatDataDate(lastUpdate)}</strong>.
+        </>
+        }
+      />
 
       <section className={`${card} mt-8`}>
         <h2 className="text-sm font-semibold text-[var(--color-text)]">1. Télécharger le fichier actuel</h2>

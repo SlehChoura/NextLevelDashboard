@@ -170,7 +170,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
   const userAction: ActionItem = { id: "u1", title: "Mon action", owner: "moi", objectiveId: "", status: "todo", dueDate: "" }
 
   it("donne les nouvelles valeurs du pilotage à un navigateur qui n'a rien importé depuis", () => {
-    expect(refreshPilotage({ ...old, lastImportAt: null }, 6, defaults).values).toMatchObject({ missions_avec_agents: 42 })
+    expect(refreshPilotage({ ...old, lastImportAt: null }, 6, defaults).values).toMatchObject({ agents_industrialises: 9, missions_avec_agents: 41 })
     expect(refreshPilotage({ ...old, lastImportAt: olderImport }, 6, defaults).values).toEqual(defaults.values)
   })
 
@@ -184,8 +184,8 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
     expect(byId).toMatchObject({
       consultants_vibe_coding: [300, 250],
       agents_disponibles: [12, 20],
-      agents_industrialises: [8, 10],
-      missions_avec_agents: [42, 50],
+      agents_industrialises: [9, 10],
+      missions_avec_agents: [41, 50],
       licences_claude: [0, 25],
       demo_ai_showcase: [3, 10],
     })

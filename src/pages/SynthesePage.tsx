@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { Check } from "lucide-react"
 import { Logo } from "../components/common/Logo"
 import { Badge } from "../components/common/Badge"
 import { HeroKpi } from "../components/common/HeroKpi"
@@ -73,14 +74,14 @@ export function SynthesePage() {
     : []
 
   return (
-    <div className="print-page print-zoom mx-auto max-w-5xl px-6 py-8">
+    <div className="print-page print-zoom mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
       <div className="no-print mb-4 flex items-center justify-between gap-3">
         <Link to="/" className="text-sm text-[var(--color-text-muted)] hover:underline">
           ← Accueil
         </Link>
         <button
           onClick={() => window.print()}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+          className="rounded-full px-4 py-2 text-xs font-semibold text-white"
           style={{ backgroundColor: "var(--color-accent)" }}
         >
           Imprimer / PDF
@@ -128,7 +129,7 @@ export function SynthesePage() {
         <ChangesSinceUpdate diff={diff} />
       </div>
 
-      <section className="print-break-avoid mt-4 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <section className="print-break-avoid mt-4 overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         <h2 className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
           Objectifs du pilotage
         </h2>
@@ -151,7 +152,7 @@ export function SynthesePage() {
                 <td className={td}>{o.objective.label}</td>
                 <td className={`${td} whitespace-nowrap`}>
                   {o.current} / {o.target} {o.objective.unit}
-                  {o.revised && <span className="ml-1 text-[11px] text-[var(--color-warning)]">⚠ cible révisée</span>}
+                  {o.revised && <span className="ml-1 text-[11px] font-semibold text-[var(--color-warning)]">cible révisée</span>}
                 </td>
                 <td className={`${td} whitespace-nowrap`}>{o.percent}%</td>
                 <td className={`${td} whitespace-nowrap`}>
@@ -164,7 +165,7 @@ export function SynthesePage() {
       </section>
 
       <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] print:grid-cols-[3fr_2fr]">
-        <section className="print-break-avoid overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <section className="print-break-avoid overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
           <h2 className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
             Actions à arbitrer ({late.length} en retard)
           </h2>
@@ -194,13 +195,16 @@ export function SynthesePage() {
           )}
         </section>
 
-        <section className="print-break-avoid rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <section className="print-break-avoid rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
             Agents prêts pour un client ({readyAgents.length})
           </h2>
           <ul className="mt-2 space-y-1 text-sm text-[var(--color-text)] print:text-xs">
             {readyAgents.map((row) => (
-              <li key={row.__id}>✓ {String(row.label ?? "")}</li>
+              <li key={row.__id} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-success)]" strokeWidth={2.5} aria-hidden />
+                {String(row.label ?? "")}
+              </li>
             ))}
           </ul>
           <p className="mt-3 text-xs text-[var(--color-text-muted)]">
@@ -209,7 +213,7 @@ export function SynthesePage() {
         </section>
       </div>
 
-      <section className="print-break-before mt-8">
+      <section className="print-break-before print-annex mt-8">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
           Annexe — détail par agent
         </h2>

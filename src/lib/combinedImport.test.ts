@@ -6,7 +6,6 @@ import {
   ACTIONS_SHEET_NAME,
   DASHBOARD_SHEET_NAME,
   PILOTAGE_SHEET_NAME,
-  KNOWN_REFERENCE_WARNINGS,
   referenceWorkbook,
   roundTrip,
   workbookFrom,
@@ -18,8 +17,8 @@ const ACT_HEADERS = ["Clé", "Titre", "Porteur", "Clé objectif", "Objectif lié
 describe("import du fichier de référence", () => {
   const result = parseCombinedWorkbook(referenceWorkbook(), [])
 
-  it("ne signale que l'écart connu entre onglets du fichier de suivi", () => {
-    expect(result.warnings).toEqual(KNOWN_REFERENCE_WARNINGS)
+  it("ne signale aucune incohérence", () => {
+    expect(result.warnings).toEqual([])
   })
 
   it("restitue les valeurs et cibles de tous les objectifs", () => {
@@ -169,7 +168,7 @@ describe("fichier téléchargé (modèle pré-rempli)", () => {
     const workbook = roundTrip(buildCombinedWorkbook(values, targets, SEED_ACTIONS, SEED_REPORT))
     const result = parseCombinedWorkbook(workbook, SEED_ACTIONS)
     const strip = ({ __id: _id, ...rest }: { __id: string }) => rest
-    expect(result.warnings).toEqual(KNOWN_REFERENCE_WARNINGS)
+    expect(result.warnings).toEqual([])
     expect(result.dashboard?.rows.map(strip)).toEqual(SEED_REPORT.rows.map(strip))
     expect(result.dashboard?.template.criteria).toEqual(SEED_REPORT.template.criteria)
   })

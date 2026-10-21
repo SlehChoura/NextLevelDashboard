@@ -5,7 +5,6 @@ import {
   ACTIONS_SHEET_NAME,
   DASHBOARD_SHEET_NAME,
   PILOTAGE_SHEET_NAME,
-  KNOWN_REFERENCE_WARNINGS,
   referenceWorkbook,
   workbookFrom,
 } from "../test/referenceWorkbook"
@@ -18,8 +17,8 @@ const ACT_HEADERS = ["Clé", "Titre", "Porteur", "Clé objectif", "Objectif lié
 const validPilotageRows = PILOTAGE_OBJECTIVES.map((o) => [o.id, "", o.label, o.defaultCurrent, o.target, o.unit])
 
 describe("checkCombinedWorkbook", () => {
-  it("ne signale sur le fichier de référence que son écart connu entre onglets", () => {
-    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual(KNOWN_REFERENCE_WARNINGS)
+  it("ne signale rien sur le fichier de référence", () => {
+    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual([])
   })
 
   it("compare les chiffres saisis à la fois dans le pilotage et dans l'onglet agents", () => {
