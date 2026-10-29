@@ -16,23 +16,23 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 10
+export const SEED_VERSION = 11
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
  * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
  */
-export const SEED_PILOTAGE_DATE = "2026-10-21"
+export const SEED_PILOTAGE_DATE = "2026-10-29"
 
 /**
  * Instant d'intégration du dernier fichier de suivi : un import fait avant (même plus tôt le même
  * jour, quand deux versions du fichier se suivent) est plus ancien que ces données.
  */
-export const SEED_REFERENCE_AT = "2026-10-21T22:45:00.000Z"
+export const SEED_REFERENCE_AT = "2026-10-29T12:20:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
-  "Nos agents IA4CYB",
+  "Nos agents AI4CYB",
   "Status",
   "Portabilité",
   "Documentation",
@@ -46,42 +46,78 @@ export const DASHBOARD_HEADERS = [
 ]
 
 export const DASHBOARD_ROWS: unknown[][] = [
-  ["Smart Identity Analyzer", "Présentable en contexte client", 1, 0.9, 0.5, 0.5, 0.6, "Oui", "", "Oui", "Oui"],
-  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.75, 1, 1, "Oui", 10, "Oui", "Oui"],
-  ["Booster EBIOS RM - Analyse de risques", "Présentable en contexte client", 1, 0.75, 0.75, 0.5, 1, "Oui", 3, "Oui", "Oui"],
+  ["Smart Identity Analyzer", "Déployable en contexte client", 1, 0.9, 0.5, 0.5, 0.6, "Non", 1, "Oui", "Oui"],
+  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.75, 1, 1, "Non", 10, "Oui", "Oui"],
   [
-    "The Web Recon Accelerator - Local-LLM Powered Pentest Assistant",
-    "Présentable en contexte client",
+    "Booster EBIOS RM – Analyse de risques",
+    "Déployable en contexte client",
     1,
-    1,
-    1,
-    0.25,
+    0.75,
+    0.75,
+    0.5,
     1,
     "Oui",
-    20,
+    3,
     "Oui",
     "Oui",
   ],
-  ["The CyberBench Intelligence Orchestrator ", "WIP", 0.75, 0.33, 0.5, 1, 0.75, "En cours", 2, "Oui", "Oui"],
-  ["The CTI Exposure Scout – Autonomous Attack Surface Intelligence", "WIP", 0.5, 0.5, 0, 0, 0.25, "Non", "", "En cours", "Non"],
-  ["AI‑Powered NIS2 Intelligence & Compliance Assistant", "WIP", 0.5, 0.5, 0.25, 0.25, 0.5, "Non", 2, "Oui", "Oui"],
-  ["Cyber-by-Design Project Assistant", "Présentable en contexte client", 1, 1, 0.75, 0.75, 1, "Oui", 2, "Oui", "Oui"],
+  ["Web Recon", "Déployable en contexte client", 1, 1, 1, 0.25, 1, "Non", 20, "Oui", "Oui"],
+  [
+    "The CyberBench Intelligence Orchestrator",
+    "En développement",
+    0.75,
+    0.33,
+    0.5,
+    1,
+    0.75,
+    "En cours",
+    2,
+    "Oui",
+    "Oui",
+  ],
+  [
+    "The CTI Threat Landscape Scout – Autonomous Threat Landscape Generation",
+    "En développement",
+    0.5,
+    0.5,
+    0,
+    0,
+    0.25,
+    "",
+    0,
+    "En cours",
+    "Non",
+  ],
+  [
+    "AI-Powered NIS2 Intelligence & Compliance Assistant",
+    "En développement",
+    0.5,
+    0.5,
+    0.25,
+    0.25,
+    0.5,
+    "Non",
+    2,
+    "Oui",
+    "Oui",
+  ],
+  ["Cyber-by-Design Project Assistant", "Déployable en contexte client", 1, 1, 0.75, 0.75, 1, "Oui", 2, "Oui", "Oui"],
   [
     "The Deliverable Purifier – Automated Anonymization & KM Re-injection",
     "Présentable en contexte client",
-    1,
+    "",
     1,
     1,
     0.5,
-    1,
     "",
     "",
-    "Oui",
+    "",
+    "",
     "Oui",
   ],
   ["Kovex", "Déployable en contexte client", 1, 0.75, 0.75, 0.25, 1, "", 2, "Oui", "Oui"],
-  ["RegWatch", "WIP", 0.5, 0.5, 0.75, 0.25, 0.25, "", "", "", "Non"],
-  ["WaveWarden", "WIP", 0.5, 0.25, 0.25, 0.25, 0.5, "", "", "", "Non"],
+  ["RegWatch", "En développement", 0.5, 0.5, 0.75, 0.25, 0.25, "", "", "", "Non"],
+  ["WaveWarden", "En développement", 0.5, 0.25, 0.25, 0.25, 0.5, "En cours", "", "", "Non"],
 ]
 
 const dashboardSheet: ParsedSheet = {
@@ -109,7 +145,7 @@ export const SEED_REPORT: ReportData = {
 export const SEED_ACTIONS: ActionItem[] = [
   {
     id: "seed-action-1",
-    title: "Synchronisation avec le relai cyber academy pour évoluer le support et le format",
+    title: "Se synchroniser avec le relais Cyber Academy pour faire évoluer le support et le format",
     owner: "SlehEddine CHOURA",
     objectiveId: "cyber_academy_ia",
     status: "done",
@@ -117,7 +153,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-2",
-    title: "Formation des consultants Cyber au vibe coding",
+    title: "Former les consultants Cyber au vibe coding",
     owner: "Gérôme BILLOIS",
     objectiveId: "consultants_vibe_coding",
     status: "done",
@@ -129,11 +165,11 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "SlehEddine CHOURA",
     objectiveId: "consultants_vibe_coding",
     status: "todo",
-    dueDate: "2026-10-30",
+    dueDate: "2026-11-15",
   },
   {
     id: "seed-action-4",
-    title: "Suivre le nombre des consultants Cyb certifiés Claude",
+    title: "Suivre le nombre de consultants Cyber certifiés Claude",
     owner: "Anna VALIER",
     objectiveId: "certifications_claude",
     status: "in_progress",
@@ -165,7 +201,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-8",
-    title: "Dcoumentation de la chaine CI/CD",
+    title: "Documenter la chaîne CI/CD",
     owner: "Mehdi BOUDJELLA",
     objectiveId: "description_cicd",
     status: "done",
@@ -173,7 +209,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-9",
-    title: "Documentation du How to",
+    title: "Rédiger le guide d'utilisation (How to) de la chaîne CI/CD",
     owner: "Mel ENZEN",
     objectiveId: "disponibilite_cicd",
     status: "done",
@@ -181,7 +217,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-10",
-    title: "Publication d'agents AI4CYB sur le site AI Showcase",
+    title: "Publier les agents AI4CYB sur le site AI Showcase",
     owner: "Tom WILTBERGER",
     objectiveId: "publication_ai_showcase",
     status: "done",
@@ -189,7 +225,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-11",
-    title: "Descripction et How to de la chaine CI/CD",
+    title: "Rédiger la description et le guide d'utilisation de la chaîne CI/CD",
     owner: "Mel ENZEN",
     objectiveId: "description_cicd",
     status: "done",
@@ -197,7 +233,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-12",
-    title: "Centraliser les guidelines pour un secure vibe coding",
+    title: "Centraliser les guidelines de secure vibe coding",
     owner: "Mel ENZEN",
     objectiveId: "guidelines_cicd",
     status: "todo",
@@ -205,23 +241,23 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-13",
-    title: "Ajouter un démo mode pour nos agents AI4CYB",
+    title: "Ajouter un mode démo aux agents AI4CYB",
     owner: "SlehEddine CHOURA",
     objectiveId: "demo_ai_showcase",
-    status: "todo",
-    dueDate: "2026-10-31",
+    status: "in_progress",
+    dueDate: "2026-11-12",
   },
   {
     id: "seed-action-14",
-    title: "Identifier et piloter l'attribution de licence Claude Code à la communauté AI4CYB Makers",
+    title: "Identifier les bénéficiaires et piloter l'attribution des licences Claude Code de la communauté AI4CYB Makers",
     owner: "SlehEddine CHOURA",
     objectiveId: "licences_claude",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-10-31",
   },
   {
     id: "seed-action-15",
-    title: "Vérification des critères de l'industrialisation pour les agents et les aider à les atteindre facilement",
+    title: "Vérifier les critères d'industrialisation des agents et accompagner les équipes pour les atteindre",
     owner: "Anna VALIER",
     objectiveId: "agents_industrialises",
     status: "done",
@@ -229,7 +265,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-16",
-    title: "Déployer les nouvelles fonctionnalités sur PARALLAX",
+    title: "Déployer les nouvelles fonctionnalités sur Parallax",
     owner: "Arnaud PETICOL",
     objectiveId: "description_cicd",
     status: "in_progress",
@@ -237,7 +273,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-17",
-    title: "Etablir les actions prioritaires pour chaque agent",
+    title: "Établir les actions prioritaires de chaque agent",
     owner: "Anna VALIER",
     objectiveId: "agents_industrialises",
     status: "done",
@@ -245,7 +281,7 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-18",
-    title: "Définition de nos besoins budgétaires",
+    title: "Définir les besoins budgétaires 2027 de la communauté AI4CYB Makers",
     owner: "SlehEddine CHOURA",
     objectiveId: "",
     status: "todo",
@@ -253,19 +289,51 @@ export const SEED_ACTIONS: ActionItem[] = [
   },
   {
     id: "seed-action-19",
-    title: "Récuperer les noms pour les licence Claude Code",
+    title: "Recenser les bénéficiaires des licences Claude Code",
     owner: "Anna VALIER",
     objectiveId: "licences_claude",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-10-22",
   },
   {
     id: "seed-action-20",
-    title: "Contacter les relais learning des BT",
+    title: "Contacter les relais Learning des BT",
+    owner: "Anna VALIER",
+    objectiveId: "bt_academy_transformees",
+    status: "done",
+    dueDate: "2026-10-28",
+  },
+  {
+    id: "seed-action-21",
+    title: "Identifier les prochains BT Days",
     owner: "Anna VALIER",
     objectiveId: "bt_academy_transformees",
     status: "in_progress",
-    dueDate: "2026-10-28",
+    dueDate: "2026-10-31",
+  },
+  {
+    id: "seed-action-22",
+    title: "Constituer le backlog des cas d'usage à développer en vibe coding (backlog DAIS et travaux des BT)",
+    owner: "Anna VALIER",
+    objectiveId: "agents_disponibles",
+    status: "todo",
+    dueDate: "2026-11-30",
+  },
+  {
+    id: "seed-action-23",
+    title: "Contacter les porteurs de formation des BT",
+    owner: "Anna VALIER",
+    objectiveId: "bt_academy_transformees",
+    status: "done",
+    dueDate: "2026-10-31",
+  },
+  {
+    id: "seed-action-24",
+    title: "Tester les démos des agents",
+    owner: "Anna VALIER",
+    objectiveId: "agents_disponibles",
+    status: "in_progress",
+    dueDate: "2026-11-10",
   },
 ]
 
@@ -288,13 +356,18 @@ const targets1005 = without(referenceTargets, ADDED_ON_2026_10_14)
 /** Dashboard des agents des fichiers du 30/09 et du 05/10 (10 agents, une propale type). */
 const dashboardBefore1014 = { agents: 10, missions: 27, ready: 7, propale: 1 }
 
+/** Fichier corrigé du 21/10, avant celui du 29/10. */
+const values1021 = { ...referenceValues, licences_claude: 0 }
+const dashboard1021 = { agents: 12, missions: 41, ready: 7, propale: 5 }
+
 /** Fichier corrigé du 14/10, avant celui du 21/10. */
-const values1014 = { ...referenceValues, consultants_vibe_coding: 250, agents_industrialises: 8, missions_avec_agents: 41 }
+const values1014 = { ...values1021, consultants_vibe_coding: 250, agents_industrialises: 8, missions_avec_agents: 41 }
 const targets1014 = { ...referenceTargets, licences_claude: 23 }
 const dashboard1014 = { agents: 12, missions: 41, ready: 7, propale: 3 }
 
 /**
- * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10 et du {@link SEED_PILOTAGE_DATE},
+ * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10, du 21/10 et du
+ * {@link SEED_PILOTAGE_DATE},
  * pour que « Depuis la dernière mise à jour » montre d'emblée les évolutions (et les cibles révisées).
  */
 export const SEED_HISTORY: Snapshot[] = [
@@ -313,5 +386,6 @@ export const SEED_HISTORY: Snapshot[] = [
   },
   { date: "2026-10-05", values: values1005, targets: targets1005, dashboard: dashboardBefore1014 },
   { date: "2026-10-14", values: values1014, targets: targets1014, dashboard: dashboard1014 },
+  { date: "2026-10-21", values: values1021, targets: referenceTargets, dashboard: dashboard1021 },
   makeSnapshot(SEED_PILOTAGE_DATE, referenceValues, referenceTargets, SEED_REPORT),
 ]

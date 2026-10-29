@@ -235,13 +235,14 @@ function checkDashboardSheet(workbook: XLSX.WorkBook): string[] {
   const sheet = DASHBOARD_SHEET_NAME
   const warnings: string[] = []
 
-  const present = new Set(grid.headers.filter(Boolean).map(normalizeText))
-  const expected = new Set(DASHBOARD_HEADERS.map(normalizeText))
-  for (const h of DASHBOARD_HEADERS) {
+  // La colonne A porte le nom des agents : son intitulé est libre (« Nos agents IA4CYB », « AI4CYB »…).
+  const present = new Set(grid.headers.slice(1).filter(Boolean).map(normalizeText))
+  const expected = new Set(DASHBOARD_HEADERS.slice(1).map(normalizeText))
+  for (const h of DASHBOARD_HEADERS.slice(1)) {
     if (!present.has(normalizeText(h))) warnings.push(`[${sheet}] Colonne attendue « ${h} » absente.`)
   }
   grid.headers.forEach((h, i) => {
-    if (h && !expected.has(normalizeText(h))) {
+    if (i > 0 && h && !expected.has(normalizeText(h))) {
       warnings.push(`[${sheet}] Colonne ${XLSX.utils.encode_col(i)} « ${h} » non prévue par le modèle (importée telle quelle).`)
     }
   })
