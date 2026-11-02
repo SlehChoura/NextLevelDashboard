@@ -1,0 +1,1 @@
+var e={todo:`À faire`,in_progress:`En cours`,done:`Terminée`};function t(){return new Date().toISOString().slice(0,10)}function n(e,n=t()){return e.status!==`done`&&e.dueDate!==``&&e.dueDate<n}function r(e){return e.filter(e=>e.status!==`done`).sort((e,t)=>(e.dueDate||`9999`).localeCompare(t.dueDate||`9999`))}export{t as i,n,r,e as t};
