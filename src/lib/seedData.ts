@@ -16,11 +16,12 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 11
+export const SEED_VERSION = 12
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
- * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
+ * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes. Le fichier du 02/11 ne
+ * modifie que des actions : les chiffres, et donc l'historique, restent ceux du 29/10.
  */
 export const SEED_PILOTAGE_DATE = "2026-10-29"
 
@@ -28,7 +29,7 @@ export const SEED_PILOTAGE_DATE = "2026-10-29"
  * Instant d'intégration du dernier fichier de suivi : un import fait avant (même plus tôt le même
  * jour, quand deux versions du fichier se suivent) est plus ancien que ces données.
  */
-export const SEED_REFERENCE_AT = "2026-10-29T12:20:00.000Z"
+export const SEED_REFERENCE_AT = "2026-11-02T09:00:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
@@ -237,7 +238,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     owner: "Mel ENZEN",
     objectiveId: "guidelines_cicd",
     status: "todo",
-    dueDate: "2026-10-31",
+    dueDate: "2026-11-30",
   },
   {
     id: "seed-action-13",
@@ -268,7 +269,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Déployer les nouvelles fonctionnalités sur Parallax",
     owner: "Arnaud PETICOL",
     objectiveId: "description_cicd",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-10-19",
   },
   {
@@ -308,7 +309,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Identifier les prochains BT Days",
     owner: "Anna VALIER",
     objectiveId: "bt_academy_transformees",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-10-31",
   },
   {
