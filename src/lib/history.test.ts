@@ -7,7 +7,7 @@ import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
   it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 41, ready: 7, propale: 5 })
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 42, ready: 7, propale: 2 })
   })
 })
 
@@ -73,11 +73,22 @@ describe("historique des mises à jour", () => {
   })
 
   it("compare le fichier du 14/10 à celui du 21/10", () => {
-    expect([latest.from, latest.to]).toEqual(["2026-10-14", "2026-10-21"])
-    expect(byId(latest.progress)).toEqual({ consultants_vibe_coding: [250, 300], agents_industrialises: [8, 9] })
-    expect(byId(latest.targetRevisions)).toEqual({ licences_claude: [23, 25] })
-    expect(latest.added).toEqual([])
-    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents avec propale type", 3, 5]])
+    const oct21 = compareSnapshots(SEED_HISTORY[2], SEED_HISTORY[3])
+    expect([oct21.from, oct21.to]).toEqual(["2026-10-14", "2026-10-21"])
+    expect(byId(oct21.progress)).toEqual({ consultants_vibe_coding: [250, 300], agents_industrialises: [8, 9] })
+    expect(byId(oct21.targetRevisions)).toEqual({ licences_claude: [23, 25] })
+    expect(oct21.added).toEqual([])
+    expect(oct21.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents avec propale type", 3, 5]])
+  })
+
+  it("compare le fichier du 21/10 à celui du 29/10", () => {
+    expect([latest.from, latest.to]).toEqual(["2026-10-21", "2026-10-29"])
+    expect(byId(latest.progress)).toEqual({ licences_claude: [0, 23] })
+    expect(latest.targetRevisions).toEqual([])
+    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
+      ["Missions réalisées (somme par agent)", 41, 42],
+      ["Agents avec propale type", 5, 2],
+    ])
   })
 
   it("compare aussi les chiffres du dashboard", () => {

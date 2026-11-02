@@ -5,6 +5,7 @@ import {
   ACTIONS_SHEET_NAME,
   DASHBOARD_SHEET_NAME,
   PILOTAGE_SHEET_NAME,
+  KNOWN_REFERENCE_WARNINGS,
   referenceWorkbook,
   workbookFrom,
 } from "../test/referenceWorkbook"
@@ -17,8 +18,8 @@ const ACT_HEADERS = ["Clé", "Titre", "Porteur", "Clé objectif", "Objectif lié
 const validPilotageRows = PILOTAGE_OBJECTIVES.map((o) => [o.id, "", o.label, o.defaultCurrent, o.target, o.unit])
 
 describe("checkCombinedWorkbook", () => {
-  it("ne signale rien sur le fichier de référence", () => {
-    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual([])
+  it("ne signale sur le fichier de référence que son écart connu entre onglets", () => {
+    expect(checkCombinedWorkbook(referenceWorkbook())).toEqual(KNOWN_REFERENCE_WARNINGS)
   })
 
   it("compare les chiffres saisis à la fois dans le pilotage et dans l'onglet agents", () => {
@@ -49,7 +50,7 @@ describe("checkCombinedWorkbook", () => {
           ...validPilotageRows.slice(1),
           ["agents_disponibles", "", "Agents industrialisés", 1, 2, ""],
           ["inconnu", "", "Objectif inconnu", 1, 2, ""],
-          ["cyber_academy_ia", "", "Cyber Academy avec contenu IA", "beaucoup", 1, ""],
+          ["cyber_academy_ia", "", "Cyber Academy intégrant du contenu IA", "beaucoup", 1, ""],
         ],
       }),
     )
@@ -65,7 +66,7 @@ describe("checkCombinedWorkbook", () => {
 
   it("signale un objectif absent du fichier", () => {
     const warnings = checkCombinedWorkbook(workbookFrom({ [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...validPilotageRows.slice(1)] }))
-    expect(warnings).toEqual([expect.stringMatching(/Objectif « Cyber Academy avec contenu IA » absent du fichier/)])
+    expect(warnings).toEqual([expect.stringMatching(/Objectif « Cyber Academy intégrant du contenu IA » absent du fichier/)])
   })
 
   it("signale les anomalies de l'onglet actions", () => {
@@ -74,7 +75,7 @@ describe("checkCombinedWorkbook", () => {
         [ACTIONS_SHEET_NAME]: [
           ACT_HEADERS,
           ["7", "A", "Moi", "description_cicd", "Disponibilité de la chaîne CI/CD", "Fait", "2026-10-01"],
-          ["7", "B", "Moi", "description_cicd", "Description et How to de la chaîne CI/CD", "Fait", "2026-10-01"],
+          ["7", "B", "Moi", "description_cicd", "Documentation et guide d'utilisation de la chaîne CI/CD", "Fait", "2026-10-01"],
           ["", "a ", "", "inconnu", "", "Peut-être", "bientôt"],
           ["", "", "Moi", "", "", "", ""],
         ],
