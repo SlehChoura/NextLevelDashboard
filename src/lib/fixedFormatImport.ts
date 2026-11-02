@@ -91,12 +91,25 @@ function inferColumn(values: string[], header: string): ColumnInference {
       options: distinct.map((v) => ({
         value: slugify(v),
         label: v,
-        color: isNotApplicable(v) ? "neutral" : PALETTE[paletteIndex++ % PALETTE.length],
+        color: isNotApplicable(v) ? "neutral" : (maturityColor(v) ?? PALETTE[paletteIndex++ % PALETTE.length]),
       })),
     }
   }
 
   return { type: "text", role: "info" }
+}
+
+/**
+ * Couleur d'un statut de maturité d'agent, fixée par son sens plutôt que par son ordre
+ * d'apparition dans le fichier : déployable (le plus mûr) en vert, présentable en bleu, en
+ * développement / WIP en orange.
+ */
+function maturityColor(value: string): CriterionOption["color"] | undefined {
+  const v = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  if (v.includes("deployable")) return "success"
+  if (v.includes("presentable")) return "info"
+  if (/\bwip\b|en developpement|en cours/.test(v)) return "warning"
+  return undefined
 }
 
 export interface AmbiguousCell {
