@@ -15,6 +15,8 @@ import { averageOfNumeric, findCriterionByKeyword } from "../lib/criteria"
 import { hasPropaleType } from "../lib/fixedFormatImport"
 import { industrialisedAgents, industrialisedCriterion } from "../lib/dashboardMetrics"
 import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
+import { AgentDetailDialog } from "../components/dashboard/AgentDetailDialog"
+import type { DataRow } from "../types"
 import { reviewEditorHandlers, type ImportDraft } from "../lib/aiTemplateEdit"
 
 type Mode = "view" | "edit"
@@ -27,6 +29,7 @@ export function DashboardPage() {
   const [industrialisedOpen, setIndustrialisedOpen] = useState(false)
   const [focus, setFocus] = useState<{ criterionKey: string; criterionLabel: string; value: string; label: string } | null>(null)
   const [showTable, setShowTable] = useState(true)
+  const [selectedAgent, setSelectedAgent] = useState<DataRow | null>(null)
   const [searchParams] = useSearchParams()
   const section = searchParams.get("section")
 
@@ -89,14 +92,15 @@ export function DashboardPage() {
       {mode === "view" && (
         <div className="space-y-5">
           <IndustrialisedAgentsDialog open={industrialisedOpen} onClose={() => setIndustrialisedOpen(false)} />
+          <AgentDetailDialog row={selectedAgent} template={template} onClose={() => setSelectedAgent(null)} />
           <DashboardHeader report={report} template={template} onExport={() => window.print()} />
 
           <div id="section-prets" className="scroll-mt-20">
-            <ClientReadyAgents template={template} rows={report.rows} />
+            <ClientReadyAgents template={template} rows={report.rows} onSelect={setSelectedAgent} />
           </div>
 
           <div id="section-missions" className="scroll-mt-20">
-            <MissionsPodium template={template} rows={report.rows} />
+            <MissionsPodium template={template} rows={report.rows} onSelect={setSelectedAgent} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -208,7 +212,7 @@ export function DashboardPage() {
                 </button>
               </div>
 
-              {showTable && <DataTable template={template} rows={report.rows} />}
+              {showTable && <DataTable template={template} rows={report.rows} onSelect={setSelectedAgent} />}
             </>
           )}
         </div>

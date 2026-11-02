@@ -9,7 +9,16 @@ import { Card, CardTitle } from "../ui/Card"
  * proportionnelles, valeur affichée en bout de barre, podium mis en avant. Repère les critères
  * concernés par mot-clé dans leur libellé, le schéma étant généré dynamiquement à l'import.
  */
-export function MissionsPodium({ template, rows }: { template: ReportTemplate; rows: DataRow[] }) {
+export function MissionsPodium({
+  template,
+  rows,
+  onSelect,
+}: {
+  template: ReportTemplate
+  rows: DataRow[]
+  /** Ouvre la fiche de l'agent cliqué. */
+  onSelect?: (row: DataRow) => void
+}) {
   const labelCriterion = template.criteria.find((c) => c.role === "label")
   const missionsCriterion = findCriterionByKeyword(template, "mission")
   const propaleCriterion = findCriterionByKeyword(template, "propale")
@@ -50,9 +59,20 @@ export function MissionsPodium({ template, rows }: { template: ReportTemplate; r
               {i + 1}
             </span>
             <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-              <span className="truncate" title={String(row[labelCriterion.key] ?? "")}>
-                {row[labelCriterion.key]}
-              </span>
+              {onSelect ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect(row)}
+                  className="truncate text-left hover:text-[var(--color-accent)] hover:underline"
+                  title={`Découvrir ${String(row[labelCriterion.key] ?? "")}`}
+                >
+                  {row[labelCriterion.key]}
+                </button>
+              ) : (
+                <span className="truncate" title={String(row[labelCriterion.key] ?? "")}>
+                  {row[labelCriterion.key]}
+                </span>
+              )}
               {propaleCriterion && hasPropaleType(String(row[propaleCriterion.key] ?? "")) && (
                 <span
                   className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-success)]"
