@@ -69,7 +69,7 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
         {diff.added.length > 0 && (
           <div className="mt-3">
             <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-accent)]">
-              <Plus className="h-3.5 w-3.5" aria-hidden /> Nouveau(x) objectif(s)
+              <Plus className="h-3.5 w-3.5" aria-hidden /> {diff.added.length > 1 ? "Nouveaux objectifs" : "Nouvel objectif"}
             </p>
             <ul className="mt-1">
               {diff.added.map((a) => (
@@ -88,7 +88,7 @@ export function ChangesSinceUpdate({ diff }: { diff: SnapshotDiff | null }) {
         {diff.targetRevisions.length > 0 && (
           <div className="mt-4 rounded-xl border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] p-3 print:mt-2">
             <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-warning)]">
-              <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Cible(s) révisée(s) le {shortDate(diff.to)}
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> {diff.targetRevisions.length > 1 ? "Cibles révisées" : "Cible révisée"} le {shortDate(diff.to)}
             </p>
             <ul className="mt-1">
               {diff.targetRevisions.map((c) => (

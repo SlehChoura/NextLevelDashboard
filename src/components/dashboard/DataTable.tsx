@@ -14,7 +14,16 @@ function widthWeight(c: Criterion): number {
   return 1.1
 }
 
-export function DataTable({ template, rows }: { template: ReportTemplate; rows: DataRow[] }) {
+export function DataTable({
+  template,
+  rows,
+  onSelect,
+}: {
+  template: ReportTemplate
+  rows: DataRow[]
+  /** Rend le nom de chaque ligne cliquable (ouvre la fiche de l'agent). */
+  onSelect?: (row: DataRow) => void
+}) {
   const totalWeight = template.criteria.reduce((sum, c) => sum + widthWeight(c), 0) || 1
 
   return (
@@ -50,7 +59,15 @@ export function DataTable({ template, rows }: { template: ReportTemplate; rows: 
                     lang="fr"
                     className="[hyphens:auto] break-words border-b border-[var(--color-border)] px-3 py-2 align-top text-[var(--color-text)]"
                   >
-                    {isBadgeType && row[c.key] ? (
+                    {c.role === "label" && onSelect ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelect(row)}
+                        className="text-left font-medium text-[var(--color-accent)] hover:underline"
+                      >
+                        {formatCellValue(c, row[c.key])}
+                      </button>
+                    ) : isBadgeType && row[c.key] ? (
                       <Badge label={formatCellValue(c, row[c.key])} color={option?.color ?? "neutral"} />
                     ) : (
                       formatCellValue(c, row[c.key])

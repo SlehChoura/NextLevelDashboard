@@ -106,7 +106,7 @@ function AchievementCard({
       <div className="mt-4 flex items-end justify-between gap-4">
         <div>
           <strong className="block text-2xl font-bold text-[var(--color-text)]">{formatNumber(current)}</strong>
-          <span className="text-xs text-[var(--color-text-muted)]">{objective.unit} actuel(le)</span>
+          <span className="text-xs text-[var(--color-text-muted)]">actuel · {objective.unit}</span>
         </div>
         <div className="text-right">
           <strong className="block text-2xl font-bold text-[var(--color-text-muted)]">{formatNumber(target)}</strong>
@@ -117,7 +117,7 @@ function AchievementCard({
       <div className="mt-3 flex items-center gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-border)]">
           <div
-            className="h-full rounded-full transition-all"
+            className="anim-bar h-full rounded-full transition-all"
             style={{ width: `${barWidth}%`, backgroundColor: PROGRESS_BAR_COLOR[status] }}
           />
         </div>
@@ -395,7 +395,8 @@ export function PilotagePage() {
       </div>
 
       <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-        <strong className="text-[var(--color-text)]">{filtered.length}</strong> objectif(s) affiché(s)
+        <strong className="text-[var(--color-text)]">{filtered.length}</strong>{" "}
+        {filtered.length > 1 ? "objectifs affichés" : "objectif affiché"}
       </p>
 
       {filtered.length === 0 ? (

@@ -7,7 +7,7 @@ export function ImportFeedback({ message, warnings }: { message: string | null; 
       {warnings.length > 0 && (
         <details className="rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] p-3 text-xs">
           <summary className="cursor-pointer font-semibold text-[var(--color-warning)]">
-            {warnings.length} incohérence(s) détectée(s) dans le fichier
+            {warnings.length > 1 ? `${warnings.length} incohérences détectées` : "1 incohérence détectée"} dans le fichier
           </summary>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-[var(--color-text)]">
             {warnings.map((w, i) => (
