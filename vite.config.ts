@@ -4,16 +4,16 @@ import { defineConfig, type Plugin } from 'vite'
 
 /**
  * Politique de sécurité du contenu, injectée dans le site publié uniquement (le serveur de
- * développement a besoin de scripts inline). Le site n'appelle aucun service : seuls ses propres
- * fichiers et la police Poppins (Google Fonts) sont autorisés. Les attributs style posés par React
+ * développement a besoin de scripts inline). Le site n'appelle aucun service tiers : seuls ses
+ * propres fichiers sont autorisés, police Poppins comprise (@fontsource). Les attributs style posés par React
  * passent par le CSSOM, non concerné par style-src ; 'unsafe-inline' n'y couvre que les styles
  * des graphiques (recharts).
  */
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
   "img-src 'self' data: blob:",
   "connect-src 'self'",
   "object-src 'none'",

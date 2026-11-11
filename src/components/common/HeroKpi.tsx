@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react"
 import { Sparkline } from "../ui/Sparkline"
+import { CountUp } from "../ui/CountUp"
 
 /**
  * Tuile KPI mise en avant (accueil, synthèse) : pictogramme, valeur, évolution depuis la mise à
@@ -48,7 +49,9 @@ export function HeroKpi({
         )}
       </div>
       <div className="mt-2 flex items-end justify-between gap-3">
-        <p className="text-[44px] leading-none font-semibold tracking-tight text-[var(--color-primary)] print:text-4xl">{value}</p>
+        <p className="text-[44px] leading-none font-semibold tracking-tight text-[var(--color-primary)] print:text-4xl">
+          {/^\d+$/.test(value) ? <CountUp value={Number(value)} /> : value}
+        </p>
         {trend && trend.length > 1 && (
           <span className="print:hidden">
             <Sparkline points={trend} label={label} width={96} height={34} />
@@ -81,7 +84,7 @@ export function HeroKpi({
           aria-valuemax={100}
           aria-label={`${label} : ${Math.round(percent)} % de la cible`}
         >
-          <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${percent}%` }} />
+          <div className="anim-bar h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${percent}%` }} />
         </div>
       )}
       {(to || onClick) && (

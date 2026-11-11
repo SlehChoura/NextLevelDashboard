@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { Check } from "lucide-react"
 import { Logo } from "../components/common/Logo"
+import { plural } from "../lib/plural"
 import { Badge } from "../components/common/Badge"
 import { HeroKpi } from "../components/common/HeroKpi"
 import { ChangesSinceUpdate } from "../components/common/ChangesSinceUpdate"
@@ -95,7 +96,8 @@ export function SynthesePage() {
           <h1 className="text-2xl font-semibold text-[var(--color-text)]">Synthèse des agents IA4CYB</h1>
           <p className="text-sm text-[var(--color-text-muted)]">
             Données au {dataDate ? new Date(dataDate + "T00:00:00").toLocaleDateString("fr-FR") : "—"} ·{" "}
-            {unlocked} objectif(s) atteint(s) sur {objectives.length} · {late.length} action(s) en retard
+            {plural(unlocked, "objectif atteint", "objectifs atteints")} sur {objectives.length} ·{" "}
+            {plural(late.length, "action")} en retard
           </p>
         </div>
       </header>
@@ -190,7 +192,7 @@ export function SynthesePage() {
           </table>
           {openActions.length > ACTIONS_SHOWN && (
             <p className="px-4 py-2 text-xs text-[var(--color-text-muted)]">
-              + {openActions.length - ACTIONS_SHOWN} autre(s) action(s) ouverte(s)
+              + {plural(openActions.length - ACTIONS_SHOWN, "autre action ouverte", "autres actions ouvertes")}
             </p>
           )}
         </section>
@@ -208,7 +210,8 @@ export function SynthesePage() {
             ))}
           </ul>
           <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-            {metrics.propale} agent(s) sur {metrics.agents} disposent d'une propale type.
+            {metrics.propale > 1 ? `${metrics.propale} agents sur ${metrics.agents} disposent` : `${metrics.propale} agent sur ${metrics.agents} dispose`}{" "}
+            d'une propale type.
           </p>
         </section>
       </div>

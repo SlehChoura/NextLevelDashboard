@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react"
+import { plural } from "../lib/plural"
 import { PageHeader } from "../components/ui/PageHeader"
 import { OwnerAvatar } from "../components/ui/OwnerAvatar"
 import { Plus, X } from "lucide-react"
@@ -277,7 +278,8 @@ export function ActionsPage() {
           Grouper par porteur
         </label>
         <span className="text-[var(--color-text-muted)]">
-          <strong className="text-[var(--color-text)]">{filtered.length}</strong> action(s) affichée(s)
+          <strong className="text-[var(--color-text)]">{filtered.length}</strong>{" "}
+          {filtered.length > 1 ? "actions affichées" : "action affichée"}
         </span>
       </div>
 
@@ -308,7 +310,7 @@ export function ActionsPage() {
                       <td colSpan={6} className="border-b border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-text)]">
                         {owner}{" "}
                         <span className="font-normal text-[var(--color-text-muted)]">
-                          — {items.length} action(s)
+                          — {plural(items.length, "action")}
                           {items.some((a) => isLate(a, today)) && `, dont ${items.filter((a) => isLate(a, today)).length} en retard`}
                         </span>
                       </td>
