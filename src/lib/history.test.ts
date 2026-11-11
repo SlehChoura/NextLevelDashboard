@@ -7,7 +7,7 @@ import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
   it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 42, ready: 7, propale: 2 })
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 46, ready: 7, propale: 2 })
   })
 })
 
@@ -81,11 +81,19 @@ describe("historique des mises à jour", () => {
     expect(oct21.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents avec propale type", 3, 5]])
   })
 
-  it("compare le fichier du 21/10 à celui du 29/10", () => {
-    expect([latest.from, latest.to]).toEqual(["2026-10-21", "2026-10-29"])
-    expect(byId(latest.progress)).toEqual({ licences_claude: [0, 23] })
+  it("compare le fichier du 29/10 à celui du 11/11 : seules les missions par agent bougent", () => {
+    expect([latest.from, latest.to]).toEqual(["2026-10-29", "2026-11-11"])
+    expect(latest.progress).toEqual([])
     expect(latest.targetRevisions).toEqual([])
-    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
+    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Missions réalisées (somme par agent)", 42, 46]])
+  })
+
+  it("compare le fichier du 21/10 à celui du 29/10", () => {
+    const oct29 = compareSnapshots(SEED_HISTORY[3], SEED_HISTORY[4])
+    expect([oct29.from, oct29.to]).toEqual(["2026-10-21", "2026-10-29"])
+    expect(byId(oct29.progress)).toEqual({ licences_claude: [0, 23] })
+    expect(oct29.targetRevisions).toEqual([])
+    expect(oct29.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([
       ["Missions réalisées (somme par agent)", 41, 42],
       ["Agents avec propale type", 5, 2],
     ])

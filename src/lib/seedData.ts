@@ -16,20 +16,19 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 12
+export const SEED_VERSION = 13
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
- * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes. Le fichier du 02/11 ne
- * modifie que des actions : les chiffres, et donc l'historique, restent ceux du 29/10.
+ * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
  */
-export const SEED_PILOTAGE_DATE = "2026-10-29"
+export const SEED_PILOTAGE_DATE = "2026-11-11"
 
 /**
  * Instant d'intégration du dernier fichier de suivi : un import fait avant (même plus tôt le même
  * jour, quand deux versions du fichier se suivent) est plus ancien que ces données.
  */
-export const SEED_REFERENCE_AT = "2026-11-02T09:00:00.000Z"
+export const SEED_REFERENCE_AT = "2026-11-11T09:00:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
@@ -46,9 +45,14 @@ export const DASHBOARD_HEADERS = [
   "Agent industrialisé",
 ]
 
+/**
+ * Fichier du 11/11. Sa colonne « Agent industrialisé » (3 « Fait », 1 « En cours », 8 vides) porte
+ * visiblement l'avancement du mode démo et non l'industrialisation, que le pilotage maintient à 9 :
+ * les valeurs du fichier précédent sont conservées dans cette colonne, en attendant un fichier corrigé.
+ */
 export const DASHBOARD_ROWS: unknown[][] = [
   ["Smart Identity Analyzer", "Déployable en contexte client", 1, 0.9, 0.5, 0.5, 0.6, "Non", 1, "Oui", "Oui"],
-  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.75, 1, 1, "Non", 10, "Oui", "Oui"],
+  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.75, 1, 1, "Non", 14, "Oui", "Oui"],
   [
     "Booster EBIOS RM – Analyse de risques",
     "Déployable en contexte client",
@@ -117,7 +121,7 @@ export const DASHBOARD_ROWS: unknown[][] = [
     "Oui",
   ],
   ["Kovex", "Déployable en contexte client", 1, 0.75, 0.75, 0.25, 1, "", 2, "Oui", "Oui"],
-  ["RegWatch", "En développement", 0.5, 0.5, 0.75, 0.25, 0.25, "", "", "", "Non"],
+  ["RegWatch", "En développement", 0.5, 1, 0.75, 0.25, 0.25, "", "", "", "Non"],
   ["WaveWarden", "En développement", 0.5, 0.25, 0.25, 0.25, 0.5, "En cours", "", "", "Non"],
 ]
 
@@ -336,6 +340,22 @@ export const SEED_ACTIONS: ActionItem[] = [
     status: "in_progress",
     dueDate: "2026-11-10",
   },
+  {
+    id: "seed-action-25",
+    title: "Slides DI day",
+    owner: "Anna VALIER",
+    objectiveId: "bt_academy_transformees",
+    status: "todo",
+    dueDate: "2026-11-25",
+  },
+  {
+    id: "seed-action-26",
+    title: "Prépa 12 nov",
+    owner: "Anna VALIER",
+    objectiveId: "agents_disponibles",
+    status: "in_progress",
+    dueDate: "2026-11-12",
+  },
 ]
 
 const referenceValues = Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent]))
@@ -357,6 +377,9 @@ const targets1005 = without(referenceTargets, ADDED_ON_2026_10_14)
 /** Dashboard des agents des fichiers du 30/09 et du 05/10 (10 agents, une propale type). */
 const dashboardBefore1014 = { agents: 10, missions: 27, ready: 7, propale: 1 }
 
+/** Dashboard des agents du fichier du 29/10 (pilotage identique à celui du 11/11). */
+const dashboard1029 = { agents: 12, missions: 42, ready: 7, propale: 2 }
+
 /** Fichier corrigé du 21/10, avant celui du 29/10. */
 const values1021 = { ...referenceValues, licences_claude: 0 }
 const dashboard1021 = { agents: 12, missions: 41, ready: 7, propale: 5 }
@@ -367,7 +390,7 @@ const targets1014 = { ...referenceTargets, licences_claude: 23 }
 const dashboard1014 = { agents: 12, missions: 41, ready: 7, propale: 3 }
 
 /**
- * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10, du 21/10 et du
+ * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10, du 21/10, du 29/10 et du
  * {@link SEED_PILOTAGE_DATE},
  * pour que « Depuis la dernière mise à jour » montre d'emblée les évolutions (et les cibles révisées).
  */
@@ -388,5 +411,6 @@ export const SEED_HISTORY: Snapshot[] = [
   { date: "2026-10-05", values: values1005, targets: targets1005, dashboard: dashboardBefore1014 },
   { date: "2026-10-14", values: values1014, targets: targets1014, dashboard: dashboard1014 },
   { date: "2026-10-21", values: values1021, targets: referenceTargets, dashboard: dashboard1021 },
+  { date: "2026-10-29", values: referenceValues, targets: referenceTargets, dashboard: dashboard1029 },
   makeSnapshot(SEED_PILOTAGE_DATE, referenceValues, referenceTargets, SEED_REPORT),
 ]

@@ -47,12 +47,67 @@ body {
   border-radius: 8px;
 }
 
+/* Entrée en scène : les cartes montent légèrement, les barres de progression se remplissent. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes shine {
+  to {
+    transform: translateX(420%);
+  }
+}
+.anim-rise {
+  animation: rise-in 520ms var(--ease-standard) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+.stagger > * {
+  animation: rise-in 520ms var(--ease-standard) both;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 210ms;
+}
+.anim-bar {
+  transform-origin: left center;
+  animation: bar-grow 900ms var(--ease-standard) both;
+  animation-delay: 150ms;
+}
+/* Reflet qui traverse une fois un succès débloqué. */
+.anim-shine {
+  position: relative;
+  overflow: hidden;
+}
+.anim-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: translateX(0);
+  animation: shine 1400ms var(--ease-standard) 500ms both;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
   }
 }
 
@@ -63,6 +118,12 @@ body {
 @media print {
   .no-print {
     display: none !important;
+  }
+  .anim-rise,
+  .stagger > *,
+  .anim-bar,
+  .anim-shine::after {
+    animation: none !important;
   }
   body,
   #root {

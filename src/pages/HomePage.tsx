@@ -6,6 +6,8 @@ import { RagSummary } from "../components/dashboard/RagSummary"
 import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
 import { HeroKpi } from "../components/common/HeroKpi"
 import { ChangesSinceUpdate } from "../components/common/ChangesSinceUpdate"
+import { SuccessShowcase } from "../components/common/SuccessShowcase"
+import { plural } from "../lib/plural"
 import { Card, CardTitle } from "../components/ui/Card"
 import { LineConcept } from "../components/ui/LineConcept"
 import { ProgressRing } from "../components/ui/ProgressRing"
@@ -108,7 +110,8 @@ export function HomePage() {
           </h1>
           <p className="mt-3 text-sm text-white/80 sm:text-base">
             {metrics.agents} agents suivis, dont {metrics.ready} prêts pour un contexte client et {industrialisedCount}{" "}
-            industrialisés · {metrics.missions} missions réalisées · {unlockedCount} objectifs sur {computed.length} atteints.
+            industrialisés · {metrics.missions} missions réalisées · {plural(unlockedCount, "succès débloqué", "succès débloqués")} sur{" "}
+            {computed.length} objectifs.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
@@ -133,7 +136,7 @@ export function HomePage() {
       </section>
 
       {/* Chiffres clés */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
+      <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4 [&>*]:min-w-0">
         <HeroKpi
           label="Agents IA4CYB"
           value={String(metrics.agents)}
@@ -230,7 +233,7 @@ export function HomePage() {
               <p className="mt-1 text-sm font-medium text-[var(--color-text)]">{nextSuccess.objective.label}</p>
               <div className="mt-2 flex items-center gap-2">
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
-                  <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${Math.min(100, nextSuccess.percent)}%` }} />
+                  <div className="anim-bar h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${Math.min(100, nextSuccess.percent)}%` }} />
                 </div>
                 <span className="text-xs font-semibold text-[var(--color-accent)]">{nextSuccess.percent}%</span>
               </div>
@@ -243,7 +246,10 @@ export function HomePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
-        <ChangesSinceUpdate diff={diff} />
+        <div className="space-y-6">
+          <SuccessShowcase successes={computed.filter((c) => c.status === "unlocked")} total={computed.length} />
+          <ChangesSinceUpdate diff={diff} />
+        </div>
 
         {/* Actions à suivre */}
         <Card className="p-5">
@@ -258,7 +264,7 @@ export function HomePage() {
             Actions à suivre
           </CardTitle>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            {openActions.length} ouvertes
+            {plural(openActions.length, "action ouverte", "actions ouvertes")}
             {lateCount > 0 && (
               <>
                 {" "}·{" "}
@@ -341,7 +347,7 @@ export function HomePage() {
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-accent-soft)]">
                         <div
-                          className="h-full rounded-full"
+                          className="anim-bar h-full rounded-full"
                           style={{
                             width: `${Math.min(100, c.percent)}%`,
                             backgroundColor: c.status === "unlocked" ? "var(--color-success)" : "var(--color-accent)",

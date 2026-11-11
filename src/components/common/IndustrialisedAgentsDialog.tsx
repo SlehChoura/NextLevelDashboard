@@ -71,7 +71,8 @@ export function IndustrialisedAgentsDialog({ open, onClose }: { open: boolean; o
         {hasColumn && pilotageValue !== agents.length && (
           <p className="mt-3 rounded-lg border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/[0.06] px-3 py-2 text-xs">
             <span className="font-semibold text-[var(--color-warning)]">À vérifier :</span> le pilotage indique{" "}
-            {pilotageValue} agent(s) industrialisé(s), l'onglet agents en marque {agents.length} « Oui ».
+            {pilotageValue > 1 ? `${pilotageValue} agents industrialisés` : `${pilotageValue} agent industrialisé`}, l'onglet agents en
+            marque {agents.length} « Oui ».
           </p>
         )}
 

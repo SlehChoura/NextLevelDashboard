@@ -116,7 +116,7 @@ describe("migration des données persistées", () => {
     expect(SEED_REPORT.rows.map((r) => r[propale.key])).toEqual([
       "non", "non", "oui", "non", "en_cours", "non", "non", "oui", "non", "non", "non", "en_cours",
     ])
-    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([1, 10, 3, 20, 2, 0, 2, 2, 0, 2, 0, 0])
+    expect(SEED_REPORT.rows.map((r) => r[missions.key])).toEqual([1, 14, 3, 20, 2, 0, 2, 2, 0, 2, 0, 0])
   })
 
   it("tolère un état persisté corrompu", () => {
@@ -165,7 +165,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
     targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
   }
   const old = { values: { agents_industrialises: 9 }, targets: { agents_industrialises: 10 } }
-  const recentImport = "2026-11-03T09:00:00.000Z"
+  const recentImport = "2026-11-12T09:00:00.000Z"
   const olderImport = "2026-10-06T09:00:00.000Z"
   const userAction: ActionItem = { id: "u1", title: "Mon action", owner: "moi", objectiveId: "", status: "todo", dueDate: "" }
 
@@ -214,9 +214,9 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
 
   it("considère un import fait plus tôt le même jour comme plus ancien que les données de référence", () => {
     // Deux versions du fichier ont été intégrées le 14/10 : un import du matin est dépassé.
-    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-11-02T08:00:00.000Z").rows).toHaveLength(12)
+    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-11-11T08:00:00.000Z").rows).toHaveLength(12)
     const later = { ...SEED_REPORT, rows: [] }
-    expect(refreshDashboard(later, "2026-11-02T18:00:00.000Z")).toBe(later)
+    expect(refreshDashboard(later, "2026-11-11T18:00:00.000Z")).toBe(later)
   })
 
   it("remplace une photo enregistrée à la date d'une photo de référence, sauf import plus récent", () => {
@@ -235,6 +235,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
       "2026-10-14",
       "2026-10-21",
       "2026-10-29",
+      "2026-11-11",
     ])
     expect(mergeSeedHistory(undefined).map((s) => s.date)).toEqual(SEED_HISTORY.map((s) => s.date))
   })
