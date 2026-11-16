@@ -8,6 +8,7 @@ import { industrialisedAgents, industrialisedCriterion } from "../lib/dashboardM
 import { usePilotageStore } from "../store/pilotageStore"
 import { useHistoryStore } from "../store/historyStore"
 import { latestDiff, shortDate } from "../lib/history"
+import { parseNumber } from "../lib/cellParsing"
 import {
   CATEGORY_LABELS,
   computeStatus,
@@ -63,6 +64,7 @@ function AchievementCard({
   const [editing, setEditing] = useState(false)
   const [currentDraft, setCurrentDraft] = useState(String(current))
   const [targetDraft, setTargetDraft] = useState(String(target))
+  const [draftError, setDraftError] = useState<string | null>(null)
   const status = visibleStatus(computeStatus(objective, current, target))
   const percent = progressPercent(objective, current, target)
   const barWidth = Math.max(0, Math.min(100, percent))
@@ -76,9 +78,15 @@ function AchievementCard({
     visibleStatus(computeStatus(objective, current, activeRevision.from)) !== "unlocked"
 
   function save() {
-    const nCurrent = Number(currentDraft.replace(",", "."))
-    const nTarget = Number(targetDraft.replace(",", "."))
-    if (Number.isFinite(nCurrent) && Number.isFinite(nTarget)) onSave(nCurrent, nTarget)
+    // Un champ vidé n'est pas un 0 : sans les deux nombres, rien n'est enregistré.
+    const nCurrent = parseNumber(currentDraft)
+    const nTarget = parseNumber(targetDraft)
+    if (nCurrent === null || nTarget === null) {
+      setDraftError("Saisissez un nombre pour la valeur actuelle et pour la cible.")
+      return
+    }
+    onSave(nCurrent, nTarget)
+    setDraftError(null)
     setEditing(false)
   }
 
@@ -173,6 +181,11 @@ function AchievementCard({
                 />
               </label>
             </div>
+            {draftError && (
+              <p role="alert" className="text-xs text-[var(--color-danger)]">
+                {draftError}
+              </p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={save}
@@ -182,7 +195,10 @@ function AchievementCard({
                 Enregistrer
               </button>
               <button
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setDraftError(null)
+                  setEditing(false)
+                }}
                 className="flex-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)]"
               >
                 Annuler

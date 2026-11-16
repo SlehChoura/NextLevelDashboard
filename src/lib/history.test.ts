@@ -159,3 +159,15 @@ describe("effacement des données du navigateur", () => {
     expect(Array.from(data.keys())).toEqual(["autre-site"])
   })
 })
+
+describe("appendSnapshot : photos de dates postérieures", () => {
+  const s = (date: string) => ({ date, values: {}, targets: {}, dashboard: { agents: 0, missions: 0, ready: 0, propale: 0 } })
+
+  it("garde les photos plus récentes (horloge du poste en retard) et trie par date", () => {
+    expect(appendSnapshot([s("2026-10-01"), s("2026-11-11")], s("2026-11-10")).map((x) => x.date)).toEqual([
+      "2026-10-01",
+      "2026-11-10",
+      "2026-11-11",
+    ])
+  })
+})

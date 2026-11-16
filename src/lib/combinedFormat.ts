@@ -1,4 +1,7 @@
 import { ACTION_STATUS_LABELS, type ActionStatus } from "./actions"
+import { normalizeText } from "./cellParsing"
+
+export { normalizeText }
 
 /** Noms des onglets et colonnes du fichier de suivi combiné (voir combinedImport.ts). */
 
@@ -20,14 +23,6 @@ export const ACT_COL_OBJECTIVE_KEY = "Clé objectif"
 export const ACT_COL_OBJECTIVE_LABEL = "Objectif lié"
 export const ACT_COL_STATUS = "Statut"
 export const ACT_COL_DUE_DATE = "Échéance"
-
-export function normalizeText(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase()
-}
 
 /** Libellés de statut d'action acceptés à l'import (insensibles à la casse et aux accents). */
 export const STATUS_SYNONYMS: Record<string, ActionStatus> = {

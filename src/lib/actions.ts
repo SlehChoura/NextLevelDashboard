@@ -1,3 +1,5 @@
+import { localIsoDate } from "./cellParsing"
+
 export type ActionStatus = "todo" | "in_progress" | "done"
 
 export interface ActionItem {
@@ -17,9 +19,12 @@ export const ACTION_STATUS_LABELS: Record<ActionStatus, string> = {
   done: "Terminée",
 }
 
-/** Date du jour au format YYYY-MM-DD (même format que les échéances). */
+/**
+ * Date du jour au format YYYY-MM-DD (même format que les échéances), dans le fuseau de
+ * l'utilisateur : à 00:30 à Paris, on est déjà le lendemain (en UTC, encore la veille).
+ */
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  return localIsoDate()
 }
 
 /** Une action non terminée dont l'échéance est passée. */

@@ -1,3 +1,5 @@
+import { normalizeText } from "./cellParsing"
+
 export type PilotageCategory = "competences" | "agents" | "plateforme" | "notoriete"
 export type PilotageOwner = "academy" | "plateforme" | "missions" | "finops" | "communication"
 export type PilotageDirection = "up" | "down"
@@ -209,11 +211,7 @@ export function findObjectiveIdByLabel(rawLabel: string): string | undefined {
 }
 
 function compactKey(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "")
+  return normalizeText(text).replace(/[^a-z0-9]+/g, "")
 }
 
 const PROGRESS_THRESHOLD = 0.8

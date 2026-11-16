@@ -7,6 +7,7 @@ import { makeId } from "./id"
 import { DASHBOARD_HEADERS } from "./seedData"
 import { checkCombinedWorkbook } from "./workbookCheck"
 import { getOption } from "./criteria"
+import { cellNumber, parseDateCell } from "./cellParsing"
 import type { Criterion, DataRow, ReportData } from "../types"
 import {
   ACT_COL_DUE_DATE,
@@ -30,30 +31,6 @@ import {
 } from "./combinedFormat"
 
 export { ACTIONS_SHEET_NAME, DASHBOARD_SHEET_NAME, PILOTAGE_SHEET_NAME }
-
-/** Une cellule numérique, ou null si elle est vide ou illisible (une cellule vide ne vaut pas 0). */
-function parseNumber(raw: unknown): number | null {
-  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null
-  if (typeof raw === "string") {
-    const text = raw.trim()
-    if (text === "") return null
-    const n = Number(text.replace(",", "."))
-    return Number.isFinite(n) ? n : null
-  }
-  return null
-}
-
-/** Une date de cellule Excel (objet Date en UTC minuit avec `cellDates: true`) vers "YYYY-MM-DD". */
-function toDateInputValue(raw: unknown): string {
-  if (raw instanceof Date) {
-    const y = raw.getUTCFullYear()
-    const m = String(raw.getUTCMonth() + 1).padStart(2, "0")
-    const d = String(raw.getUTCDate()).padStart(2, "0")
-    return `${y}-${m}-${d}`
-  }
-  const s = String(raw ?? "").trim()
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ""
-}
 
 // ---------------------------------------------------------------------------
 // Onglet "Suivi pilotage"
@@ -83,25 +60,27 @@ function readPilotageSheet(workbook: XLSX.WorkBook): PilotageImportResult | null
   if (!workbook.SheetNames.includes(PILOTAGE_SHEET_NAME)) return null
   const sheet = workbook.Sheets[PILOTAGE_SHEET_NAME]
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" })
+  // Mêmes lignes, telles qu'affichées dans Excel : révèle les cellules au format pourcentage.
+  const shown = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false })
 
   const valueUpdates: Record<string, number> = {}
   const targetUpdates: Record<string, number> = {}
   const unmatched: string[] = []
 
-  for (const row of rows) {
+  rows.forEach((row, i) => {
     const rawKey = String(row[PIL_COL_KEY] ?? "").trim()
     const rawLabel = String(row[PIL_COL_LABEL] ?? "").trim()
     const id = findObjectiveIdByKey(rawKey) ?? findObjectiveIdByLabel(rawLabel)
 
     if (!id) {
       if (rawKey || rawLabel) unmatched.push(rawLabel || rawKey)
-      continue
+      return
     }
-    const current = parseNumber(row[PIL_COL_CURRENT])
+    const current = cellNumber(row[PIL_COL_CURRENT], shown[i]?.[PIL_COL_CURRENT])
     if (current !== null) valueUpdates[id] = current
-    const target = parseNumber(row[PIL_COL_TARGET])
+    const target = cellNumber(row[PIL_COL_TARGET], shown[i]?.[PIL_COL_TARGET])
     if (target !== null) targetUpdates[id] = target
-  }
+  })
 
   return { valueUpdates, targetUpdates, unmatched }
 }
@@ -147,6 +126,8 @@ export interface ActionsImportResult {
   unmatchedObjectives: string[]
   /** Lignes ignorées faute de titre renseigné. */
   skippedNoTitle: number
+  /** Échéances illisibles dans le fichier : l'échéance déjà enregistrée pour l'action est conservée. */
+  unreadableDueDates: string[]
 }
 
 function resolveActionObjectiveId(rawKey: string, rawLabel: string): { id: string; unmatched: boolean } {
@@ -177,6 +158,7 @@ function readActionsSheet(workbook: XLSX.WorkBook, existingActions: ActionItem[]
 
   const actions: ActionItem[] = []
   const unmatchedObjectives: string[] = []
+  const unreadableDueDates: string[] = []
   let created = 0
   let updated = 0
   let skippedNoTitle = 0
@@ -203,20 +185,27 @@ function readActionsSheet(workbook: XLSX.WorkBook, existingActions: ActionItem[]
     )
     if (unmatched) unmatchedObjectives.push(title)
 
+    // Une échéance illisible n'efface pas celle déjà connue (une cellule vide, elle, la retire).
+    let dueDate = parseDateCell(row[ACT_COL_DUE_DATE])
+    if (dueDate === null) {
+      unreadableDueDates.push(title)
+      dueDate = existing?.dueDate ?? ""
+    }
+
     actions.push({
       id,
       title,
       owner: String(row[ACT_COL_OWNER] ?? "").trim(),
       objectiveId,
       status: resolveActionStatus(String(row[ACT_COL_STATUS] ?? "")),
-      dueDate: toDateInputValue(row[ACT_COL_DUE_DATE]),
+      dueDate,
     })
   }
 
   // Un onglet Actions vide (ex: en-têtes seuls) ne doit pas effacer toutes les actions existantes.
   if (actions.length === 0) return null
   const removed = existingActions.filter((a) => !matched.has(a.id)).length
-  return { actions, created, updated, removed, unmatchedObjectives, skippedNoTitle }
+  return { actions, created, updated, removed, unmatchedObjectives, skippedNoTitle, unreadableDueDates }
 }
 
 // ---------------------------------------------------------------------------

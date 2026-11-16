@@ -26,10 +26,14 @@ export function makeSnapshot(
   return { date: date.slice(0, 10), values: { ...values }, targets: { ...targets }, dashboard: dashboardMetrics(report) }
 }
 
-/** Ajoute une photo ; une photo du même jour remplace la précédente (réimport le même jour). */
+/**
+ * Ajoute une photo ; une photo du même jour remplace la précédente (réimport le même jour). Les
+ * photos de dates postérieures (ex: horloge du poste en retard) sont conservées, dans l'ordre des dates.
+ */
 export function appendSnapshot(history: Snapshot[], snapshot: Snapshot): Snapshot[] {
-  const kept = history.filter((s) => s.date !== snapshot.date && s.date < snapshot.date)
-  return [...kept, snapshot].slice(-MAX_SNAPSHOTS)
+  return [...history.filter((s) => s.date !== snapshot.date), snapshot]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-MAX_SNAPSHOTS)
 }
 
 export interface ValueChange {
