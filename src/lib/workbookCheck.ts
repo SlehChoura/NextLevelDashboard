@@ -19,6 +19,8 @@ import {
 } from "./combinedFormat"
 import { findObjectiveIdByKey, findObjectiveIdByLabel, PILOTAGE_OBJECTIVES } from "./pilotage"
 import { DASHBOARD_HEADERS } from "./seedData"
+import { cellNumber, isNotApplicable, LEADING_NUMBER, parseDateCell, readYesNo, toYesNo } from "./cellParsing"
+import { knownColumnKind } from "./fixedFormatImport"
 
 /**
  * Contrôle de cohérence d'un fichier de suivi combiné, indépendant de l'import lui-même : chaque
@@ -40,10 +42,11 @@ interface Grid {
   rows: { line: number; cells: unknown[] }[]
 }
 
-function readGrid(workbook: XLSX.WorkBook, sheetName: string): Grid | null {
+/** Lignes de l'onglet, valeurs brutes (`raw`) ou telles qu'affichées dans Excel (ex: "100%"). */
+function readGrid(workbook: XLSX.WorkBook, sheetName: string, raw = true): Grid | null {
   const sheet = workbook.Sheets[sheetName]
   if (!sheet) return null
-  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: "", blankrows: true })
+  const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw, defval: "", blankrows: true })
   const [headerRow = [], ...rest] = matrix
   return {
     headers: headerRow.map((h) => String(h ?? "").trim()),
@@ -61,10 +64,9 @@ function columnIndex(grid: Grid, header: string): number {
   return grid.headers.findIndex((h) => normalizeText(h) === normalizeText(header))
 }
 
-function isNumeric(raw: unknown): boolean {
-  if (typeof raw === "number") return Number.isFinite(raw)
-  const s = String(raw ?? "").trim().replace(",", ".")
-  return s !== "" && Number.isFinite(Number(s))
+/** Cellules affichées d'une ligne de `grid`, retrouvées par leur numéro de ligne Excel. */
+function shownCellsByLine(shown: Grid | null): Map<number, unknown[]> {
+  return new Map((shown?.rows ?? []).map(({ line, cells }) => [line, cells]))
 }
 
 function requireColumns(grid: Grid, sheetName: string, headers: string[]): string[] {
@@ -87,6 +89,7 @@ function checkPilotageSheet(workbook: XLSX.WorkBook): string[] {
   const currentCol = columnIndex(grid, PIL_COL_CURRENT)
   const targetCol = columnIndex(grid, PIL_COL_TARGET)
   const seen = new Map<string, number>()
+  const shown = shownCellsByLine(readGrid(workbook, PILOTAGE_SHEET_NAME, false))
 
   for (const { line, cells } of grid.rows) {
     const key = cellText(cells, keyCol)
@@ -110,11 +113,22 @@ function checkPilotageSheet(workbook: XLSX.WorkBook): string[] {
       warnings.push(`[${sheet}] Ligne ${line} : objectif « ${objectiveLabel(id)} » en double (déjà ligne ${seen.get(id)}).`)
     }
     seen.set(id, line)
+    const isPercentObjective = PILOTAGE_OBJECTIVES.find((o) => o.id === id)?.unit === "%"
     for (const [col, name] of [
       [currentCol, PIL_COL_CURRENT],
       [targetCol, PIL_COL_TARGET],
     ] as const) {
-      if (col < 0 || isNumeric(cells[col])) continue
+      if (col < 0) continue
+      const value = cellNumber(cells[col], shown.get(line)?.[col])
+      if (value !== null) {
+        // Un objectif en % saisi 1 (ou 0,5) : sans doute une fraction ("100 %" tapé dans une cellule Standard).
+        if (isPercentObjective && value > 0 && value <= 1) {
+          warnings.push(
+            `[${sheet}] Ligne ${line} : « ${name} » vaut ${value} pour un objectif en % (« ${objectiveLabel(id)} ») — vérifiez qu'il ne s'agit pas de ${value * 100} %.`,
+          )
+        }
+        continue
+      }
       const text = cellText(cells, col)
       warnings.push(
         text
@@ -211,9 +225,10 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
     }
 
     const due = col.dueDate >= 0 ? cells[col.dueDate] : ""
-    const dueText = String(due ?? "").trim()
-    if (dueText && !(due instanceof Date) && !/^\d{4}-\d{2}-\d{2}$/.test(dueText)) {
-      warnings.push(`[${sheet}] Ligne ${line} : échéance « ${dueText} » illisible (attendu : date Excel ou AAAA-MM-JJ).`)
+    if (parseDateCell(due) === null) {
+      warnings.push(
+        `[${sheet}] Ligne ${line} : échéance « ${String(due).trim()} » illisible (attendu : date Excel, JJ/MM/AAAA ou AAAA-MM-JJ), échéance précédente conservée.`,
+      )
     }
   }
   return warnings
@@ -221,13 +236,7 @@ function checkActionsSheet(workbook: XLSX.WorkBook): string[] {
 
 /** Colonnes de l'onglet agents attendues en pourcentage (0-1 dans Excel, ou texte "50%"). */
 const PERCENT_HEADERS = new Set(["Portabilité", "Documentation", "Formation", "Communauté", "Ready to market"])
-const COUNT_HEADER = "Nombre de missions réalisées"
-const LEADING_NUMBER = /^[~≈]?\s*\d+(?:[.,]\d+)?/
-
-/** "N/A", éventuellement suivi d'un commentaire (ex: "N/A\nUse case interne uniquement"). */
-function isNotApplicable(value: string): boolean {
-  return /^n\s*\/?\s*a\b/i.test(value)
-}
+const COUNT_COLUMN = "Nombre de missions réalisées"
 
 function checkDashboardSheet(workbook: XLSX.WorkBook): string[] {
   const grid = readGrid(workbook, DASHBOARD_SHEET_NAME)
@@ -271,8 +280,11 @@ function checkDashboardSheet(workbook: XLSX.WorkBook): string[] {
       if (canonical && PERCENT_HEADERS.has(canonical) && !isNumber && !isNotApplicable(value)) {
         warnings.push(`${where} : « ${header} » devrait être un pourcentage (« ${value} »).`)
       }
-      if (canonical === COUNT_HEADER && !isNumber && !isNotApplicable(value)) {
+      if (canonical === COUNT_COLUMN && !isNumber && !isNotApplicable(value)) {
         warnings.push(`${where} : « ${header} » devrait être un nombre (« ${value} »).`)
+      }
+      if (knownColumnKind(header) === "yesNo" && !readYesNo(value).recognised) {
+        warnings.push(`${where} : « ${value} » non reconnu (attendu : Oui, Non, En cours ou N/A), compté « Non ».`)
       }
     })
   }
@@ -300,17 +312,18 @@ function checkAcrossSheets(workbook: XLSX.WorkBook): string[] {
   const keyCol = columnIndex(pilotage, PIL_COL_KEY)
   const labelCol = columnIndex(pilotage, PIL_COL_LABEL)
   const currentCol = columnIndex(pilotage, PIL_COL_CURRENT)
+  const shown = shownCellsByLine(readGrid(workbook, PILOTAGE_SHEET_NAME, false))
   const pilotageValue = (id: string): number | null => {
     const row = pilotage.rows.find(
       ({ cells }) => (findObjectiveIdByKey(cellText(cells, keyCol)) ?? findObjectiveIdByLabel(cellText(cells, labelCol))) === id,
     )
-    const raw = row ? cellText(row.cells, currentCol).replace(",", ".") : ""
-    return raw !== "" && Number.isFinite(Number(raw)) ? Number(raw) : null
+    return row && currentCol >= 0 ? cellNumber(row.cells[currentCol], shown.get(row.line)?.[currentCol]) : null
   }
 
   const agentRows = agents.rows.filter(({ cells }) => cellText(cells, 0) !== "")
   const showcaseCol = columnIndex(agents, SHOWCASE_HEADER)
-  const countYes = (col: number) => agentRows.filter(({ cells }) => normalizeText(cellText(cells, col)) === "oui").length
+  // Même lecture que l'import (« Fait », « X », un lien… valent Oui) : les chiffres comparés sont ceux affichés.
+  const countYes = (col: number) => agentRows.filter(({ cells }) => toYesNo(cellText(cells, col)) === "oui").length
   const published = countYes(showcaseCol)
   const industrialisedCol = columnIndex(agents, INDUSTRIALISED_HEADER)
 

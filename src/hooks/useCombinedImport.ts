@@ -5,6 +5,7 @@ import { useReportStore } from "../store/reportStore"
 import { useHistoryStore } from "../store/historyStore"
 import { parseCombinedFile } from "../lib/combinedImport"
 import { makeSnapshot } from "../lib/history"
+import { todayIso } from "../lib/actions"
 
 /** Au-delà, le fichier n'est pas un fichier de suivi (quelques dizaines de Ko) : refusé sans être lu. */
 export const MAX_IMPORT_BYTES = 5 * 1024 * 1024
@@ -14,8 +15,7 @@ export const MAX_IMPORT_BYTES = 5 * 1024 * 1024
  * Seul point d'entrée de mise à jour des données (encart « Mettre à jour les données »).
  */
 export function useCombinedImport() {
-  const setValues = usePilotageStore((s) => s.setValues)
-  const setTargets = usePilotageStore((s) => s.setTargets)
+  const applyPilotageImport = usePilotageStore((s) => s.applyImport)
   const setLastImportAt = usePilotageStore((s) => s.setLastImportAt)
 
   const actions = useActionsStore((s) => s.actions)
@@ -38,45 +38,54 @@ export function useCombinedImport() {
     try {
       const result = await parseCombinedFile(file, actions)
       const parts: string[] = []
+      // Vrai dès qu'un onglet a réellement modifié des données : seul cas où la date de mise à jour
+      // et l'historique avancent (un onglet présent mais sans ligne reconnue ne compte pas).
+      let changed = false
 
       if (result.pilotage) {
         const { valueUpdates, targetUpdates, unmatched } = result.pilotage
         const touched = new Set([...Object.keys(valueUpdates), ...Object.keys(targetUpdates)])
-        if (Object.keys(valueUpdates).length > 0) setValues(valueUpdates)
-        if (Object.keys(targetUpdates).length > 0) setTargets(targetUpdates)
-        parts.push(
-          `Pilotage : ${touched.size} objectif(s) mis à jour` +
-            (unmatched.length > 0 ? ` (${unmatched.length} ligne(s) ignorée(s))` : "") +
-            ".",
-        )
+        const ignored = unmatched.length > 0 ? ` (${unmatched.length} ligne(s) ignorée(s))` : ""
+        if (touched.size > 0) {
+          applyPilotageImport(valueUpdates, targetUpdates)
+          changed = true
+          parts.push(`Pilotage : ${touched.size} objectif(s) mis à jour${ignored}.`)
+        } else {
+          parts.push(`Pilotage : aucun objectif reconnu, rien n'a été modifié${ignored}.`)
+        }
       }
 
       if (result.actions) {
-        const { actions: imported, created, updated, removed, unmatchedObjectives, skippedNoTitle } = result.actions
+        const { actions: imported, created, updated, removed, unmatchedObjectives, skippedNoTitle, unreadableDueDates } =
+          result.actions
         replaceActions(imported)
+        changed = true
         parts.push(
           `Actions : ${imported.length} au total — ${created} créée(s), ${updated} mise(s) à jour` +
             (removed > 0 ? `, ${removed} retirée(s) car absente(s) du fichier` : "") +
             (skippedNoTitle > 0 ? `, ${skippedNoTitle} ligne(s) sans titre ignorée(s)` : "") +
             (unmatchedObjectives.length > 0 ? `, ${unmatchedObjectives.length} objectif(s) non reconnu(s)` : "") +
+            (unreadableDueDates.length > 0
+              ? `, ${unreadableDueDates.length} échéance(s) illisible(s) (échéance précédente conservée)`
+              : "") +
             ".",
         )
       }
 
       if (result.dashboard) {
         const { template, rows } = result.dashboard
-        updateReportData(template, rows)
+        updateReportData(template, rows, "import")
+        changed = true
         parts.push(`Dashboard : ${rows.length} agent(s) mis à jour.`)
       }
 
-      if (parts.length > 0) {
-        const now = new Date().toISOString()
-        setLastImportAt(now)
-        // Photo des chiffres après import, pour « Depuis la dernière mise à jour ».
+      if (changed) {
+        setLastImportAt(new Date().toISOString())
+        // Photo des chiffres après import, pour « Depuis la dernière mise à jour », datée du jour local.
         const pilotage = usePilotageStore.getState()
         useHistoryStore
           .getState()
-          .addSnapshot(makeSnapshot(now, pilotage.values, pilotage.targets, useReportStore.getState().report))
+          .addSnapshot(makeSnapshot(todayIso(), pilotage.values, pilotage.targets, useReportStore.getState().report))
       }
       setImportWarnings(result.warnings)
       setImportMessage(

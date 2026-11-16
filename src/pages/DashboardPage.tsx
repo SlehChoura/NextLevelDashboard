@@ -82,7 +82,7 @@ export function DashboardPage() {
           discardLabel="Annuler"
           {...reviewEditorHandlers(setEditDraft)}
           onConfirm={() => {
-            updateData(editDraft.template, editDraft.rows)
+            updateData(editDraft.template, editDraft.rows, "edit")
             exitToView()
           }}
           onDiscard={exitToView}

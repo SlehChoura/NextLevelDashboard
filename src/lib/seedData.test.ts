@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { findCriterionByKeyword } from "./criteria"
+import { averageOfNumeric, findCriterionByKeyword } from "./criteria"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
 import { SEED_ACTIONS, SEED_HISTORY, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
 import {
+  keepsLocalData,
   mergeSeedHistory,
+  ownOrLegacy,
   pickDashboardReport,
   refreshActions,
   refreshDashboard,
@@ -238,5 +240,69 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
       "2026-11-11",
     ])
     expect(mergeSeedHistory(undefined).map((s) => s.date)).toEqual(SEED_HISTORY.map((s) => s.date))
+  })
+})
+
+describe("modifications faites dans l'application, à la mise à jour des données de référence", () => {
+  const defaults = {
+    values: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.defaultCurrent])),
+    targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
+  }
+  const edited = "2026-11-12T10:00:00.000Z"
+  const olderImport = "2026-10-06T09:00:00.000Z"
+
+  it("garde des données modifiées à la main, quelle que soit la date des nouvelles données de référence", () => {
+    expect(keepsLocalData({ importedAt: null, editedAt: edited })).toBe(true)
+    expect(keepsLocalData({ importedAt: olderImport, editedAt: null })).toBe(false)
+    expect(keepsLocalData({})).toBe(false)
+  })
+
+  it("garde une cible modifiée sur une carte du pilotage", () => {
+    const persisted = { values: { agents_industrialises: 9 }, targets: { agents_industrialises: 12 }, lastImportAt: null, editedAt: edited }
+    expect(refreshPilotage(persisted, 13, defaults)).toBe(persisted)
+  })
+
+  it("ne garde le pilotage qu'après un import de l'onglet pilotage lui-même", () => {
+    // Import récent de l'onglet Actions seul : la date commune avance, pas celle du pilotage.
+    const persisted = {
+      values: { agents_industrialises: 1 },
+      targets: {},
+      lastImportAt: "2026-11-12T09:00:00.000Z",
+      valuesImportedAt: null,
+      editedAt: undefined as string | null | undefined,
+    }
+    const next = refreshPilotage(persisted, 13, defaults)
+    expect(next.values).toEqual(defaults.values)
+    expect(next.editedAt).toBeNull()
+    // Sans date propre (données enregistrées par une version précédente), la date commune fait foi.
+    const legacy = { values: { agents_industrialises: 1 }, targets: {}, lastImportAt: "2026-11-12T09:00:00.000Z" }
+    expect(refreshPilotage(legacy, 13, defaults)).toBe(legacy)
+    expect(ownOrLegacy(undefined, "x")).toBe("x")
+    expect(ownOrLegacy(null, "x")).toBeNull()
+  })
+
+  it("garde les statuts d'actions modifiés à la main", () => {
+    const mine = SEED_ACTIONS.map((a) => ({ ...a, status: "done" as const }))
+    expect(refreshActions(mine, 13, olderImport, edited)).toBe(mine)
+    expect(refreshActions(mine, 13, olderImport, null)).toEqual(SEED_ACTIONS)
+  })
+
+  it("remplace une liste d'actions illisible par les actions de référence", () => {
+    expect(refreshActions(undefined, 13, null)).toEqual(SEED_ACTIONS)
+    expect(refreshActions({ broken: true }, 13, "2026-11-12T09:00:00.000Z")).toEqual(SEED_ACTIONS)
+  })
+
+  it("garde un dashboard corrigé avec « Modifier les données »", () => {
+    const corrected = { ...SEED_REPORT, rows: SEED_REPORT.rows.slice(0, 3) }
+    expect(refreshDashboard(corrected, null, edited)).toBe(corrected)
+    expect(refreshDashboard(corrected, null, null).rows).toHaveLength(SEED_REPORT.rows.length)
+  })
+})
+
+describe("averageOfNumeric", () => {
+  it("exclut les cellules vides de la moyenne au lieu de les compter 0", () => {
+    const rows = [{ __id: "1", p: 80 }, { __id: "2", p: 60 }, { __id: "3", p: "" }, { __id: "4", p: null }]
+    expect(averageOfNumeric(rows, "p")).toBe(70)
+    expect(averageOfNumeric([{ __id: "1", p: "" }], "p")).toBeNull()
   })
 })

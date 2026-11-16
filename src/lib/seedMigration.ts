@@ -4,6 +4,7 @@ import { normalizeKnownColumns } from "./fixedFormatImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
 import { SEED_ACTIONS, SEED_HISTORY, SEED_REFERENCE_AT, SEED_REPORT, SEED_REPORT_ID } from "./seedData"
 import { MAX_SNAPSHOTS, type Snapshot } from "./history"
+import { normalizeText } from "./cellParsing"
 
 /**
  * Migrations des données persistées (localStorage) lorsque {@link SEED_VERSION} change : les données
@@ -13,9 +14,8 @@ import { MAX_SNAPSHOTS, type Snapshot } from "./history"
 
 export const SEED_ACTION_PREFIX = "seed-action-"
 
-function normalizeTitle(title: string): string {
-  return title.trim().toLowerCase()
-}
+/** Même comparaison de titres que l'import (casse et accents ignorés). */
+const normalizeTitle = normalizeText
 
 /**
  * Remplace les actions initiales d'une version précédente par celles de la version courante, en
@@ -105,24 +105,55 @@ function isReport(value: unknown): value is ReportData {
   return typeof r?.id === "string" && Array.isArray(r.template?.criteria) && Array.isArray(r.rows)
 }
 
+/**
+ * Ce que ce navigateur a fait de ses propres données, pour décider à la mise à jour des données de
+ * référence s'il garde les siennes.
+ */
+export interface LocalChanges {
+  /** Date du dernier import de ces données depuis le fichier de suivi. */
+  importedAt?: unknown
+  /** Date de la dernière modification faite dans l'application depuis la réception des données de référence. */
+  editedAt?: unknown
+}
+
+/**
+ * Les données de ce navigateur l'emportent sur les nouvelles données de référence si elles viennent
+ * d'un import plus récent que celles-ci, ou si elles ont été modifiées dans l'application (une
+ * valeur corrigée, une action passée « Terminée »…) : ce travail n'est jamais écrasé en silence.
+ */
+export function keepsLocalData({ importedAt, editedAt }: LocalChanges): boolean {
+  return importedSinceReference(importedAt) || typeof editedAt === "string"
+}
+
+/**
+ * Date propre à un store si elle a déjà été enregistrée, sinon la date d'import commune, seule
+ * connue des versions précédentes (où un import, même partiel, valait pour toutes les données).
+ */
+export function ownOrLegacy(own: unknown, legacy: unknown): unknown {
+  return own === undefined ? legacy : own
+}
+
 interface PersistedPilotage {
   values?: Record<string, number>
   targets?: Record<string, number>
   lastImportAt?: string | null
+  valuesImportedAt?: string | null
+  editedAt?: string | null
 }
 
 /**
  * Valeurs et cibles du pilotage à la mise à jour des données de référence. Elles sont remplacées
- * par celles du dernier fichier de suivi ({@link SEED_REFERENCE_AT}), sauf si l'utilisateur a
- * importé un fichier depuis : ses valeurs, plus récentes, sont alors conservées.
+ * par celles du dernier fichier de suivi ({@link SEED_REFERENCE_AT}), sauf si l'onglet pilotage a
+ * été importé depuis ou si une valeur a été modifiée dans l'application (voir {@link keepsLocalData}).
  */
 export function refreshPilotage<T extends PersistedPilotage>(
   persisted: T,
   version: number,
   defaults: { values: Record<string, number>; targets: Record<string, number> },
 ): T {
-  if (version >= 3 && importedSinceReference(persisted?.lastImportAt)) return persisted
-  return { ...persisted, values: { ...defaults.values }, targets: { ...defaults.targets } }
+  const changes = { importedAt: ownOrLegacy(persisted?.valuesImportedAt, persisted?.lastImportAt), editedAt: persisted?.editedAt }
+  if (version >= 3 && keepsLocalData(changes)) return persisted
+  return { ...persisted, values: { ...defaults.values }, targets: { ...defaults.targets }, editedAt: null }
 }
 
 /**
@@ -134,16 +165,18 @@ export function importedSinceReference(lastImportAt: unknown): boolean {
 }
 
 /**
- * Actions à la mise à jour des données de référence. Sans import depuis leur date, les actions du
- * fichier de suivi de référence remplacent celles enregistrées (statuts, échéances, nouvelles
- * actions) ; les actions créées à la main, absentes du fichier, sont conservées. Après un import
- * plus récent, rien ne change.
+ * Actions à la mise à jour des données de référence. Sans import depuis leur date ni modification
+ * dans l'application, les actions du fichier de suivi de référence remplacent celles enregistrées
+ * (statuts, échéances, nouvelles actions) ; les actions créées à la main, absentes du fichier, sont
+ * conservées. Après un import plus récent ou une modification, rien ne change. Une liste
+ * enregistrée illisible (stockage corrompu) est remplacée par les actions de référence.
  */
-export function refreshActions(actions: unknown, version: number, lastImportAt: unknown): ActionItem[] {
-  if (importedSinceReference(lastImportAt)) {
+export function refreshActions(actions: unknown, version: number, lastImportAt: unknown, editedAt: unknown = null): ActionItem[] {
+  if (!Array.isArray(actions)) return [...SEED_ACTIONS]
+  if (keepsLocalData({ importedAt: lastImportAt, editedAt })) {
     return version >= 4 ? (actions as ActionItem[]) : refreshSeedActions(actions)
   }
-  const list = Array.isArray(actions) ? (actions as ActionItem[]) : []
+  const list = actions as ActionItem[]
   const referenceTitles = new Set(SEED_ACTIONS.map((a) => normalizeTitle(a.title)))
   const userOnly = list.filter(
     (a) =>
@@ -155,11 +188,12 @@ export function refreshActions(actions: unknown, version: number, lastImportAt: 
 }
 
 /**
- * Dashboard à la mise à jour des données de référence : sans import depuis leur date, il reprend les
- * agents du fichier de suivi de référence, en gardant le titre et les informations saisis.
+ * Dashboard à la mise à jour des données de référence : sans import depuis leur date ni correction
+ * dans l'application (« Modifier les données »), il reprend les agents du fichier de suivi de
+ * référence, en gardant le titre et les informations saisis.
  */
-export function refreshDashboard(report: ReportData, lastImportAt: unknown): ReportData {
-  return importedSinceReference(lastImportAt) ? report : { ...SEED_REPORT, meta: report.meta }
+export function refreshDashboard(report: ReportData, lastImportAt: unknown, editedAt: unknown = null): ReportData {
+  return keepsLocalData({ importedAt: lastImportAt, editedAt }) ? report : { ...SEED_REPORT, meta: report.meta }
 }
 
 /**

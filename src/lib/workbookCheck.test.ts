@@ -143,3 +143,46 @@ describe("checkCombinedWorkbook", () => {
     expect(warnings).toEqual([expect.stringMatching(/Colonne L « Commentaire » non prévue/)])
   })
 })
+
+describe("checkCombinedWorkbook : mêmes règles que l'import", () => {
+  const agentRow = (name: string, propale: string, industrialised: string) =>
+    [name, "WIP", 0.5, 0.5, 0.5, 0.5, 0.5, propale, 1, "Oui", industrialised]
+
+  it("signale une valeur Oui/Non non reconnue, comptée « Non »", () => {
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({ [DASHBOARD_SHEET_NAME]: [DASHBOARD_HEADERS, agentRow("A", "peut-être", "N/A\nUse case interne")] }),
+    )
+    expect(warnings).toEqual([
+      "[Agents IA4CYB] H2 (A) : « peut-être » non reconnu (attendu : Oui, Non, En cours ou N/A), compté « Non ».",
+    ])
+  })
+
+  it("compte « Fait » et « X » comme Oui dans le contrôle entre onglets, comme l'import", () => {
+    const pilotage = validPilotageRows.map((r) =>
+      r[0] === "agents_industrialises" ? [r[0], "", r[2], 2, r[4], r[5]] : r[0] === "agents_disponibles" ? [r[0], "", r[2], 2, r[4], r[5]] : r[0] === "publication_ai_showcase" ? [r[0], "", r[2], 2, r[4], r[5]] : r,
+    )
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({
+        [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
+        [DASHBOARD_SHEET_NAME]: [DASHBOARD_HEADERS, agentRow("A", "Non", "Fait"), agentRow("B", "Non", "X")],
+      }),
+    )
+    expect(warnings.filter((w) => w.startsWith("[Cohérence"))).toEqual([])
+  })
+
+  it("signale un objectif en % saisi comme une fraction, et accepte « 75 % » et les dates JJ/MM/AAAA", () => {
+    const pilotage = validPilotageRows.map((r) =>
+      r[0] === "disponibilite_cicd" ? [r[0], "", r[2], 1, r[4], r[5]] : r[0] === "guidelines_cicd" ? [r[0], "", r[2], "75 %", r[4], r[5]] : r,
+    )
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({
+        [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
+        [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", "Action A", "Moi", "", "", "À faire", "15/12/2026"], ["", "Action B", "Moi", "", "", "À faire", "bientôt"]],
+      }),
+    )
+    expect(warnings).toEqual([
+      "[Suivi pilotage] Ligne 10 : « Valeur actuelle » vaut 1 pour un objectif en % (« Disponibilité de la chaîne CI/CD ») — vérifiez qu'il ne s'agit pas de 100 %.",
+      "[Actions] Ligne 3 : échéance « bientôt » illisible (attendu : date Excel, JJ/MM/AAAA ou AAAA-MM-JJ), échéance précédente conservée.",
+    ])
+  })
+})

@@ -1,10 +1,6 @@
 import type { Criterion, CriterionOption, DataRow, ReportTemplate } from "../types"
+import { normalizeText, parseNumber } from "./cellParsing"
 
-const DIACRITICS = new RegExp(String.fromCharCode(0x300) + "-" + String.fromCharCode(0x36f), "g")
-
-function normalizeText(text: string): string {
-  return text.normalize("NFD").replace(DIACRITICS, "").toLowerCase()
-}
 
 /** Trouve un critère par un mot-clé contenu dans son libellé (insensible aux accents/casse). */
 export function findCriterionByKeyword(template: ReportTemplate, keyword: string): Criterion | undefined {
@@ -68,9 +64,8 @@ export function countByCriterion(
 }
 
 export function averageOfNumeric(rows: DataRow[], key: string): number | null {
-  const values = rows
-    .map((r) => Number(r[key]))
-    .filter((n) => Number.isFinite(n))
+  // Une cellule vide n'est pas un 0 : elle est exclue de la moyenne.
+  const values = rows.map((r) => parseNumber(r[key])).filter((n): n is number => n !== null)
   if (values.length === 0) return null
   return values.reduce((a, b) => a + b, 0) / values.length
 }
