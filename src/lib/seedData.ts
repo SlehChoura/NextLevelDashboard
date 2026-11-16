@@ -46,9 +46,10 @@ export const DASHBOARD_HEADERS = [
 ]
 
 /**
- * Fichier du 11/11. Sa colonne « Agent industrialisé » (3 « Fait », 1 « En cours », 8 vides) porte
- * visiblement l'avancement du mode démo et non l'industrialisation, que le pilotage maintient à 9 :
- * les valeurs du fichier précédent sont conservées dans cette colonne, en attendant un fichier corrigé.
+ * Fichier du 11/11, confirmé par le classeur de pilotage du 16/11. La colonne « Agent industrialisé »
+ * du fichier exporté (3 « Fait », 1 « En cours », 8 vides) reprend en réalité la colonne voisine
+ * « Parallax » du classeur : les valeurs ci-dessous sont celles de la vraie colonne « Agent
+ * industrialisé » du classeur (9 « Oui »), cohérentes avec le pilotage.
  */
 export const DASHBOARD_ROWS: unknown[][] = [
   ["Smart Identity Analyzer", "Déployable en contexte client", 1, 0.9, 0.5, 0.5, 0.6, "Non", 1, "Oui", "Oui"],

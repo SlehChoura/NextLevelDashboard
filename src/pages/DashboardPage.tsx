@@ -16,6 +16,7 @@ import { hasPropaleType } from "../lib/fixedFormatImport"
 import { industrialisedAgents, industrialisedCriterion } from "../lib/dashboardMetrics"
 import { IndustrialisedAgentsDialog } from "../components/common/IndustrialisedAgentsDialog"
 import { AgentDetailDialog } from "../components/dashboard/AgentDetailDialog"
+import { InitiativesPipeline } from "../components/dashboard/InitiativesPipeline"
 import type { DataRow } from "../types"
 import { reviewEditorHandlers, type ImportDraft } from "../lib/aiTemplateEdit"
 
@@ -215,6 +216,8 @@ export function DashboardPage() {
               {showTable && <DataTable template={template} rows={report.rows} onSelect={setSelectedAgent} />}
             </>
           )}
+
+          <InitiativesPipeline />
         </div>
       )}
     </div>

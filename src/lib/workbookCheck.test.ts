@@ -186,3 +186,17 @@ describe("checkCombinedWorkbook : mêmes règles que l'import", () => {
     ])
   })
 })
+
+describe("checkCombinedWorkbook : export du classeur de pilotage", () => {
+  it("explique un écart d'agents industrialisés venant de la colonne « Parallax »", () => {
+    const pilotage = validPilotageRows.map((r) => (r[0] === "agents_disponibles" ? [r[0], "", r[2], 2, r[4], r[5]] : r))
+    const agentRow = (name: string, industrialised: string) => [name, "WIP", 0.5, 0.5, 0.5, 0.5, 0.5, "Non", 1, "", industrialised]
+    const warnings = checkCombinedWorkbook(
+      workbookFrom({
+        [PILOTAGE_SHEET_NAME]: [PIL_HEADERS, ...pilotage],
+        [DASHBOARD_SHEET_NAME]: [DASHBOARD_HEADERS, agentRow("A", "Fait"), agentRow("B", "En cours")],
+      }),
+    )
+    expect(warnings.at(-1)).toMatch(/contient « Fait » \/ « En cours », les valeurs de la colonne « Parallax »/)
+  })
+})
