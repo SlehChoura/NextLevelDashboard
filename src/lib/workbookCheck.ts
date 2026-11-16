@@ -340,7 +340,17 @@ function checkAcrossSheets(workbook: XLSX.WorkBook): string[] {
   compare("agents_disponibles", agentRows.length, "agents")
   if (showcaseCol >= 0) compare("publication_ai_showcase", published, `agents avec « Oui » en « ${SHOWCASE_HEADER} »`)
   if (industrialisedCol >= 0) {
+    const before = warnings.length
     compare("agents_industrialises", countYes(industrialisedCol), `agents avec « Oui » en « ${INDUSTRIALISED_HEADER} »`)
+    // « Fait » / « En cours » sont les valeurs de la colonne voisine « Parallax » du classeur de pilotage
+    // (« Agent industrialisé » y vaut Oui / Non) : signe d'un export qui a lu la mauvaise colonne.
+    const looksLikeParallax = agentRows.some(({ cells }) => /^(fait|en cours)$/.test(normalizeText(cellText(cells, industrialisedCol))))
+    if (warnings.length > before && looksLikeParallax) {
+      warnings.push(
+        `[${DASHBOARD_SHEET_NAME}] La colonne « ${INDUSTRIALISED_HEADER} » contient « Fait » / « En cours », les valeurs de la colonne « Parallax » ` +
+          `du classeur de pilotage (où « ${INDUSTRIALISED_HEADER} » vaut Oui / Non) : vérifiez la colonne lue par l'export.`,
+      )
+    }
   }
   return warnings
 }

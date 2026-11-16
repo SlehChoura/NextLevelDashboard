@@ -21,3 +21,14 @@ describe("fiches des agents", () => {
     for (const p of AGENT_PROFILES) if (p.demoUrl) expect(p.demoUrl).toMatch(/^https:\/\//)
   })
 })
+
+describe("initiatives de la communauté", () => {
+  it("ont un titre unique, une description et des liens https", async () => {
+    const { INITIATIVES } = await import("./initiatives")
+    expect(new Set(INITIATIVES.map((i) => i.title)).size).toBe(INITIATIVES.length)
+    for (const i of INITIATIVES) {
+      expect(i.description.length).toBeGreaterThan(40)
+      if (i.url) expect(i.url).toMatch(/^https:\/\//)
+    }
+  })
+})
