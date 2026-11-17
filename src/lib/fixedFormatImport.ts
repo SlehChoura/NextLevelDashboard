@@ -1,6 +1,9 @@
 import type { ChartSpec, Criterion, CriterionOption, DataRow, ReportTemplate } from "../types"
 import type { ParsedSheet } from "./excelImport"
 import { makeId } from "./id"
+import { isNotApplicable, LEADING_NUMBER, toYesNo } from "./cellParsing"
+
+export { toYesNo }
 
 const PALETTE: CriterionOption["color"][] = ["success", "info", "warning", "danger", "neutral"]
 
@@ -24,9 +27,6 @@ function uniqueKey(base: string, existing: Set<string>): string {
   existing.add(key)
   return key
 }
-
-/** Un nombre en tête de cellule (ex: "50%", "~99%", "50% (déployable en local)") — le reste du texte est ignoré. */
-const LEADING_NUMBER = /^[~≈]?\s*(\d+(?:[.,]\d+)?)\s*%?/
 
 function extractLeadingNumber(raw: string): number | null {
   const match = LEADING_NUMBER.exec(raw.trim())
@@ -53,15 +53,12 @@ const YES_NO_OPTIONS: CriterionOption[] = [
   { value: "non", label: "Non", color: "neutral" },
 ]
 
-/** Valeurs lues comme « en cours » (propale en préparation) : ni disponible, ni absente. */
-const IN_PROGRESS_VALUES = ["en cours", "encours", "in progress", "wip", "en preparation", "a venir"]
-
 /**
  * Colonnes dont le type est fixé par leur en-tête plutôt que déduit des valeurs : la déduction
  * échoue dès que la colonne est peu remplie (ex: une seule propale type renseignée, ou des
  * compteurs laissés vides), alors que le dashboard attend toujours un Oui/Non et un nombre.
  */
-function knownColumnKind(header: string): "yesNo" | "count" | null {
+export function knownColumnKind(header: string): "yesNo" | "count" | null {
   if (YES_NO_HEADER.test(header)) return "yesNo"
   if (COUNT_HEADER.test(header)) return "count"
   return null
@@ -244,22 +241,6 @@ export function buildFromSheet(sheet: ParsedSheet): FixedFormatImportResult {
   return { template, rows: normalizeKnownColumns(template, rows).rows, ambiguousCells }
 }
 
-/**
- * "oui" si la cellule indique une propale existante (Oui, X, un lien…), "en_cours" si elle est en
- * préparation (En cours, WIP…), "non" si vide, Non ou N/A.
- */
-export function toYesNo(raw: unknown): "oui" | "en_cours" | "non" {
-  const v = String(raw ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/_/g, " ")
-    .trim()
-    .toLowerCase()
-  if (isNotApplicable(v) || ["non", "no", "n", "0", "false", "faux", "-", "—"].includes(v)) return "non"
-  if (IN_PROGRESS_VALUES.includes(v)) return "en_cours"
-  return "oui"
-}
-
 /** Un compteur : vide ou N/A vaut 0, un nombre en tête de texte est retenu, sinon la valeur brute est gardée. */
 function toCount(raw: DataRow[string]): DataRow[string] {
   if (typeof raw === "number") return raw
@@ -302,12 +283,6 @@ export function normalizeKnownColumns(template: ReportTemplate, rows: DataRow[])
 export function isClientReadyStatus(value: string): boolean {
   const v = value.toLowerCase()
   return v.includes("contexte_client") && (v.startsWith("presentable") || v.startsWith("deployable"))
-}
-
-/** "N/A" (brut ou déjà passé par `slugify`) : une valeur explicitement non applicable. */
-function isNotApplicable(value: string): boolean {
-  const v = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
-  return v === "" || v === "na"
 }
 
 /** Une "propale type" existe pour l'agent (voir {@link toYesNo}). */

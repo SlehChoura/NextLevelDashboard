@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildCombinedWorkbook, parseCombinedWorkbook } from "./combinedImport"
 import { PILOTAGE_OBJECTIVES } from "./pilotage"
+import type { ActionItem } from "./actions"
 import { SEED_ACTIONS, SEED_REPORT } from "./seedData"
 import {
   ACTIONS_SHEET_NAME,
@@ -172,5 +173,71 @@ describe("fichier téléchargé (modèle pré-rempli)", () => {
     expect(result.warnings).toEqual(KNOWN_REFERENCE_WARNINGS)
     expect(result.dashboard?.rows.map(strip)).toEqual(SEED_REPORT.rows.map(strip))
     expect(result.dashboard?.template.criteria).toEqual(SEED_REPORT.template.criteria)
+  })
+})
+
+describe("onglet pilotage : pourcentages et nombres saisis dans Excel", () => {
+  it("lit « 100 % » (cellule au format pourcentage) comme 100, et « 75 % » écrit en texte comme 75", () => {
+    const workbook = workbookFrom({
+      [PILOTAGE_SHEET_NAME]: [
+        PIL_HEADERS,
+        ["disponibilite_cicd", "", "", 1, 1, "%"],
+        ["guidelines_cicd", "", "", "75 %", "100%", "%"],
+        ["consultants_vibe_coding", "", "", "1 234", 250, "consultants"],
+      ],
+    })
+    // Format pourcentage appliqué dans Excel aux deux cellules de « Disponibilité de la chaîne CI/CD ».
+    const sheet = workbook.Sheets[PILOTAGE_SHEET_NAME]
+    for (const ref of ["D2", "E2"]) {
+      sheet[ref].z = "0%"
+      delete sheet[ref].w
+    }
+    const result = parseCombinedWorkbook(workbook, [])
+    expect(result.pilotage?.valueUpdates).toEqual({ disponibilite_cicd: 100, guidelines_cicd: 75, consultants_vibe_coding: 1234 })
+    expect(result.pilotage?.targetUpdates).toMatchObject({ disponibilite_cicd: 100, guidelines_cicd: 100 })
+  })
+})
+
+describe("onglet Actions : échéances", () => {
+  const existing = [
+    { id: "a1", title: "Action A", owner: "Moi", objectiveId: "", status: "todo" as const, dueDate: "2026-12-01" },
+    { id: "a2", title: "Action B", owner: "Moi", objectiveId: "", status: "todo" as const, dueDate: "2026-12-02" },
+  ]
+
+  it("lit JJ/MM/AAAA, garde l'échéance connue si la nouvelle est illisible, et vide si la cellule l'est", () => {
+    const result = parseCombinedWorkbook(
+      workbookFrom({
+        [ACTIONS_SHEET_NAME]: [
+          ACT_HEADERS,
+          ["a1", "Action A", "Moi", "", "", "À faire", "bientôt"],
+          ["a2", "Action B", "Moi", "", "", "À faire", ""],
+          ["", "Action C", "Moi", "", "", "À faire", "15/12/2026"],
+        ],
+      }),
+      existing,
+    )
+    expect(result.actions?.actions.map((a) => [a.title, a.dueDate])).toEqual([
+      ["Action A", "2026-12-01"],
+      ["Action B", ""],
+      ["Action C", "2026-12-15"],
+    ])
+    expect(result.actions?.unreadableDueDates).toEqual(["Action A"])
+  })
+
+  it("ne décale pas une échéance au fil des téléchargements et réimports", () => {
+    let current: ActionItem[] = [{ ...existing[0], dueDate: "2026-11-15" }]
+    for (let i = 0; i < 3; i += 1) {
+      current = parseCombinedWorkbook(roundTrip(buildCombinedWorkbook({}, {}, current)), current).actions!.actions
+    }
+    expect(current[0].dueDate).toBe("2026-11-15")
+  })
+
+  it("lit une vraie date Excel au bon jour", () => {
+    // aoa_to_sheet enregistre la date telle qu'affichée dans le fuseau du poste (minuit local).
+    const result = parseCombinedWorkbook(
+      workbookFrom({ [ACTIONS_SHEET_NAME]: [ACT_HEADERS, ["", "Action D", "Moi", "", "", "À faire", new Date(2026, 10, 15)]] }),
+      [],
+    )
+    expect(result.actions?.actions[0].dueDate).toBe("2026-11-15")
   })
 })

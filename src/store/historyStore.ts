@@ -21,7 +21,11 @@ export const useHistoryStore = create<HistoryState>()(
       name: "nld-history",
       version: SEED_VERSION,
       // Nouvelles données de référence : leurs photos rejoignent l'historique enregistré.
-      migrate: (persisted) => ({ ...(persisted as HistoryState), snapshots: mergeSeedHistory((persisted as HistoryState)?.snapshots, readStoredLastImportAt()) }),
+      // Un onglet resté ouvert sur une version plus ancienne du site ne réécrit pas l'historique.
+      migrate: (persisted, version) =>
+        version > SEED_VERSION
+          ? (persisted as HistoryState)
+          : { ...(persisted as HistoryState), snapshots: mergeSeedHistory((persisted as HistoryState)?.snapshots, readStoredLastImportAt()) },
     },
   ),
 )

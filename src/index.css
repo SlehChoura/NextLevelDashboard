@@ -101,6 +101,33 @@ body {
   pointer-events: none;
 }
 
+/* Page « Pitch client » : halo de l'étape active de la chaîne de vibe coding, flottement décoratif. */
+@keyframes pitch-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(4, 240, 106, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(4, 240, 106, 0);
+  }
+}
+@keyframes pitch-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.pitch-glow {
+  animation: pitch-glow 1800ms var(--ease-standard) infinite;
+}
+.pitch-float {
+  animation: pitch-float 6s ease-in-out infinite;
+}
+/* En mode présentation (plein écran), la page occupe tout l'écran et défile seule. */
+.pitch-root:fullscreen {
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

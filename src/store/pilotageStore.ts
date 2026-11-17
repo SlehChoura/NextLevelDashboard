@@ -11,14 +11,19 @@ interface PilotageState {
   targets: PilotageValues
   valueFor: (objectiveId: string) => number
   targetFor: (objectiveId: string) => number
+  /** Modification manuelle (carte d'un objectif) : protégée des prochaines données de référence. */
   setValue: (objectiveId: string, value: number) => void
-  setValues: (values: PilotageValues) => void
   setTarget: (objectiveId: string, target: number) => void
-  setTargets: (targets: PilotageValues) => void
+  /** Import de l'onglet « Suivi pilotage » : le fichier fait foi pour les objectifs qu'il contient. */
+  applyImport: (values: PilotageValues, targets: PilotageValues) => void
   resetValues: () => void
   /** Date (ISO) du dernier import global réussi, affichée comme « dernière mise à jour des données ». */
   lastImportAt: string | null
   setLastImportAt: (date: string) => void
+  /** Date du dernier import ayant mis à jour des valeurs ou cibles du pilotage (≠ import d'un autre onglet). */
+  valuesImportedAt: string | null
+  /** Dernière modification manuelle depuis la réception des données de référence (voir keepsLocalData). */
+  editedAt: string | null
 }
 
 const defaultValues: PilotageValues = Object.fromEntries(
@@ -28,6 +33,8 @@ const defaultTargets: PilotageValues = Object.fromEntries(
   PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target]),
 )
 
+const now = () => new Date().toISOString()
+
 export const usePilotageStore = create<PilotageState>()(
   persist(
     (set, get) => ({
@@ -36,22 +43,32 @@ export const usePilotageStore = create<PilotageState>()(
       valueFor: (objectiveId) => get().values[objectiveId] ?? defaultValues[objectiveId] ?? 0,
       targetFor: (objectiveId) => get().targets[objectiveId] ?? defaultTargets[objectiveId] ?? 0,
       setValue: (objectiveId, value) =>
-        set((state) => ({ values: { ...state.values, [objectiveId]: value } })),
-      setValues: (values) => set((state) => ({ values: { ...state.values, ...values } })),
+        set((state) => ({ values: { ...state.values, [objectiveId]: value }, editedAt: now() })),
       setTarget: (objectiveId, target) =>
-        set((state) => ({ targets: { ...state.targets, [objectiveId]: target } })),
-      setTargets: (targets) => set((state) => ({ targets: { ...state.targets, ...targets } })),
-      resetValues: () => set({ values: { ...defaultValues }, targets: { ...defaultTargets } }),
+        set((state) => ({ targets: { ...state.targets, [objectiveId]: target }, editedAt: now() })),
+      applyImport: (values, targets) =>
+        set((state) => ({
+          values: { ...state.values, ...values },
+          targets: { ...state.targets, ...targets },
+          valuesImportedAt: now(),
+          editedAt: null,
+        })),
+      resetValues: () => set({ values: { ...defaultValues }, targets: { ...defaultTargets }, editedAt: null }),
       lastImportAt: null,
       setLastImportAt: (date) => set({ lastImportAt: date }),
+      valuesImportedAt: null,
+      editedAt: null,
     }),
     {
       name: "nld-pilotage",
       version: SEED_VERSION,
-      // Nouvelles données de référence : remplacent les valeurs enregistrées, sauf si un fichier
-      // a été importé depuis la date de ces données (voir refreshPilotage).
+      // Nouvelles données de référence : remplacent les valeurs enregistrées, sauf si l'onglet
+      // pilotage a été importé depuis leur date ou modifié à la main (voir refreshPilotage). Un onglet
+      // resté ouvert sur une version plus ancienne du site ne rétrograde pas des données plus récentes.
       migrate: (persisted, version) =>
-        refreshPilotage(persisted as PilotageState, version, { values: defaultValues, targets: defaultTargets }),
+        version > SEED_VERSION
+          ? (persisted as PilotageState)
+          : refreshPilotage(persisted as PilotageState, version, { values: defaultValues, targets: defaultTargets }),
     },
   ),
 )
