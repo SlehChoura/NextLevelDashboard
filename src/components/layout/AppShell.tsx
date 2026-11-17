@@ -1,6 +1,6 @@
 import { Suspense, useState } from "react"
 import { NavLink, Outlet, useLocation } from "react-router-dom"
-import { Bot, FileText, Gauge, Home, ListChecks, Menu, RefreshCw, Target, X, type LucideIcon } from "lucide-react"
+import { Bot, FileText, Gauge, Home, ListChecks, Menu, Presentation, RefreshCw, Target, X, type LucideIcon } from "lucide-react"
 import { PageErrorBoundary } from "./PageErrorBoundary"
 import { LineConcept } from "../ui/LineConcept"
 import { formatDataDate, useLastDataUpdate } from "../../hooks/useLastDataUpdate"
@@ -9,6 +9,7 @@ import logotypeWhite from "../../assets/brand/wavestone-logotype-white.svg"
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: "/", label: "Accueil", icon: Home, end: true },
   { to: "/dashboard", label: "Agents", icon: Bot },
+  { to: "/pitch", label: "Pitch client", icon: Presentation },
   { to: "/pilotage", label: "Pilotage", icon: Target },
   { to: "/actions", label: "Actions", icon: ListChecks },
   { to: "/synthese", label: "Synthèse comité", icon: FileText },
