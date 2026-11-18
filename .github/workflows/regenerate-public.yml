@@ -1,0 +1,58 @@
+name: Regenerate public/ on main
+
+# Le dossier public/ (site compilé) est versionné sur main pour les hébergements qui publient
+# « main + dossier public » sans étape de build (ex: hébergement interne déclenché par webhook).
+# À chaque push sur main, ce workflow recompile le site et committe public/ s'il a changé : le
+# commit du bot déclenche à son tour le webhook de l'hébergement, qui récupère le site à jour.
+#
+# Un push fait avec GITHUB_TOKEN ne relance aucun workflow : pas de boucle. Le garde sur l'acteur
+# l'assure aussi si le jeton venait à changer.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Une seule régénération à la fois : une fusion plus récente annule celle en cours, qui serait de
+# toute façon dépassée.
+concurrency:
+  group: regenerate-public
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Committer public/ s'il a changé
+        run: |
+          git add -A public
+          if git diff --cached --quiet; then
+            echo "public/ est déjà à jour, rien à committer."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Régénère public/ depuis ${GITHUB_SHA::7}"
+          if git push origin HEAD:main; then exit 0; fi
+          # Échec toléré seulement si main a avancé entre-temps (la régénération lancée par ce nouveau
+          # push publiera public/). Sinon (branche protégée, droits…), l'échec doit se voir.
+          git fetch -q origin main
+          if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then
+            echo "::warning::main a avancé pendant la régénération : la prochaine exécution publiera public/."
+            exit 0
+          fi
+          echo "::error::Impossible de pousser public/ sur main (branche protégée ou droits insuffisants ?)."
+          exit 1
