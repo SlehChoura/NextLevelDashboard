@@ -119,10 +119,11 @@ d'assets statiques bruts habituel de Vite — celui-ci a été renommé en `stat
   - *Avec choix d'un dossier sur `main`* : le dossier `public/` est aussi versionné directement
     sur `main` — pointez votre hébergement sur `main` + dossier `public`. Le workflow
     `.github/workflows/regenerate-public.yml` le régénère automatiquement : à chaque push sur
-    `main`, il recompile le site et committe `public/` s'il a changé (commit « Régénère public/
-    depuis … » de `github-actions[bot]`). Un hébergement déclenché par webhook reçoit ainsi deux
-    push par fusion : le second porte le site à jour. Si `main` est protégée contre les push
-    directs, autorisez `github-actions[bot]` à y pousser, sinon le workflow échoue.
+    `main` ou `dev`, il recompile le site et committe `public/` sur la même branche s'il a changé
+    (commit « Régénère public/ depuis … » de `github-actions[bot]`). Un hébergement déclenché par
+    webhook reçoit ainsi deux push par fusion : le second porte le site à jour. Si `main` ou `dev`
+    est protégée contre les push directs, autorisez `github-actions[bot]` à y pousser, sinon le
+    workflow échoue.
 - **Hébergement capable d'exécuter une commande de build** (Netlify, Vercel, PaaS interne…) :
   configurez la commande `npm run build` et le dossier de publication `public`.
 
