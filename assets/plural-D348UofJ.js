@@ -1,0 +1,1 @@
+import{m as e}from"./index-CDMpd4wy.js";var t=e(`Plus`,[[`path`,{d:`M5 12h14`,key:`1ays0h`}],[`path`,{d:`M12 5v14`,key:`s699le`}]]);function n(e,t,n=`${t}s`){return`${e} ${Math.abs(e)<2?t:n}`}export{t as n,n as t};
