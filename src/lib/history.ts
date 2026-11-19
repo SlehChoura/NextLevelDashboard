@@ -63,7 +63,7 @@ export interface SnapshotDiff {
 const DASHBOARD_LABELS: Record<keyof DashboardMetrics, { label: string; unit: string }> = {
   agents: { label: "Agents IA4CYB suivis", unit: "agents" },
   missions: { label: "Missions réalisées (somme par agent)", unit: "missions" },
-  ready: { label: "Agents prêts pour un client", unit: "agents" },
+  ready: { label: "Agents utilisables en mission", unit: "agents" },
   propale: { label: "Agents avec propale type", unit: "agents" },
 }
 

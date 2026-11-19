@@ -67,7 +67,7 @@ export const PILOTAGE_OBJECTIVES: PilotageObjective[] = [
     description: "Faire évoluer les Business Trainings existants pour intégrer les usages de l'IA.",
     unit: "BT Academy",
     direction: "up",
-    target: 5,
+    target: 4,
     defaultCurrent: 1,
   },
   {

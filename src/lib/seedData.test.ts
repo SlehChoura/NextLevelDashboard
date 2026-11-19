@@ -167,7 +167,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
     targets: Object.fromEntries(PILOTAGE_OBJECTIVES.map((o) => [o.id, o.target])),
   }
   const old = { values: { agents_industrialises: 9 }, targets: { agents_industrialises: 10 } }
-  const recentImport = "2026-11-12T09:00:00.000Z"
+  const recentImport = "2026-11-20T09:00:00.000Z"
   const olderImport = "2026-10-06T09:00:00.000Z"
   const userAction: ActionItem = { id: "u1", title: "Mon action", owner: "moi", objectiveId: "", status: "todo", dueDate: "" }
 
@@ -216,9 +216,9 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
 
   it("considère un import fait plus tôt le même jour comme plus ancien que les données de référence", () => {
     // Deux versions du fichier ont été intégrées le 14/10 : un import du matin est dépassé.
-    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-11-11T08:00:00.000Z").rows).toHaveLength(12)
+    expect(refreshDashboard({ ...SEED_REPORT, rows: [] }, "2026-11-19T08:00:00.000Z").rows).toHaveLength(12)
     const later = { ...SEED_REPORT, rows: [] }
-    expect(refreshDashboard(later, "2026-11-11T18:00:00.000Z")).toBe(later)
+    expect(refreshDashboard(later, "2026-11-19T18:00:00.000Z")).toBe(later)
   })
 
   it("remplace une photo enregistrée à la date d'une photo de référence, sauf import plus récent", () => {
@@ -238,6 +238,7 @@ describe("mise à jour des données de référence (fichier du 14/10)", () => {
       "2026-10-21",
       "2026-10-29",
       "2026-11-11",
+      "2026-11-19",
     ])
     expect(mergeSeedHistory(undefined).map((s) => s.date)).toEqual(SEED_HISTORY.map((s) => s.date))
   })
@@ -267,7 +268,7 @@ describe("modifications faites dans l'application, à la mise à jour des donné
     const persisted = {
       values: { agents_industrialises: 1 },
       targets: {},
-      lastImportAt: "2026-11-12T09:00:00.000Z",
+      lastImportAt: "2026-11-20T09:00:00.000Z",
       valuesImportedAt: null,
       editedAt: undefined as string | null | undefined,
     }
@@ -275,7 +276,7 @@ describe("modifications faites dans l'application, à la mise à jour des donné
     expect(next.values).toEqual(defaults.values)
     expect(next.editedAt).toBeNull()
     // Sans date propre (données enregistrées par une version précédente), la date commune fait foi.
-    const legacy = { values: { agents_industrialises: 1 }, targets: {}, lastImportAt: "2026-11-12T09:00:00.000Z" }
+    const legacy = { values: { agents_industrialises: 1 }, targets: {}, lastImportAt: "2026-11-20T09:00:00.000Z" }
     expect(refreshPilotage(legacy, 13, defaults)).toBe(legacy)
     expect(ownOrLegacy(undefined, "x")).toBe("x")
     expect(ownOrLegacy(null, "x")).toBeNull()
@@ -289,7 +290,7 @@ describe("modifications faites dans l'application, à la mise à jour des donné
 
   it("remplace une liste d'actions illisible par les actions de référence", () => {
     expect(refreshActions(undefined, 13, null)).toEqual(SEED_ACTIONS)
-    expect(refreshActions({ broken: true }, 13, "2026-11-12T09:00:00.000Z")).toEqual(SEED_ACTIONS)
+    expect(refreshActions({ broken: true }, 13, "2026-11-20T09:00:00.000Z")).toEqual(SEED_ACTIONS)
   })
 
   it("garde un dashboard corrigé avec « Modifier les données »", () => {

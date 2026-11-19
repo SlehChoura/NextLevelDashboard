@@ -2,7 +2,7 @@ import type { DataRow, ReportTemplate } from "../../types"
 import { isClientReadyStatus } from "../../lib/fixedFormatImport"
 
 /**
- * Met en avant les éléments dont le statut est "présentable" ou "déployable" en contexte client —
+ * Met en avant les agents utilisables en mission chez un client (voir isClientReadyStatus) —
  * ceux qui méritent d'être montrés en premier dans une présentation. Seul le nom est affiché : le
  * statut exact importe moins ici que le fait d'être prêt, et l'ensemble se lit comme une vitrine.
  */
@@ -26,7 +26,7 @@ export function ClientReadyAgents({
   return (
     <div className="print-break-avoid rounded-xl border border-[var(--color-accent)]/25 bg-[var(--color-accent)]/[0.04] p-5 shadow-sm">
       <div className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-        Nos agents prêts pour un contexte client ({matches.length})
+        Nos agents utilisables en mission opérationnelle ({matches.length})
       </div>
       {onSelect && (
         <p className="no-print mt-1 text-xs text-[var(--color-text-muted)]">Cliquez sur un agent pour découvrir sa fiche.</p>

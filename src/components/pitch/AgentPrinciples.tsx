@@ -1,6 +1,6 @@
-import { useState } from "react"
-import { BadgeCheck, CheckCircle2, Coins, GitBranch, Lock, ShieldCheck, UserCheck, type LucideIcon } from "lucide-react"
-import { AGENT_PRINCIPLES, communityDocUrl, COMMUNITY_DOCS, INDUSTRIALISATION_CRITERIA, MATURITY_AXES, type Principle } from "../../lib/pitch"
+import { useEffect, useState } from "react"
+import { BadgeCheck, Coins, GitBranch, Lock, ShieldCheck, UserCheck, type LucideIcon } from "lucide-react"
+import { AGENT_PRINCIPLES, type Principle } from "../../lib/pitch"
 
 const PRINCIPLE_ICONS: Record<Principle["icon"], LucideIcon> = {
   shield: ShieldCheck,
@@ -11,104 +11,84 @@ const PRINCIPLE_ICONS: Record<Principle["icon"], LucideIcon> = {
   coins: Coins,
 }
 
-const principlesDoc = COMMUNITY_DOCS.find((d) => d.path === "agent-principles.html")
+/** Durée d'affichage de chaque principe en défilement automatique. */
+const ROTATE_MS = 6000
 
 /**
- * Chapitre 2 : nos principes de développement, la définition d'un agent industrialisé et les
- * échelles de maturité sur lesquelles chaque agent est évalué.
+ * Chapitre 2 : les principes communs à tous nos agents, un à la fois sous le projecteur. Ils
+ * défilent seuls tant que personne n'en choisit un ; un clic sur un principe arrête le défilement.
  */
 export function AgentPrinciples() {
-  const [axis, setAxis] = useState(0)
-  const current = MATURITY_AXES[axis]
+  const [active, setActive] = useState(0)
+  const [auto, setAuto] = useState(true)
+  const principle = AGENT_PRINCIPLES[active]
+  const Icon = PRINCIPLE_ICONS[principle.icon]
+
+  useEffect(() => {
+    if (!auto) return
+    const id = window.setTimeout(() => setActive((i) => (i + 1) % AGENT_PRINCIPLES.length), ROTATE_MS)
+    return () => window.clearTimeout(id)
+  }, [auto, active])
 
   return (
-    <div className="space-y-8">
-      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
         {AGENT_PRINCIPLES.map((p, i) => {
-          const Icon = PRINCIPLE_ICONS[p.icon]
+          const ItemIcon = PRINCIPLE_ICONS[p.icon]
+          const current = i === active
           return (
-            <article
-              key={p.title}
-              className="group relative overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-raised)]"
-            >
-              <span className="absolute top-4 right-5 text-4xl font-semibold text-[var(--color-accent)]/10 tabular-nums" aria-hidden>
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] transition-colors duration-300 group-hover:bg-[var(--color-accent)] group-hover:text-white">
-                <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-[var(--color-text)]">{p.title}</h3>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">{p.description}</p>
-            </article>
-          )
-        })}
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
-        {/* Définition d'un agent industrialisé */}
-        <div className="rounded-[var(--radius-card)] p-6 text-white shadow-[var(--shadow-card)]" style={{ background: "var(--gradient-brand)" }}>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">Notre définition d'un agent industrialisé</p>
-          <ul className="mt-4 space-y-3">
-            {INDUSTRIALISATION_CRITERIA.map((c) => (
-              <li key={c} className="flex gap-3 text-sm">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-energy)]" strokeWidth={2} aria-hidden />
-                {c}
-              </li>
-            ))}
-          </ul>
-          {principlesDoc && (
-            <a
-              href={communityDocUrl(principlesDoc)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-print mt-5 inline-flex text-xs font-semibold text-white/85 underline-offset-4 hover:underline"
-            >
-              Tous les principes des agents (accès Wavestone) →
-            </a>
-          )}
-        </div>
-
-        {/* Échelles de maturité */}
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-card)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-            Chaque agent est évalué sur 5 axes de maturité
-          </p>
-          <div role="tablist" aria-label="Axes de maturité" className="mt-3 flex flex-wrap gap-1.5">
-            {MATURITY_AXES.map((a, i) => (
+            <li key={p.title}>
               <button
-                key={a.axis}
                 type="button"
-                role="tab"
-                aria-selected={i === axis}
-                onClick={() => setAxis(i)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-200 ${
-                  i === axis
-                    ? "bg-[var(--color-accent)] text-white"
-                    : "bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/15"
+                onClick={() => {
+                  setAuto(false)
+                  setActive(i)
+                }}
+                aria-current={current ? "true" : undefined}
+                className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 text-left transition-all duration-300 ${
+                  current
+                    ? "border-[var(--color-accent)]/40 bg-[var(--color-surface)] shadow-[var(--shadow-raised)]"
+                    : "border-transparent bg-[var(--color-surface)]/60 hover:bg-[var(--color-surface)]"
                 }`}
               >
-                {a.axis}
-              </button>
-            ))}
-          </div>
-          <ol key={current.axis} role="tabpanel" className="stagger mt-5 space-y-2">
-            {current.levels.map((level, i) => (
-              <li key={level.score} className="flex items-center gap-3">
-                <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums text-[var(--color-accent)]">{level.score}</span>
-                <span className="relative h-9 flex-1 overflow-hidden rounded-lg bg-[var(--color-bg)]">
+                {/* Barre de progression du défilement automatique */}
+                {current && auto && (
                   <span
-                    className="anim-bar absolute inset-y-0 left-0 origin-left rounded-lg"
-                    style={{
-                      width: `${((i + 1) / current.levels.length) * 100}%`,
-                      background: "linear-gradient(90deg, var(--color-accent-soft), color-mix(in srgb, var(--color-accent) 30%, white))",
-                    }}
+                    key={`progress-${active}`}
+                    className="anim-bar absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[var(--color-accent)]"
+                    style={{ animationDuration: `${ROTATE_MS}ms`, animationTimingFunction: "linear" }}
                     aria-hidden
                   />
-                  <span className="relative flex h-full items-center px-3 text-xs font-medium text-[var(--color-text)]">{level.label}</span>
+                )}
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-300 ${
+                    current ? "text-white" : "bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+                  }`}
+                  style={current ? { background: "var(--gradient-brand)" } : undefined}
+                >
+                  <ItemIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
-              </li>
-            ))}
-          </ol>
+                <span className={`text-sm font-semibold ${current ? "text-[var(--color-text)]" : "text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]"}`}>
+                  {p.title}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+
+      {/* Principe sous le projecteur */}
+      <div className="relative flex min-h-[320px] overflow-hidden rounded-[var(--radius-card)] p-8 text-white shadow-[var(--shadow-raised)] sm:p-10" style={{ background: "var(--gradient-brand)" }}>
+        <Icon className="pointer-events-none absolute -right-10 -bottom-10 h-72 w-72 text-white/[0.06]" strokeWidth={1} aria-hidden />
+        <div key={active} className="anim-rise relative flex flex-col">
+          <span className="pitch-glow flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--color-energy)] text-[var(--color-primary)]">
+            <Icon className="h-8 w-8" strokeWidth={1.75} aria-hidden />
+          </span>
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+            Principe {active + 1} sur {AGENT_PRINCIPLES.length}
+          </p>
+          <h3 className="mt-2 text-2xl leading-tight font-semibold sm:text-3xl">{principle.title}</h3>
+          <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">{principle.description}</p>
         </div>
       </div>
     </div>

@@ -103,7 +103,7 @@ function inferColumn(values: string[], header: string): ColumnInference {
  */
 function maturityColor(value: string): CriterionOption["color"] | undefined {
   const v = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
-  if (v.includes("deployable")) return "success"
+  if (v.includes("deployable") || v.includes("utilisable en mission")) return "success"
   if (v.includes("presentable")) return "info"
   if (/\bwip\b|en developpement|en cours/.test(v)) return "warning"
   return undefined
@@ -277,11 +277,13 @@ export function normalizeKnownColumns(template: ReportTemplate, rows: DataRow[])
 }
 
 /**
- * Un statut "présentable" ou "déployable" en contexte client (options générées par `inferColumn`,
- * dont la valeur technique est produite par `slugify` — donc déjà sans accent, en minuscules).
+ * Un agent utilisable chez un client : statut « Utilisable en mission (opérationnelle) », ou
+ * « Présentable / Déployable en contexte client » dans les fichiers antérieurs au 19/11. Accepte la
+ * valeur technique produite par `slugify` comme le libellé brut.
  */
 export function isClientReadyStatus(value: string): boolean {
-  const v = value.toLowerCase()
+  const v = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
+  if (v.startsWith("utilisable_en_mission")) return true
   return v.includes("contexte_client") && (v.startsWith("presentable") || v.startsWith("deployable"))
 }
 
