@@ -6,8 +6,8 @@ import { isLate, openActionsByDueDate, type ActionItem } from "./actions"
 import { clearBrowserData } from "./browserData"
 
 describe("chiffres du dashboard", () => {
-  it("compte agents, missions, agents prêts et propales types", () => {
-    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 46, ready: 7, propale: 2 })
+  it("compte agents, missions, agents utilisables en mission et propales types", () => {
+    expect(dashboardMetrics(SEED_REPORT)).toEqual({ agents: 12, missions: 46, ready: 8, propale: 2 })
   })
 })
 
@@ -82,10 +82,18 @@ describe("historique des mises à jour", () => {
   })
 
   it("compare le fichier du 29/10 à celui du 11/11 : seules les missions par agent bougent", () => {
-    expect([latest.from, latest.to]).toEqual(["2026-10-29", "2026-11-11"])
+    const nov11 = compareSnapshots(SEED_HISTORY[4], SEED_HISTORY[5])
+    expect([nov11.from, nov11.to]).toEqual(["2026-10-29", "2026-11-11"])
+    expect(nov11.progress).toEqual([])
+    expect(nov11.targetRevisions).toEqual([])
+    expect(nov11.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Missions réalisées (somme par agent)", 42, 46]])
+  })
+
+  it("compare le fichier du 11/11 à celui du 19/11 : cible des BT Academies et agents utilisables en mission", () => {
+    expect([latest.from, latest.to]).toEqual(["2026-11-11", "2026-11-19"])
     expect(latest.progress).toEqual([])
-    expect(latest.targetRevisions).toEqual([])
-    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Missions réalisées (somme par agent)", 42, 46]])
+    expect(byId(latest.targetRevisions)).toEqual({ bt_academy_transformees: [5, 4] })
+    expect(latest.dashboard.map((c) => [c.label, c.from, c.to])).toEqual([["Agents utilisables en mission", 7, 8]])
   })
 
   it("compare le fichier du 21/10 à celui du 29/10", () => {

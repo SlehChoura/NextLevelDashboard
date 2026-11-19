@@ -109,7 +109,7 @@ export function HomePage() {
             Nos agents IA, de l'idée à l'<span className="text-[var(--color-energy)]">impact</span>
           </h1>
           <p className="mt-3 text-sm text-white/80 sm:text-base">
-            {metrics.agents} agents suivis, dont {metrics.ready} prêts pour un contexte client et {industrialisedCount}{" "}
+            {metrics.agents} agents suivis, dont {metrics.ready} utilisables en mission opérationnelle et {industrialisedCount}{" "}
             industrialisés · {metrics.missions} missions réalisées · {plural(unlockedCount, "succès débloqué", "succès débloqués")} sur{" "}
             {computed.length} objectifs.
           </p>
@@ -174,12 +174,12 @@ export function HomePage() {
           to="/dashboard?section=missions"
         />
         <HeroKpi
-          label="Prêts pour un client"
+          label="Utilisables en mission"
           value={String(metrics.ready)}
           sub={`présentables ou déployables, sur ${metrics.agents} agents`}
           icon={<Rocket className="h-[18px] w-[18px]" strokeWidth={1.75} />}
           trend={trendOf(snapshots, (s) => s.dashboard.ready)}
-          delta={dashboardDelta("Agents prêts pour un client")}
+          delta={dashboardDelta("Agents utilisables en mission")}
           to="/dashboard?section=prets"
         />
       </div>
@@ -202,7 +202,7 @@ export function HomePage() {
             {[
               { label: "Propale type", value: `${metrics.propale}/${metrics.agents}` },
               { label: "Industrialisés", value: `${industrialisedCount}/${metrics.agents}` },
-              { label: "Prêts client", value: `${metrics.ready}/${metrics.agents}` },
+              { label: "En mission", value: `${metrics.ready}/${metrics.agents}` },
             ].map((item) => (
               <div key={item.label}>
                 <dt className="text-xs text-[var(--color-text-muted)]">{item.label}</dt>

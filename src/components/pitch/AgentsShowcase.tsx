@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
-import { ExternalLink, PlayCircle } from "lucide-react"
+import { ExternalLink, PlayCircle, Sparkles } from "lucide-react"
+import { AgentArt, THEME_ICONS } from "./AgentArt"
 import { useReportStore } from "../../store/reportStore"
 import { AGENT_PROFILES, AI_SHOWCASE_CYBER_URL, findAgentProfile, type AgentProfile } from "../../lib/agentProfiles"
 import { AGENT_THEMES } from "../../lib/pitch"
@@ -54,7 +55,7 @@ export function AgentsShowcase() {
         missions: Number.isFinite(missions) ? missions : 0,
       }
     })
-      // Les plus éprouvés d'abord : prêts pour un client, puis par nombre de missions.
+      // Les plus éprouvés d'abord : utilisables en mission, puis par nombre de missions.
       .sort((a, b) => Number(b.ready) - Number(a.ready) || b.missions - a.missions)
   }, [report.rows, statusCriterion, missionsCriterion])
 
@@ -73,12 +74,16 @@ export function AgentsShowcase() {
               role="tab"
               aria-selected={t === theme}
               onClick={() => setTheme(t)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
                 t === theme
                   ? "bg-[var(--color-primary)] text-white"
                   : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-accent)]/50"
               }`}
             >
+              {t !== ALL && (() => {
+                const Icon = THEME_ICONS[t]
+                return Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : null
+              })()}
               {t}
             </button>
           ))}
@@ -104,22 +109,29 @@ export function AgentsShowcase() {
         {shown.map((agent, i) => {
           const status = agent.row && statusCriterion ? agent.row[statusCriterion.key] : null
           const option = statusCriterion ? getOption(statusCriterion, status) : undefined
+          const ThemeIcon = THEME_ICONS[agent.theme] ?? Sparkles
           return (
             <article
               key={agent.profile.code}
               className="anim-rise group flex flex-col rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-accent)]/40 hover:shadow-[var(--shadow-raised)]"
               style={{ ["--i" as string]: i }}
             >
-              <div className="relative overflow-hidden rounded-t-[var(--radius-card)] px-5 pt-5 pb-4 text-white" style={{ background: "var(--gradient-brand)" }}>
-                <span className="absolute -right-6 -bottom-10 h-28 w-28 rounded-full bg-[var(--color-energy)]/20 blur-2xl transition-transform duration-500 group-hover:scale-150" aria-hidden />
-                <p className="relative text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">{agent.theme}</p>
-                <h3 className="relative mt-1 text-lg font-semibold">{agent.name}</h3>
-                <div className="relative mt-3 flex flex-wrap gap-1.5">
-                  {agent.profile.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-white/12 px-2 py-0.5 text-[10px] text-white/90">
-                      {tag}
-                    </span>
-                  ))}
+              <div className="relative h-40 overflow-hidden rounded-t-[var(--radius-card)] text-white" style={{ background: "var(--gradient-brand)" }}>
+                <AgentArt theme={agent.theme} />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-primary)] via-[var(--color-primary)]/40 to-transparent" aria-hidden />
+                <span className="absolute top-4 left-5 inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90 backdrop-blur-sm">
+                  <ThemeIcon className="h-3.5 w-3.5 text-[var(--color-energy)]" aria-hidden />
+                  {agent.theme}
+                </span>
+                <div className="absolute right-5 bottom-4 left-5">
+                  <h3 className="text-xl leading-tight font-semibold">{agent.name}</h3>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {agent.profile.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-white/90">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 

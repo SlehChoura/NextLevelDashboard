@@ -10,19 +10,22 @@ export const COMMUNITY_SITE_URL = "https://internal.w-cyberlab.com/hdzIJm/wavest
 
 export interface CommunityDoc {
   title: string
+  /** Libellé court affiché sur la tuile. */
+  short: string
   description: string
   path: string
+  icon: "compass" | "rocket" | "shield" | "book" | "layers" | "key" | "coins" | "bot"
 }
 
 export const COMMUNITY_DOCS: CommunityDoc[] = [
-  { title: "Vibe-code, yes, but how?", description: "Les deux chemins comparés, question par question.", path: "vibecoding-paths.html" },
-  { title: "Environnement et premier agent", description: "Tutoriel d'installation et de déploiement d'un premier agent.", path: "vibecoding-setup-guide.html" },
-  { title: "Principes des agents", description: "Les règles de conception communes à tous nos agents.", path: "agent-principles.html" },
-  { title: "Playbook", description: "Des exemples concrets pour passer de l'idée au code.", path: "playbook.html" },
-  { title: "De Copilot aux agents", description: "Quatre façons d'utiliser l'IA, jusqu'à l'agent personnel.", path: "ai-usage-models.html" },
-  { title: "Clé API Azure Foundry", description: "Connecter un agent aux modèles du tenant Wavestone.", path: "api-key.html" },
-  { title: "Token economics", description: "Budgéter et suivre la consommation, en mission ou en interne.", path: "token-economics.html" },
-  { title: "Nos agents", description: "Le catalogue des agents de la communauté.", path: "our-agents.html" },
+  { short: "Choisir son chemin", title: "Vibe-code, yes, but how?", description: "Les deux chemins comparés, question par question.", path: "vibecoding-paths.html", icon: "compass" },
+  { short: "Premier agent", title: "Environnement et premier agent", description: "Tutoriel d'installation et de déploiement d'un premier agent.", path: "vibecoding-setup-guide.html", icon: "rocket" },
+  { short: "Principes", title: "Principes des agents", description: "Les règles de conception communes à tous nos agents.", path: "agent-principles.html", icon: "shield" },
+  { short: "Playbook", title: "Playbook", description: "Des exemples concrets pour passer de l'idée au code.", path: "playbook.html", icon: "book" },
+  { short: "Usages de l'IA", title: "De Copilot aux agents", description: "Quatre façons d'utiliser l'IA, jusqu'à l'agent personnel.", path: "ai-usage-models.html", icon: "layers" },
+  { short: "Clé API", title: "Clé API Azure Foundry", description: "Connecter un agent aux modèles du tenant Wavestone.", path: "api-key.html", icon: "key" },
+  { short: "Coûts", title: "Token economics", description: "Budgéter et suivre la consommation, en mission ou en interne.", path: "token-economics.html", icon: "coins" },
+  { short: "Catalogue", title: "Nos agents", description: "Le catalogue des agents de la communauté.", path: "our-agents.html", icon: "bot" },
 ]
 
 export function communityDocUrl(doc: CommunityDoc): string {
@@ -211,95 +214,97 @@ export const AGENT_THEMES: Record<string, string> = {
 
 export interface DemoStep {
   title: string
-  action: string
-  /** Ce que le client doit retenir de l'étape. */
-  takeaway: string
+  /** Ce que fait l'agent à cette étape. */
+  feature: string
+  /** Ce que le client y gagne. */
+  benefit: string
 }
 
 export interface DemoScenario {
   /** Référence du cas d'usage (voir AGENT_PROFILES). */
   code: string
   name: string
-  pitch: string
-  /** Pourquoi cette démo parle aux clients. */
-  why: string
+  tagline: string
+  /** Pour qui l'agent est conçu. */
+  audience: string
+  /** Trois atouts mis en avant sur la carte de la démo. */
+  highlights: string[]
   url: string
-  /** Lien accessible uniquement avec un compte Wavestone. */
+  /** Démonstrateur hébergé sur l'environnement Wavestone (connexion SSO). */
   internal: boolean
-  duration: string
   steps: DemoStep[]
 }
 
 /**
  * Deux démos parmi les derniers liens du classeur de pilotage : SAM (démo publique, utile à toute
- * équipe projet) et CrisisMaker (l'agent le plus utilisé en mission). Scénarios proposés, à caler
- * avec les porteurs des agents.
+ * équipe projet) et CrisisMaker (l'agent le plus utilisé en mission). Textes écrits pour être
+ * présentés tels quels au client : fonctionnalités et bénéfices, sans consigne d'animation.
  */
 export const DEMO_SCENARIOS: DemoScenario[] = [
   {
     code: "UC4",
     name: "SAM – Security Advisor Mate",
-    pitch: "Un assistant Security by Design qui accompagne les équipes projet à chaque phase.",
-    why: "Parle à toutes les DSI : moins de relectures manuelles, des équipes projet autonomes, une équipe cyber sollicitée au bon moment.",
+    tagline: "Votre assistant Security by Design, à chaque phase de vos projets.",
+    audience: "DSI, chefs de projet et équipes cyber",
+    highlights: ["Relecture d'architecture en minutes", "Plan de remédiation priorisé", "Revue des clauses cyber"],
     url: "https://sam-webapp-179255767007.europe-west1.run.app/demo",
     internal: false,
-    duration: "8 min",
     steps: [
       {
-        title: "Situer le projet",
-        action: "Choisir la phase du cycle de vie du projet présenté : SAM explique ce qui est attendu de l'équipe et quand impliquer l'équipe cyber.",
-        takeaway: "La sécurité s'intègre au rythme du projet, sans le ralentir.",
+        title: "Un guide à chaque phase du projet",
+        feature: "SAM indique à l'équipe projet ce qui est attendu d'elle en sécurité à chaque phase du cycle de vie, et quand solliciter l'équipe cyber.",
+        benefit: "La sécurité s'intègre au rythme du projet, sans le ralentir.",
       },
       {
-        title: "Relire une architecture",
-        action: "Déposer un document d'architecture : SAM produit un rapport de conformité et insère ses commentaires directement dans le fichier Word.",
-        takeaway: "Des jours de relecture deviennent quelques minutes, au format habituel des équipes.",
+        title: "La relecture d'architecture automatisée",
+        feature: "À partir d'un document d'architecture, SAM produit un rapport de conformité et insère ses commentaires directement dans le fichier Word.",
+        benefit: "Des jours de relecture ramenés à quelques minutes, dans le format habituel de vos équipes.",
       },
       {
-        title: "Prioriser les vulnérabilités",
-        action: "Charger un scan de vulnérabilités : SAM le transforme en plan de remédiation priorisé et contextualisé.",
-        takeaway: "On traite d'abord ce qui compte vraiment pour le contexte du projet.",
+        title: "Des vulnérabilités enfin priorisées",
+        feature: "SAM transforme un rapport de scan de vulnérabilités en plan de remédiation priorisé et contextualisé.",
+        benefit: "Vos équipes traitent d'abord ce qui compte vraiment pour le projet.",
       },
       {
-        title: "Vérifier un contrat",
-        action: "Soumettre des clauses contractuelles : SAM relit les clauses cyber et signale les manques.",
-        takeaway: "Le même assistant couvre le technique et le contractuel.",
+        title: "Les contrats passés au crible",
+        feature: "SAM relit les clauses cyber d'un contrat et signale les manques au regard de vos exigences.",
+        benefit: "Le même assistant couvre le technique et le contractuel.",
       },
       {
-        title: "Conclure",
-        action: "Rappeler que le consultant valide chaque résultat et que SAM peut être déployé dans votre environnement.",
-        takeaway: "Un accélérateur pour vos équipes, sous le contrôle de vos experts.",
+        title: "Déployable chez vous",
+        feature: "SAM peut être déployé dans votre environnement, et chaque résultat reste validé par vos experts.",
+        benefit: "Un accélérateur pour vos équipes, sous le contrôle de votre filière cyber.",
       },
     ],
   },
   {
     code: "UC8",
     name: "CrisisMaker",
-    pitch: "La plateforme Wavestone de conception d'exercices de crise, immersifs et réalistes.",
-    why: "L'agent le plus utilisé en mission (14 missions) : un exercice de crise prêt en un temps record, avec les modèles d'IA du client si besoin.",
+    tagline: "Des exercices de crise immersifs et réalistes, conçus en un temps record.",
+    audience: "RSSI, cellules de crise et directions générales",
+    highlights: ["Notre agent le plus utilisé en mission", "Contenus multi-formats", "Compatible avec vos modèles d'IA"],
     url: "https://internal.w-cyberlab.com/DXEPHV/default/",
     internal: true,
-    duration: "10 min",
     steps: [
       {
-        title: "Poser le contexte",
-        action: "Choisir le secteur, l'organisation et le scénario de menace (rançongiciel, fuite de données…).",
-        takeaway: "Chaque exercice colle à la réalité du client.",
+        title: "Un scénario taillé pour votre organisation",
+        feature: "CrisisMaker part de votre secteur, de votre organisation et de la menace choisie (rançongiciel, fuite de données…).",
+        benefit: "Un exercice qui colle à votre réalité, pas à un scénario générique.",
       },
       {
-        title: "Générer les contenus",
-        action: "Lancer la génération des injects multi-formats : mails, articles de presse, messages, appels.",
-        takeaway: "Des semaines de préparation ramenées à quelques heures.",
+        title: "Des contenus générés en quelques minutes",
+        feature: "La plateforme génère les injects de l'exercice : mails, articles de presse, messages, appels.",
+        benefit: "Des semaines de préparation ramenées à quelques heures.",
       },
       {
-        title: "Dérouler la chronologie",
-        action: "Montrer le déroulé minute par minute de l'exercice et les ajustements possibles en direct.",
-        takeaway: "L'animateur garde la main sur le rythme et l'intensité.",
+        title: "Une chronologie maîtrisée",
+        feature: "Le déroulé de l'exercice est visible minute par minute et ajustable en direct.",
+        benefit: "Vous gardez la main sur le rythme et l'intensité de la crise.",
       },
       {
-        title: "Rassurer sur les données",
-        action: "Expliquer que CrisisMaker peut s'appuyer sur les modèles d'IA du client, dans un environnement sécurisé et conforme à sa gouvernance.",
-        takeaway: "Aucun compromis entre réalisme et confidentialité.",
+        title: "Vos données restent chez vous",
+        feature: "CrisisMaker peut s'appuyer sur vos propres modèles d'IA, dans un environnement sécurisé et conforme à votre gouvernance.",
+        benefit: "Aucun compromis entre réalisme et confidentialité.",
       },
     ],
   },

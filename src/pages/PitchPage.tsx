@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { Bot, Compass, PlayCircle, Workflow } from "lucide-react"
+import { Bot, Compass, Factory, PlayCircle, Workflow } from "lucide-react"
 import { PitchHero, type HeroStat } from "../components/pitch/PitchHero"
 import { MakerChain } from "../components/pitch/MakerChain"
 import { AgentPrinciples } from "../components/pitch/AgentPrinciples"
+import { IndustrialisationPilotage } from "../components/pitch/IndustrialisationPilotage"
 import { AgentsShowcase } from "../components/pitch/AgentsShowcase"
 import { DemoGuide } from "../components/pitch/DemoGuide"
 import { useReportStore } from "../store/reportStore"
@@ -12,6 +13,7 @@ import { dashboardMetrics } from "../lib/dashboardMetrics"
 const CHAPTERS = [
   { id: "makers", label: "Des makers outillés", icon: Workflow },
   { id: "principes", label: "Nos principes", icon: Compass },
+  { id: "industrialisation", label: "Industrialiser", icon: Factory },
   { id: "agents", label: "Nos agents", icon: Bot },
   { id: "demo", label: "Démo en direct", icon: PlayCircle },
 ] as const
@@ -53,7 +55,7 @@ export function PitchPage() {
   const metrics = dashboardMetrics(report)
   const stats: HeroStat[] = [
     { value: metrics.agents, label: "agents développés par la communauté" },
-    { value: metrics.ready, label: "agents prêts pour un environnement client" },
+    { value: metrics.ready, label: "agents utilisables en mission opérationnelle" },
     { value: metrics.missions, label: "missions réalisées avec nos agents" },
     { value: consultants, label: "consultants formés au vibe coding" },
     { value: licences, label: "makers équipés de Claude Code" },
@@ -119,7 +121,7 @@ export function PitchPage() {
           aria-label="Chapitres du pitch"
           className="no-print sticky top-2 z-30 mt-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-1.5 shadow-[var(--shadow-card)] backdrop-blur"
         >
-          <ol className="relative grid grid-cols-4">
+          <ol className="relative grid grid-cols-5">
             <span
               className="absolute inset-y-0 rounded-full transition-all duration-500"
               style={{ width: `${100 / CHAPTERS.length}%`, left: `${(chapterIndex * 100) / CHAPTERS.length}%`, background: "var(--gradient-brand)" }}
@@ -139,10 +141,10 @@ export function PitchPage() {
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-                    <span className="hidden md:inline">
+                    <span className="hidden lg:inline">
                       {i + 1}. {c.label}
                     </span>
-                    <span className="md:hidden">{i + 1}</span>
+                    <span className="lg:hidden">{i + 1}</span>
                   </button>
                 </li>
               )
@@ -153,7 +155,7 @@ export function PitchPage() {
         <Chapter
           id="makers"
           index={1}
-          title="Des makers, et toute une chaîne pour industrialiser"
+          title="Des makers, et toute une chaîne de vibe coding sécurisée"
           intro="Chez Wavestone Cybersécurité, les consultants conçoivent eux-mêmes leurs agents IA, sur une chaîne de vibe coding complète, sécurisée et documentée."
         >
           <MakerChain />
@@ -163,14 +165,23 @@ export function PitchPage() {
           id="principes"
           index={2}
           title="Des principes communs à tous nos agents"
-          intro="Chaque agent suit les mêmes règles de conception et passe par les mêmes critères avant d'être proposé en mission."
+          intro="Six règles de conception, les mêmes pour chaque agent, avant qu'il ne soit proposé en mission."
         >
           <AgentPrinciples />
         </Chapter>
 
         <Chapter
-          id="agents"
+          id="industrialisation"
           index={3}
+          title="Industrialiser nos agents, et les piloter"
+          intro="Un objectif chiffré, des critères exigeants et un suivi continu : chaque agent progresse sur une trajectoire mesurée."
+        >
+          <IndustrialisationPilotage />
+        </Chapter>
+
+        <Chapter
+          id="agents"
+          index={4}
           title="Des agents déjà au service de nos missions"
           intro="Identité, conformité, audit, gestion de crise : un catalogue qui grandit chaque mois, avec des démos accessibles en direct."
         >
@@ -179,9 +190,9 @@ export function PitchPage() {
 
         <Chapter
           id="demo"
-          index={4}
+          index={5}
           title="Place à la démo"
-          intro="Deux démos guidées pas à pas, avec pour chaque étape ce qu'il faut montrer et le message à faire passer."
+          intro="Deux agents en action, fonctionnalité par fonctionnalité, et ce qu'ils changent pour vos équipes."
         >
           <DemoGuide />
         </Chapter>

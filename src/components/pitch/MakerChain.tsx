@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
-import { Check, Cloud, Code2, GitBranch, KeyRound, Laptop, Pause, Play, RotateCcw, Server, X, type LucideIcon } from "lucide-react"
-import { communityDocUrl, COMMUNITY_DOCS, PATH_COMPARISON, VIBE_CHAIN } from "../../lib/pitch"
+import { Check, Cloud, Code2, GitBranch, KeyRound, Laptop, Pause, Play, RotateCcw, Server, type LucideIcon } from "lucide-react"
+import { VIBE_CHAIN } from "../../lib/pitch"
+import { PathComparison } from "./PathComparison"
+import { DocsHub } from "./DocsHub"
 
 const STEP_ICONS: Record<string, LucideIcon> = {
   poste: Laptop,
@@ -16,8 +18,8 @@ const STEP_MS = 3200
 
 /**
  * Chapitre 1 : la chaîne de vibe coding de la communauté, de l'idée à l'agent utilisé en mission,
- * en lecture animée ou étape par étape, puis la comparaison avec l'exploration personnelle et la
- * documentation de la communauté.
+ * en lecture animée ou étape par étape, puis les deux chemins de développement et la documentation
+ * de la communauté.
  */
 export function MakerChain() {
   const [active, setActive] = useState(0)
@@ -138,57 +140,10 @@ export function MakerChain() {
         </div>
       </div>
 
-      {/* Exploration personnelle vs AI Makers */}
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
-          <div className="min-w-[560px]">
-          <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-semibold uppercase tracking-wide">
-            <span className="px-4 py-3 text-[var(--color-text-muted)]">Vibe-coder, oui, mais comment ?</span>
-            <span className="px-4 py-3 text-[var(--color-text-muted)]">Exploration personnelle</span>
-            <span className="px-4 py-3 text-white" style={{ background: "var(--color-accent)" }}>
-              Communauté AI Makers
-            </span>
-          </div>
-          {PATH_COMPARISON.map((row) => (
-            <div key={row.question} className="grid grid-cols-[1fr_1fr_1fr] border-t border-[var(--color-border)] text-sm">
-              <span className="px-4 py-3 font-medium text-[var(--color-text)]">{row.question}</span>
-              <span className="flex gap-2 px-4 py-3 text-[var(--color-text-muted)]">
-                <X className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-danger)]/70" aria-hidden />
-                {row.personal}
-              </span>
-              <span className="flex gap-2 bg-[var(--color-accent-soft)] px-4 py-3 text-[var(--color-text)]">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-success)]" strokeWidth={2.5} aria-hidden />
-                {row.makers}
-              </span>
-            </div>
-          ))}
-          </div>
-        </div>
-
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-card)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">Une documentation complète pour la communauté</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Site interne, accessible avec un compte Wavestone.</p>
-          <ul className="mt-3 divide-y divide-[var(--color-border)]">
-            {COMMUNITY_DOCS.map((doc) => (
-              <li key={doc.path}>
-                <a
-                  href={communityDocUrl(doc)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start justify-between gap-3 py-2.5"
-                >
-                  <span>
-                    <span className="block text-sm font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)]">{doc.title}</span>
-                    <span className="block text-xs text-[var(--color-text-muted)]">{doc.description}</span>
-                  </span>
-                  <span className="mt-0.5 text-[var(--color-accent)] transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden>
-                    →
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Les deux chemins et la documentation de la communauté */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PathComparison />
+        <DocsHub />
       </div>
     </div>
   )

@@ -30,7 +30,7 @@ const td = "border-b border-[var(--color-border)] px-2.5 py-1.5 align-top text-[
 
 /**
  * Synthèse d'une page pour un comité : chiffres clés, évolutions, objectifs, actions à arbitrer et
- * agents prêts pour un client ; le détail par agent suit en annexe, sur une nouvelle page à
+ * agents utilisables en mission ; le détail par agent suit en annexe, sur une nouvelle page à
  * l'impression (« Imprimer / PDF »).
  */
 export function SynthesePage() {
@@ -120,10 +120,10 @@ export function SynthesePage() {
           delta={dashboardDelta("Missions réalisées (somme par agent)")}
         />
         <HeroKpi
-          label="Prêts pour un client"
+          label="Utilisables en mission"
           value={String(metrics.ready)}
           sub={`sur ${metrics.agents} agents`}
-          delta={dashboardDelta("Agents prêts pour un client")}
+          delta={dashboardDelta("Agents utilisables en mission")}
         />
       </div>
 
@@ -199,7 +199,7 @@ export function SynthesePage() {
 
         <section className="print-break-avoid rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-            Agents prêts pour un client ({readyAgents.length})
+            Agents utilisables en mission ({readyAgents.length})
           </h2>
           <ul className="mt-2 space-y-1 text-sm text-[var(--color-text)] print:text-xs">
             {readyAgents.map((row) => (

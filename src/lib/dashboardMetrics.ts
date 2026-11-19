@@ -8,7 +8,7 @@ export interface DashboardMetrics {
   agents: number
   /** Somme du « Nombre de missions réalisées » de chaque agent. */
   missions: number
-  /** Agents dont le statut est « présentable » ou « déployable » en contexte client. */
+  /** Agents utilisables en mission chez un client (voir isClientReadyStatus). */
   ready: number
   /** Agents disposant d'une propale type. */
   propale: number

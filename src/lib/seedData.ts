@@ -16,19 +16,19 @@ import { PILOTAGE_OBJECTIVES } from "./pilotage"
  * persistés (localStorage) s'en servent pour rafraîchir les données initiales déjà enregistrées
  * dans le navigateur d'un visiteur précédent, sans toucher à ce qu'il a lui-même créé.
  */
-export const SEED_VERSION = 13
+export const SEED_VERSION = 14
 
 /**
  * Date du fichier de suivi dont sont tirées les valeurs de référence du pilotage : un navigateur
  * qui n'a rien importé depuis reçoit ces valeurs à la place des précédentes.
  */
-export const SEED_PILOTAGE_DATE = "2026-11-11"
+export const SEED_PILOTAGE_DATE = "2026-11-19"
 
 /**
  * Instant d'intégration du dernier fichier de suivi : un import fait avant (même plus tôt le même
  * jour, quand deux versions du fichier se suivent) est plus ancien que ces données.
  */
-export const SEED_REFERENCE_AT = "2026-11-11T09:00:00.000Z"
+export const SEED_REFERENCE_AT = "2026-11-19T09:00:00.000Z"
 
 /** Colonnes de l'onglet "Agents IA4CYB" (première colonne = agent suivi, suivantes = critères). */
 export const DASHBOARD_HEADERS = [
@@ -46,17 +46,18 @@ export const DASHBOARD_HEADERS = [
 ]
 
 /**
- * Fichier du 11/11, confirmé par le classeur de pilotage du 16/11. La colonne « Agent industrialisé »
- * du fichier exporté (3 « Fait », 1 « En cours », 8 vides) reprend en réalité la colonne voisine
- * « Parallax » du classeur : les valeurs ci-dessous sont celles de la vraie colonne « Agent
- * industrialisé » du classeur (9 « Oui »), cohérentes avec le pilotage.
+ * Fichier du 19/11. Les statuts y adoptent le vocabulaire « Utilisable en mission opérationnelle »
+ * (ex-« Déployable / Présentable en contexte client »). La colonne « Agent industrialisé » du
+ * fichier exporté reprend toujours la colonne voisine « Parallax » du classeur de pilotage (« Fait »,
+ * « En cours ») : les valeurs ci-dessous restent celles de la vraie colonne « Agent industrialisé »
+ * du classeur (9 « Oui »), cohérentes avec le pilotage.
  */
 export const DASHBOARD_ROWS: unknown[][] = [
-  ["Smart Identity Analyzer", "Déployable en contexte client", 1, 0.9, 0.5, 0.5, 0.6, "Non", 1, "Oui", "Oui"],
-  ["Crisis Maker", "Déployable en contexte client", 1, 1, 0.75, 1, 1, "Non", 14, "Oui", "Oui"],
+  ["Smart Identity Analyzer", "Utilisable en mission opérationnelle", 1, 0.9, 0.5, 0.5, 0.6, "Non", 1, "Oui", "Oui"],
+  ["Crisis Maker", "Utilisable en mission opérationnelle", 1, 1, 0.75, 1, 1, "Non", 14, "Oui", "Oui"],
   [
     "Booster EBIOS RM – Analyse de risques",
-    "Déployable en contexte client",
+    "Utilisable en mission opérationnelle",
     1,
     0.75,
     0.75,
@@ -67,10 +68,10 @@ export const DASHBOARD_ROWS: unknown[][] = [
     "Oui",
     "Oui",
   ],
-  ["Web Recon", "Déployable en contexte client", 1, 1, 1, 0.25, 1, "Non", 20, "Oui", "Oui"],
+  ["Web Recon", "Utilisable en mission opérationnelle", 1, 1, 1, 0.25, 1, "Non", 20, "Oui", "Oui"],
   [
     "The CyberBench Intelligence Orchestrator",
-    "En développement",
+    "Utilisable en mission opérationnelle",
     0.75,
     0.33,
     0.5,
@@ -107,10 +108,10 @@ export const DASHBOARD_ROWS: unknown[][] = [
     "Oui",
     "Oui",
   ],
-  ["Cyber-by-Design Project Assistant", "Déployable en contexte client", 1, 1, 0.75, 0.75, 1, "Oui", 2, "Oui", "Oui"],
+  ["Cyber-by-Design Project Assistant", "Utilisable en mission opérationnelle", 1, 1, 0.75, 0.75, 1, "Oui", 2, "Oui", "Oui"],
   [
     "The Deliverable Purifier – Automated Anonymization & KM Re-injection",
-    "Présentable en contexte client",
+    "En développement",
     "",
     1,
     1,
@@ -121,8 +122,8 @@ export const DASHBOARD_ROWS: unknown[][] = [
     "",
     "Oui",
   ],
-  ["Kovex", "Déployable en contexte client", 1, 0.75, 0.75, 0.25, 1, "", 2, "Oui", "Oui"],
-  ["RegWatch", "En développement", 0.5, 1, 0.75, 0.25, 0.25, "", "", "", "Non"],
+  ["Kovex", "Utilisable en mission opérationnelle", 1, 0.75, 0.75, 0.25, 1, "", 2, "Oui", "Oui"],
+  ["RegWatch", "Utilisable en mission opérationnelle", 0.5, 1, 0.75, 0.25, 0.25, "", "", "", "Non"],
   ["WaveWarden", "En développement", 0.5, 0.25, 0.25, 0.25, 0.5, "En cours", "", "", "Non"],
 ]
 
@@ -338,7 +339,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Tester les démos des agents",
     owner: "Anna VALIER",
     objectiveId: "agents_disponibles",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-11-10",
   },
   {
@@ -346,7 +347,7 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Slides DI day",
     owner: "Anna VALIER",
     objectiveId: "bt_academy_transformees",
-    status: "todo",
+    status: "in_progress",
     dueDate: "2026-11-25",
   },
   {
@@ -354,8 +355,16 @@ export const SEED_ACTIONS: ActionItem[] = [
     title: "Prépa 12 nov",
     owner: "Anna VALIER",
     objectiveId: "agents_disponibles",
-    status: "in_progress",
+    status: "done",
     dueDate: "2026-11-12",
+  },
+  {
+    id: "seed-action-27",
+    title: "Vérifier agents industrialisés/prêt pour client",
+    owner: "Anna VALIER",
+    objectiveId: "agents_disponibles",
+    status: "in_progress",
+    dueDate: "2026-11-20",
   },
 ]
 
@@ -367,6 +376,9 @@ const ADDED_ON_2026_10_14 = ["licences_claude", "demo_ai_showcase"]
 const without = (record: Record<string, number>, ids: string[]) =>
   Object.fromEntries(Object.entries(record).filter(([id]) => !ids.includes(id)))
 
+/** Cibles jusqu'au fichier du 11/11 : celle des BT Academies valait 5 (ramenée à 4 le 19/11). */
+const targets1111 = { ...referenceTargets, bt_academy_transformees: 5 }
+
 const values1005 = {
   ...without(referenceValues, ADDED_ON_2026_10_14),
   consultants_vibe_coding: 250,
@@ -374,11 +386,13 @@ const values1005 = {
   agents_industrialises: 9,
   missions_avec_agents: 27,
 }
-const targets1005 = without(referenceTargets, ADDED_ON_2026_10_14)
+const targets1005 = without(targets1111, ADDED_ON_2026_10_14)
 /** Dashboard des agents des fichiers du 30/09 et du 05/10 (10 agents, une propale type). */
 const dashboardBefore1014 = { agents: 10, missions: 27, ready: 7, propale: 1 }
 
-/** Dashboard des agents du fichier du 29/10 (pilotage identique à celui du 11/11). */
+const dashboard1111 = { agents: 12, missions: 46, ready: 7, propale: 2 }
+
+/** Dashboard des agents des fichiers du 29/10 et du 11/11 (pilotage identique). */
 const dashboard1029 = { agents: 12, missions: 42, ready: 7, propale: 2 }
 
 /** Fichier corrigé du 21/10, avant celui du 29/10. */
@@ -387,11 +401,11 @@ const dashboard1021 = { agents: 12, missions: 41, ready: 7, propale: 5 }
 
 /** Fichier corrigé du 14/10, avant celui du 21/10. */
 const values1014 = { ...values1021, consultants_vibe_coding: 250, agents_industrialises: 8, missions_avec_agents: 41 }
-const targets1014 = { ...referenceTargets, licences_claude: 23 }
+const targets1014 = { ...targets1111, licences_claude: 23 }
 const dashboard1014 = { agents: 12, missions: 41, ready: 7, propale: 3 }
 
 /**
- * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10, du 21/10, du 29/10 et du
+ * Historique initial : les fichiers de suivi du 30/09, du 05/10, du 14/10, du 21/10, du 29/10, du 11/11 et du
  * {@link SEED_PILOTAGE_DATE},
  * pour que « Depuis la dernière mise à jour » montre d'emblée les évolutions (et les cibles révisées).
  */
@@ -411,7 +425,8 @@ export const SEED_HISTORY: Snapshot[] = [
   },
   { date: "2026-10-05", values: values1005, targets: targets1005, dashboard: dashboardBefore1014 },
   { date: "2026-10-14", values: values1014, targets: targets1014, dashboard: dashboard1014 },
-  { date: "2026-10-21", values: values1021, targets: referenceTargets, dashboard: dashboard1021 },
-  { date: "2026-10-29", values: referenceValues, targets: referenceTargets, dashboard: dashboard1029 },
+  { date: "2026-10-21", values: values1021, targets: targets1111, dashboard: dashboard1021 },
+  { date: "2026-10-29", values: referenceValues, targets: targets1111, dashboard: dashboard1029 },
+  { date: "2026-11-11", values: referenceValues, targets: targets1111, dashboard: dashboard1111 },
   makeSnapshot(SEED_PILOTAGE_DATE, referenceValues, referenceTargets, SEED_REPORT),
 ]

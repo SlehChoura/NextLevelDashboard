@@ -25,3 +25,14 @@ describe("contenu de la page Pitch client", () => {
     for (const axis of MATURITY_AXES) expect(axis.levels.length).toBeGreaterThanOrEqual(3)
   })
 })
+
+describe("agents utilisables en mission", () => {
+  it("reconnaît le vocabulaire du 19/11 comme celui des fichiers précédents", async () => {
+    const { isClientReadyStatus } = await import("./fixedFormatImport")
+    expect(isClientReadyStatus("utilisable_en_mission_operationnelle")).toBe(true)
+    expect(isClientReadyStatus("Utilisable en mission opérationnelle")).toBe(true)
+    expect(isClientReadyStatus("deployable_en_contexte_client")).toBe(true)
+    expect(isClientReadyStatus("presentable_en_contexte_client")).toBe(true)
+    expect(isClientReadyStatus("en_developpement")).toBe(false)
+  })
+})
