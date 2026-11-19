@@ -1,1 +1,0 @@
-import{J as e,Y as t,Z as n,n as r,p as i,u as a}from"./seedMigration-CYTW6680.js";var o=t()(e(e=>({snapshots:a,addSnapshot:t=>e(e=>({snapshots:i(e.snapshots,t)}))}),{name:`nld-history`,version:13,migrate:(e,t)=>t>13?e:{...e,snapshots:r(e?.snapshots,n())}}));export{o as t};

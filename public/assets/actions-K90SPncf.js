@@ -1,0 +1,1 @@
+import{H as e}from"./seedMigration-D6B36lLi.js";var t={todo:`À faire`,in_progress:`En cours`,done:`Terminée`};function n(){return e()}function r(e,t=n()){return e.status!==`done`&&e.dueDate!==``&&e.dueDate<t}function i(e){return e.filter(e=>e.status!==`done`).sort((e,t)=>(e.dueDate||`9999`).localeCompare(t.dueDate||`9999`))}export{n as i,r as n,i as r,t};
